@@ -66,14 +66,76 @@
 .max-h-96{max-height:calc(var(--spacing) * 96)}
 .mb-5{margin-bottom:calc(var(--spacing) * 5)}
 .underline{text-decoration-line:underline}
+.text-\[11px\]{font-size:11px}
 @media (min-width:40rem){.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (min-width:40rem){.sm\:max-w-xs{max-width:20rem}}
 @media (min-width:64rem){.lg\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}}
 
+/* ===== manual patch 3: utility classes added for the multi-item expense
+   (repeatable item rows) feature that the extracted Tailwind build did not
+   happen to compile. Same rationale as the patch blocks above. ===== */
+.mt-3{margin-top:calc(var(--spacing) * 3)}
+
 @keyframes float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,-20px); } }
+
+/* ===== Global animated food-icon background (#food-bg) ===== */
+/* Renders once at boot (see foodBgInit / DOMContentLoaded) as a sibling of
+   #app, so it is never destroyed/recreated by render()'s innerHTML swaps
+   on navigation. Sits behind all authenticated app pages via z-index; the
+   sidebar/topbar/main panels are opaque (bg-navy-950 / bg-surface / bg-
+   background) and simply paint over it where content exists. */
+#food-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+#food-bg[hidden] { display: none; }
+#app { position: relative; z-index: 1; }
+#food-bg .food-bg-icon {
+  position: absolute;
+  color: var(--navy-900);
+  opacity: .06;
+  pointer-events: none;
+  will-change: transform;
+}
+#food-bg .food-bg-icon svg { display: block; width: 100%; height: 100%; }
+/* Slightly fewer/smaller on small phones (requirement: fewer AND smaller
+   icons on narrow viewports). */
+@media (max-width: 640px) {
+  #food-bg .food-bg-icon { transform: scale(.72); }
+  #food-bg .food-bg-icon.food-bg-mobile-hide { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #food-bg .food-bg-icon.food-bg-a { animation: food-float-a var(--food-dur, 20s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
+  #food-bg .food-bg-icon.food-bg-b { animation: food-float-b var(--food-dur, 24s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
+  #food-bg .food-bg-icon.food-bg-c { animation: food-bob var(--food-dur, 18s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
+  #food-bg .food-bg-icon.food-bg-d { animation: food-rotate-drift var(--food-dur, 27s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
+}
+@keyframes food-float-a {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -12px) rotate(2deg); }
+  50% { transform: translate(-6px, -18px) rotate(-1deg); }
+  75% { transform: translate(-12px, -4px) rotate(1deg); }
+}
+@keyframes food-float-b {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-14px, 8px) rotate(-2deg); }
+  66% { transform: translate(8px, 14px) rotate(2deg); }
+}
+@keyframes food-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(1.5deg); }
+}
+@keyframes food-rotate-drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(9px, -10px) rotate(-4deg); }
+}
 </style>
 </head>
 <body class="h-full bg-background">
+<div id="food-bg" aria-hidden="true"></div>
 <div id="app" class="h-full"></div>
 <div id="toast-host" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
 <script>
@@ -90,6 +152,94 @@ function icon(name, cls) {
   var svg = ICONS[name] || "";
   if (cls) svg = svg.replace('class="lucide', 'class="' + cls + " lucide");
   return svg;
+}
+
+/* ============================== FOOD BACKGROUND (global decorative layer) ============================== */
+/* Hand-authored minimal line-art food icons, same stroke convention as
+   window.ICONS (24x24 viewBox, stroke="currentColor", stroke-width 2,
+   round caps/joins). Used only by the subtle animated #food-bg layer
+   behind every authenticated page (see renderShell / foodBgInit). */
+var FOOD_BG_ICONS = [
+  // fish
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-4 8-6 13-4 2 .8 4 2.2 5 4-1 1.8-3 3.2-5 4-5 2-10 0-13-4Z"></path><path d="M17 9.5 20 7"></path><path d="M17 14.5 20 17"></path><circle cx="7.5" cy="11.2" r=".8" fill="currentColor" stroke="none"></circle></svg>',
+  // chicken leg (drumstick)
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c2 0 4 2 4 4.5 0 2-1.2 3.2-2.6 4.3l-4.6 4.6a2.6 2.6 0 1 1-3.7-3.7l4.6-4.6C13 7.7 14 6.3 14 4Z"></path><path d="M8 15.5 4.5 19"></path><path d="M6.2 21.3c-1-.4-1.5-.9-1.9-1.9"></path><path d="M9.3 18.4c.8 1 .8 2 .3 3"></path></svg>',
+  // rice bowl
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"></path><path d="M4 11a8 6 0 0 0 16 0"></path><path d="M4 11c0-3 3.6-5.5 8-5.5s8 2.5 8 5.5"></path><path d="M18 16.5c1.4.5 2 1.2 2 1.5 0 1-3.6 2-8 2s-8-1-8-2c0-.3.6-1 2-1.5"></path></svg>',
+  // egg
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4.4 0 7-3.4 7-7.8C19 8.4 15.5 3 12 3S5 8.4 5 13.2C5 17.6 7.6 21 12 21Z"></path></svg>',
+  // milk carton
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v3.5L18 10v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V10l2-2.5Z"></path><path d="M8 4V2.5h8V4"></path><path d="M6 13h12"></path></svg>',
+  // potato
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8.5C5 10 4 12 4.5 14.5c.5 2.7 3 4.8 6 5.3 3.5.6 7-.6 8.7-3.3 1.4-2.2 1.2-5-.4-6.9-1.3-1.6-1-3-2.8-4C14.2 4.5 12 4.3 10 5c-1.6.5-2.2 2.2-3.5 3.5Z"></path><circle cx="9.5" cy="12.5" r=".6" fill="currentColor" stroke="none"></circle><circle cx="13.5" cy="15" r=".6" fill="currentColor" stroke="none"></circle></svg>',
+  // onion
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c-.6 1-1 1.8-1 2.6C7.5 8 5.5 11 5.5 14.5 5.5 18.6 8.4 21 12 21s6.5-2.4 6.5-6.5c0-3.5-2-6.5-5.5-7.9 0-.8-.4-1.6-1-2.6Z"></path><path d="M12 6.6c1.2 1.6 1.8 3.4 1.8 5.4"></path><path d="M9.5 3.5 12 6"></path><path d="M14.5 3.5 12 6"></path></svg>',
+  // garlic
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2.2"></path><path d="M9 4.5 10 6"></path><path d="M15 4.5 14 6"></path><path d="M8.5 6.5C6.5 8 5.5 10.6 5.5 13c0 4.4 3 8 6.5 8s6.5-3.6 6.5-8c0-2.4-1-5-3-6.5-1-.7-2.2-1-3.5-1s-2.5.3-3.5 1Z"></path><path d="M12 6v15"></path><path d="M9 8.5c-.8 1.4-1.2 3-1.2 4.8"></path><path d="M15 8.5c.8 1.4 1.2 3 1.2 4.8"></path></svg>',
+  // chili
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4c1.2-.8 2.4-1 3.3-.3"></path><path d="M8 4c-.5 1.6.4 2.4 1.8 3"></path><path d="M9.5 7C7 8 5 10.5 5 13.8 5 17.8 7.8 21 12 21c3.6 0 6.7-2.7 6.7-6.5 0-3.6-2.7-6.5-6-6.8-1.2-.1-2.3 0-3.2.3Z"></path></svg>',
+  // carrot
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5c1.5-1.5 3-2.3 4.5-2.5"></path><path d="M15.5 3.5c.8.6 1 1.6.8 2.8"></path><path d="M11.5 6.8c1 1.2 1.8 2 3.3 2.3"></path><path d="M6 20c-1-1-1.3-2.3-1-3.7L9 8.5c.4-1.4 1.6-2.2 3-2 1.6.2 3.2 1 4.3 2.3 1 1.2 1.4 2.8 1 4.3l-3.6 8.5c-.6 1.4-2 2.2-3.5 1.9C8.7 22.9 7 21.4 6 20Z"></path></svg>',
+  // tomato
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-1-1.4-.4-2.6.5-3.3"></path><path d="M12 6c1-1.4 2.6-1.8 3.7-1.3"></path><path d="M12 6c-.9-1-2.4-1.2-3.6-.6"></path><path d="M5 13.5C5 9.4 8.1 6.5 12 6.5s7 2.9 7 7-3.1 8-7 8-7-3.4-7-8Z"></path></svg>',
+  // vegetable leaf
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4C10 4 4 10 4 18v2h2c8 0 14-6 14-16Z"></path><path d="M6 20c1-5 4.5-9.5 12-13.5"></path></svg>',
+  // apple
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-.3-1.6.4-3 1.8-4"></path><path d="M12 8c2.8-1.2 5.8-.7 7.5 1.6 1.8 2.4 1.8 6-.2 9-1.7 2.6-3.9 4-5.8 4-.7 0-1.3-.2-1.9-.5-.6.3-1.2.5-1.9.5-1.9 0-4.1-1.4-5.8-4-2-3-2-6.6-.2-9C5.4 7.3 8.4 6.8 12 8Z"></path></svg>',
+  // banana
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4c-1 3 0 6 2 8.5 2.3 2.8 5.5 4 8.5 3.7"></path><path d="M18.5 13c1 .6 1.7 1.6 1.5 2.8-.3 1.8-2.4 3.2-5 3.6-3.6.6-7.4-.7-9.6-3.4"></path><path d="M5.3 16c-.8.6-1.2 1.6-.8 2.6"></path></svg>',
+  // beans
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5c-2.2 2-3 5-1.6 7.8C5.6 15 8 16 10.3 15.3 12.7 14.6 14 12.2 13 9.8 12 7.4 9 5 6 5Z"></path><path d="M17 9c-2.2 2-3 5-1.6 7.8 1.2 2.2 3.6 3.2 5.9 2.5 2.4-.7 3.7-3.1 2.7-5.5C22.9 11.4 19.9 9 17 9Z"></path><path d="M8 9.2c.6.4 1.3.6 2 .6"></path><path d="M19 13.2c.6.4 1.3.6 2 .6"></path></svg>'
+];
+
+/* Deterministic-but-varied placements: percent-based top/left so it's
+   naturally responsive, plus per-instance size/rotation/animation class/
+   duration/delay so nearby icons never move in unison. A handful are
+   flagged mobile-hide (fewer AND smaller icons on narrow screens). */
+var FOOD_BG_LAYOUT = [
+  { l: 4,  t: 8,  s: 52, r: -8,  a: "a", d: 21, y: -2 },
+  { l: 16, t: 32, s: 40, r: 10,  a: "c", d: 18, y: -5 },
+  { l: 9,  t: 62, s: 60, r: 6,   a: "b", d: 25, y: -1, mh: true },
+  { l: 22, t: 85, s: 36, r: -12, a: "d", d: 27, y: -9 },
+  { l: 34, t: 15, s: 44, r: 14,  a: "a", d: 19, y: -12, mh: true },
+  { l: 40, t: 46, s: 32, r: -6,  a: "c", d: 22, y: -4 },
+  { l: 47, t: 74, s: 56, r: 8,   a: "b", d: 24, y: -15 },
+  { l: 58, t: 6,  s: 38, r: -14, a: "d", d: 20, y: -7, mh: true },
+  { l: 63, t: 28, s: 48, r: 5,   a: "a", d: 26, y: -10 },
+  { l: 70, t: 58, s: 34, r: -10, a: "c", d: 17, y: -3 },
+  { l: 78, t: 82, s: 50, r: 12,  a: "b", d: 23, y: -6, mh: true },
+  { l: 86, t: 12, s: 42, r: -4,  a: "d", d: 29, y: -13 },
+  { l: 91, t: 40, s: 30, r: 9,   a: "a", d: 18, y: -8 },
+  { l: 84, t: 65, s: 46, r: -9,  a: "c", d: 21, y: -11, mh: true },
+  { l: 12, t: 44, s: 34, r: 7,   a: "d", d: 28, y: -1 },
+  { l: 28, t: 68, s: 38, r: -13, a: "b", d: 20, y: -14, mh: true },
+  { l: 52, t: 92, s: 44, r: 4,   a: "a", d: 24, y: -6 },
+  { l: 66, t: 90, s: 32, r: -7,  a: "c", d: 16, y: -9, mh: true },
+  { l: 3,  t: 90, s: 40, r: 11,  a: "b", d: 22, y: -5 },
+  { l: 96, t: 68, s: 36, r: -5,  a: "d", d: 19, y: -12, mh: true }
+];
+
+function renderFoodBackground() {
+  var isMobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+  var placements = isMobile ? FOOD_BG_LAYOUT.filter(function (p) { return !p.mh; }) : FOOD_BG_LAYOUT;
+  var html = placements.map(function (p, i) {
+    var svg = FOOD_BG_ICONS[i % FOOD_BG_ICONS.length];
+    var style = (
+      "left:" + p.l + "%;top:" + p.t + "%;" +
+      "width:" + p.s + "px;height:" + p.s + "px;" +
+      "--food-dur:" + p.d + "s;--food-delay:" + p.y + "s;" +
+      "transform:rotate(" + p.r + "deg);"
+    );
+    var cls = "food-bg-icon food-bg-" + p.a + (p.mh ? " food-bg-mobile-hide" : "");
+    return '<span class="' + cls + '" style="' + style + '">' + svg + "</span>";
+  }).join("");
+  return html;
+}
+
+function foodBgInit() {
+  var host = document.getElementById("food-bg");
+  if (!host) return;
+  host.innerHTML = renderFoodBackground();
 }
 
 /* ============================== UTIL ============================== */
@@ -189,6 +339,16 @@ function loadDB() {
   /* defensive: DBs saved before the Hisab feature was added won't have this
      collection yet; avoid bumping DB_KEY just for one new array. */
   db.settlements = db.settlements || [];
+  /* defensive: DBs saved before multi-item expenses were added will have a
+     flat { category, item, quantity, unit, amount } shape per expense with
+     no items[] array yet. Migrate those in place to the new shape (a single
+     item row) without bumping DB_KEY. Top-level amount is left untouched —
+     it already equals the (single) item's amount. */
+  (db.expenses || []).forEach(function (e) {
+    if (!e.items) {
+      e.items = [{ category: e.category || null, item: e.item, quantity: e.quantity || null, unit: e.unit || null, amount: e.amount }];
+    }
+  });
   return db;
 }
 function saveDBRaw(db) {
@@ -272,6 +432,7 @@ window.addEventListener("hashchange", render);
 window.addEventListener("DOMContentLoaded", function () {
   DB = loadDB();
   SESSION = loadSession();
+  foodBgInit();
   render();
 });
 
@@ -284,6 +445,14 @@ function render() {
 
   var app = document.getElementById("app");
   var mobileDrawerWasOpen = app && app.dataset.drawerOpen === "1";
+
+  /* #food-bg is a persistent sibling of #app (created once at boot by
+     foodBgInit) so its animations never restart on navigation. It only
+     belongs behind the authenticated app pages (renderShell), not the
+     login/signup screens which have their own distinct navy decoration -
+     so just toggle its visibility here rather than touching its DOM. */
+  var foodBg = document.getElementById("food-bg");
+  if (foodBg) foodBg.hidden = (path === "login" || path === "signup");
 
   if (path === "login") {
     app.innerHTML = renderLogin();
@@ -783,7 +952,7 @@ function renderMeals(dateKey) {
     var total = (r.meal.breakfast ? 1 : 0) + (r.meal.lunch ? 1 : 0) + (r.meal.dinner ? 1 : 0);
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
-        '<td class="px-5 py-3"><div class="flex items-center gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style="background:' + r.member.avatarColor + '">' + esc(initials(r.member.name)) + '</span><span class="font-medium text-foreground">' + esc(r.member.name) + "</span></div></td>" +
+        '<td class="px-5 py-3"><div class="flex items-center gap-3">' + avatarHtml(r.member.pictureUrl, r.member.name, "h-8 w-8", r.member.avatarColor) + '<span class="font-medium text-foreground">' + esc(r.member.name) + "</span></div></td>" +
         '<td class="px-3 py-3">' + yesNoToggle(r.member.id, "breakfast", r.meal.breakfast) + "</td>" +
         '<td class="px-3 py-3">' + yesNoToggle(r.member.id, "lunch", r.meal.lunch) + "</td>" +
         '<td class="px-3 py-3">' + yesNoToggle(r.member.id, "dinner", r.meal.dinner) + "</td>" +
@@ -861,7 +1030,7 @@ function renderMoney(search) {
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
         '<td class="px-5 py-3 text-muted">' + dateLabelMed(d.date) + "</td>" +
-        '<td class="px-5 py-3"><div class="flex items-center gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style="background:' + (m ? m.avatarColor : "#888") + '">' + esc(initials(m ? m.name : "?")) + '</span><span class="font-medium text-foreground">' + esc(m ? m.name : "Unknown") + "</span></div></td>" +
+        '<td class="px-5 py-3"><div class="flex items-center gap-3">' + avatarHtml(m ? m.pictureUrl : null, m ? m.name : "?", "h-8 w-8", m ? m.avatarColor : "#888") + '<span class="font-medium text-foreground">' + esc(m ? m.name : "Unknown") + "</span></div></td>" +
         '<td class="px-5 py-3 text-muted">' + esc(d.note || "—") + "</td>" +
         '<td class="px-5 py-3 text-right font-semibold tabular-nums text-success-700">+' + formatCurrency(d.amount) + "</td>" +
         '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
@@ -921,13 +1090,22 @@ function deleteConfirmModal(id, title, description) {
 }
 
 /* ============================== EXPENSES ============================== */
+/* An expense's items[] array (post-migration, always present — see loadDB)
+   as a single comma-separated display string, e.g. "Rice (5 kg), Oil (2 L)",
+   matching the "(qty unit)" suffix style the old single-item form used. */
+function expenseItemsSummary(e) {
+  return (e.items || []).map(function (it) {
+    return it.item + (it.quantity ? " (" + formatNumber(it.quantity, it.quantity % 1 ? 1 : 0) + (it.unit ? " " + it.unit : "") + ")" : "");
+  }).join(", ");
+}
 function renderExpenses(search) {
   var expenses = DB.expenses.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
   if (search) {
     var q = search.toLowerCase();
     expenses = expenses.filter(function (e) {
       var buyerNames = (e.buyerIds || []).map(function (id) { var m = memberById(id); return m ? m.name.toLowerCase() : ""; }).join(" ");
-      return e.item.toLowerCase().indexOf(q) >= 0 || buyerNames.indexOf(q) >= 0;
+      var itemNames = (e.items || []).map(function (it) { return it.item.toLowerCase(); }).join(" ");
+      return itemNames.indexOf(q) >= 0 || buyerNames.indexOf(q) >= 0;
     });
   }
   var total = expenses.reduce(function (a, e) { return a + e.amount; }, 0);
@@ -936,9 +1114,11 @@ function renderExpenses(search) {
 
   var itemTotals = {};
   DB.expenses.forEach(function (e) {
-    if (!itemTotals[e.item]) itemTotals[e.item] = { item: e.item, count: 0, amount: 0 };
-    itemTotals[e.item].count += 1;
-    itemTotals[e.item].amount += e.amount;
+    (e.items || []).forEach(function (it) {
+      if (!itemTotals[it.item]) itemTotals[it.item] = { item: it.item, count: 0, amount: 0 };
+      itemTotals[it.item].count += 1;
+      itemTotals[it.item].amount += it.amount;
+    });
   });
   var itemBreakdown = Object.keys(itemTotals).map(function (k) { return itemTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
 
@@ -951,7 +1131,7 @@ function renderExpenses(search) {
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
         '<td class="px-5 py-3 text-muted">' + dateLabelMed(e.date) + "</td>" +
-        '<td class="px-5 py-3 font-medium text-foreground">' + esc(e.item) + (e.quantity ? ' <span class="font-normal text-muted">(' + formatNumber(e.quantity, e.quantity % 1 ? 1 : 0) + (e.unit ? " " + esc(e.unit) : "") + ")</span>" : "") + "</td>" +
+        '<td class="px-5 py-3 font-medium text-foreground">' + esc(expenseItemsSummary(e)) + "</td>" +
         '<td class="px-5 py-3 text-foreground">' + buyerNamesHtml(e) + "</td>" +
         '<td class="px-5 py-3 text-muted">' + esc(e.note || "—") + "</td>" +
         '<td class="px-5 py-3 text-right font-semibold tabular-nums text-danger-600">−' + formatCurrency(e.amount) + "</td>" +
@@ -988,13 +1168,43 @@ function renderExpenses(search) {
       '<div class="max-h-96 space-y-2 overflow-y-auto">' + itemBreakdown.map(function (row) {
         return (
           '<div class="flex items-center justify-between rounded-xl border border-border px-4 py-3">' +
-            '<div><p class="text-sm font-medium text-foreground">' + esc(row.item) + '</p><p class="text-xs text-muted">' + row.count + " expense" + (row.count === 1 ? "" : "s") + "</p></div>" +
+            '<div><p class="text-sm font-medium text-foreground">' + esc(row.item) + '</p><p class="text-xs text-muted">bought ' + row.count + " time" + (row.count === 1 ? "" : "s") + "</p></div>" +
             '<span class="text-sm font-semibold tabular-nums text-danger-600">' + formatCurrency(row.amount) + "</span>" +
           "</div>"
         );
       }).join("") +
       '<div class="mt-1 flex items-center justify-between rounded-xl bg-navy-50 px-4 py-3"><span class="text-sm font-semibold text-navy-900">Total</span><span class="text-base font-bold tabular-nums text-navy-900">' + formatCurrency(total) + "</span></div>" +
       "</div>")
+  );
+}
+
+var UNIT_OPTIONS_HTML = ["kg", "gm", "piece"].map(function (u) { return '<option value="' + u + '">' + u + "</option>"; }).join("");
+var CATEGORY_OPTIONS_HTML = EXPENSE_CATEGORIES.map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.name) + "</option>"; }).join("");
+
+/* Renders a single repeatable item row for the expense form's item list.
+   rowId is a unique string (not necessarily numeric/sequential — rows can be
+   added/removed freely) used only to scope this row's autocomplete dropdown
+   and DOM lookups; it is never sent to the server/stored anywhere. */
+function expenseItemRowHtml(rowId, data) {
+  data = data || {};
+  return (
+    '<div class="space-y-3 rounded-xl border border-border p-3.5" data-item-row data-row-id="' + rowId + '">' +
+      '<div class="flex items-start justify-between gap-2">' +
+        '<div class="grid flex-1 grid-cols-2 gap-3"><div>' + fieldLabel("Category") +
+          '<select data-field="category" class="' + FIELD_CLASS + ' cursor-pointer"><option value="">Select a category</option>' + CATEGORY_OPTIONS_HTML + "</select></div>" +
+          '<div class="relative" data-item-field><label class="mb-1.5 block text-sm font-medium text-foreground">Item</label>' +
+            '<input data-field="item" autocomplete="off" placeholder="e.g. Rice, Fish, Vegetables" data-action="item-input" class="' + FIELD_CLASS + '" />' +
+            '<ul data-item-suggestions hidden class="absolute z-20 mt-1.5 max-h-48 w-full overflow-y-auto rounded-xl border border-border bg-surface py-1 shadow-[var(--shadow-popover)]"></ul>' +
+          "</div>" +
+        "</div>" +
+        '<button type="button" data-action="remove-item-row" title="Remove item" class="mt-6 shrink-0 rounded-lg p-2 text-muted transition-colors hover:bg-danger-100 hover:text-danger-600">' + icon("trash", "h-4 w-4") + "</button>" +
+      "</div>" +
+      '<div class="grid grid-cols-3 gap-3">' +
+        "<div>" + fieldLabel("Quantity (optional)") + '<input data-field="quantity" type="number" min="0" step="0.1" placeholder="e.g. 25" class="' + FIELD_CLASS + '" /></div>' +
+        "<div>" + fieldLabel("Unit") + '<select data-field="unit" class="' + FIELD_CLASS + ' cursor-pointer"><option value="">—</option>' + UNIT_OPTIONS_HTML + "</select></div>" +
+        "<div>" + fieldLabel("Amount (৳)") + '<input data-field="amount" data-action="item-amount-input" type="number" min="0" step="1" placeholder="500" class="' + FIELD_CLASS + '" /></div>' +
+      "</div>" +
+    "</div>"
   );
 }
 
@@ -1005,25 +1215,22 @@ function expenseFormModal(mode) {
     return (
       '<label class="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium text-foreground transition-colors has-[:checked]:border-navy-900 has-[:checked]:bg-navy-900 has-[:checked]:text-white">' +
         '<input type="checkbox" name="buyerIds" value="' + m.id + '" class="hidden" />' +
-        '<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white" style="background:' + m.avatarColor + '">' + esc(initials(m.name)) + "</span>" +
+        avatarHtml(m.pictureUrl, m.name, "h-7 w-7", m.avatarColor, "text-[11px]") +
         esc(m.name) +
       "</label>"
     );
   }).join("");
-  var unitOptions = ["kg", "gm", "piece"].map(function (u) { return '<option value="' + u + '">' + u + "</option>"; }).join("");
-  var categoryOptions = EXPENSE_CATEGORIES.map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.name) + "</option>"; }).join("");
   var body = (
     '<form data-form="expense" data-mode="' + (isEdit ? "edit" : "add") + '" class="space-y-4">' +
       (isEdit ? '<input type="hidden" name="id" />' : "") +
-      "<div>" + fieldLabel("Category") + '<select name="category" data-action="category-select" class="' + FIELD_CLASS + ' cursor-pointer"><option value="">Select a category</option>' + categoryOptions + "</select></div>" +
-      "<div class=\"relative\" data-item-field>" + fieldLabel("Item") +
-        '<input name="item" required autocomplete="off" placeholder="e.g. Rice, Fish, Vegetables" data-action="item-input" class="' + FIELD_CLASS + '" />' +
-        '<ul data-item-suggestions hidden class="absolute z-20 mt-1.5 max-h-48 w-full overflow-y-auto rounded-xl border border-border bg-surface py-1 shadow-[var(--shadow-popover)]"></ul>' +
+      "<div>" + fieldLabel("Items") +
+        '<div class="space-y-3" data-item-rows>' + expenseItemRowHtml("0") + "</div>" +
+        '<button type="button" data-action="add-item-row" class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-gray-100/40 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("plus", "h-4 w-4") + "Add Another Item</button>" +
       "</div>" +
       "<div>" + fieldLabel("Done By (select one or more)") + '<div class="grid grid-cols-2 gap-2" data-buyer-picker>' + memberCheckboxes + "</div></div>" +
-      '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Date") + '<input name="date" type="date" required class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Amount (৳)") + '<input name="amount" type="number" min="0" step="1" required placeholder="500" class="' + FIELD_CLASS + '" /></div></div>' +
-      '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Quantity (optional)") + '<input name="quantity" type="number" min="0" step="0.1" placeholder="e.g. 25" class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Unit") + '<select name="unit" class="' + FIELD_CLASS + ' cursor-pointer"><option value="">—</option>' + unitOptions + "</select></div></div>" +
+      '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Date") + '<input name="date" type="date" required class="' + FIELD_CLASS + '" /></div><div></div></div>' +
       "<div>" + fieldLabel("Note (optional)") + '<textarea name="note" rows="2" placeholder="e.g. Price increased this week" class="' + FIELD_CLASS + '"></textarea></div>' +
+      '<div class="flex items-center justify-between rounded-xl bg-navy-50 px-4 py-3"><span class="text-sm font-semibold text-navy-900">Total</span><span data-item-total class="text-base font-bold tabular-nums text-navy-900">৳0</span></div>' +
       '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button><button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Expense") + "</button></div>" +
     "</form>"
   );
@@ -1044,12 +1251,113 @@ function refreshItemSuggestions(itemInput) {
   if (!field) return;
   var list = field.querySelector("[data-item-suggestions]");
   if (!list) return;
-  var form = itemInput.closest("form");
-  var categorySelect = form ? form.querySelector('[name="category"]') : null;
+  var row = itemInput.closest("[data-item-row]");
+  var categorySelect = row ? row.querySelector('[data-field="category"]') : null;
   var categoryName = categorySelect ? categorySelect.value : "";
   var html = categoryName ? itemSuggestionsHtml(categoryName, itemInput.value) : "";
   list.innerHTML = html;
   list.hidden = !html;
+}
+
+/* Recomputes and displays the running Total (sum of every item row's Amount
+   input) for the expense form that contains `withinEl`. */
+function refreshExpenseItemTotal(withinEl) {
+  var form = withinEl.closest ? withinEl.closest("form") : withinEl;
+  if (!form) return;
+  var totalEl = form.querySelector("[data-item-total]");
+  if (!totalEl) return;
+  var sum = 0;
+  form.querySelectorAll('[data-item-row] [data-field="amount"]').forEach(function (input) {
+    var v = parseFloat(input.value);
+    if (v > 0) sum += v;
+  });
+  totalEl.textContent = formatCurrency(sum);
+}
+
+/* Adds a fresh empty item row to the given expense form's item-rows list. */
+function addExpenseItemRow(form) {
+  var rowsHost = form.querySelector("[data-item-rows]");
+  if (!rowsHost) return;
+  var rowId = "r" + Math.random().toString(36).slice(2, 9);
+  var wrapper = document.createElement("div");
+  wrapper.innerHTML = expenseItemRowHtml(rowId);
+  rowsHost.appendChild(wrapper.firstChild);
+  updateRemoveRowButtons(form);
+}
+
+/* Removes the given item row's remove-button disabled state so at least one
+   row always remains removable-or-not depending on row count. */
+function updateRemoveRowButtons(form) {
+  var rows = form.querySelectorAll("[data-item-row]");
+  var onlyOne = rows.length <= 1;
+  rows.forEach(function (row) {
+    var btn = row.querySelector('[data-action="remove-item-row"]');
+    if (btn) {
+      btn.disabled = onlyOne;
+      btn.classList.toggle("opacity-30", onlyOne);
+      btn.classList.toggle("cursor-not-allowed", onlyOne);
+    }
+  });
+}
+
+/* Rebuilds an expense form's item-rows list from an array of
+   {category, item, quantity, unit, amount} objects (used when opening the
+   Edit Expense modal) — always renders at least one (possibly empty) row. */
+function setExpenseItemRows(form, items) {
+  var rowsHost = form.querySelector("[data-item-rows]");
+  if (!rowsHost) return;
+  var list = (items && items.length) ? items : [{}];
+  rowsHost.innerHTML = list.map(function (it, i) { return expenseItemRowHtml("r" + i + "_" + Math.random().toString(36).slice(2, 7)); }).join("");
+  var rows = rowsHost.querySelectorAll("[data-item-row]");
+  rows.forEach(function (row, i) {
+    var it = list[i] || {};
+    var catSel = row.querySelector('[data-field="category"]');
+    var itemInput = row.querySelector('[data-field="item"]');
+    if (catSel) catSel.value = it.category || "";
+    if (itemInput) itemInput.value = it.item || "";
+    row.querySelector('[data-field="quantity"]').value = it.quantity != null ? it.quantity : "";
+    row.querySelector('[data-field="unit"]').value = it.unit || "";
+    row.querySelector('[data-field="amount"]').value = it.amount != null ? it.amount : "";
+    var suggestions = row.querySelector("[data-item-suggestions]");
+    if (suggestions) suggestions.hidden = true;
+  });
+  updateRemoveRowButtons(form);
+  refreshExpenseItemTotal(form);
+}
+
+/* Reads the expense form's rendered item rows (which may have been added or
+   removed dynamically since the form was first rendered) directly from the
+   DOM and reconstructs an array of {category, item, quantity, unit, amount}
+   objects. A row left completely empty (no item AND no amount) is silently
+   dropped so users can add a row and change their mind. A row that is only
+   half-filled (item without a positive amount, or vice versa) is treated as
+   a validation error, mirroring the old single-item form's required-field
+   behavior. Returns { items: [...] } on success or { error: "..." }. */
+function parseExpenseItemRows(form) {
+  var items = [];
+  var rows = form.querySelectorAll("[data-item-row]");
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var category = String((row.querySelector('[data-field="category"]') || {}).value || "").trim();
+    var itemName = String((row.querySelector('[data-field="item"]') || {}).value || "").trim();
+    var quantityRaw = (row.querySelector('[data-field="quantity"]') || {}).value || "";
+    var unit = String((row.querySelector('[data-field="unit"]') || {}).value || "").trim();
+    var amountRaw = (row.querySelector('[data-field="amount"]') || {}).value || "";
+    var amount = amountRaw !== "" ? parseFloat(amountRaw) : NaN;
+
+    if (!itemName && !amountRaw) continue; /* fully empty row: silently skip */
+    if (!itemName || !(amount > 0)) {
+      return { error: "Each item needs a name and a valid amount." };
+    }
+    items.push({
+      category: category || null,
+      item: itemName,
+      quantity: quantityRaw !== "" ? parseFloat(quantityRaw) : null,
+      unit: unit || null,
+      amount: amount,
+    });
+  }
+  return { items: items };
 }
 
 /* ============================== STORE (monthly bazaar summary) ============================== */
@@ -1078,12 +1386,14 @@ function renderStore(monthKey) {
   var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, monthKey); });
   var storeTotals = {};
   monthExpenses.forEach(function (e) {
-    if (!storeTotals[e.item]) storeTotals[e.item] = { item: e.item, amount: 0, qty: 0, unit: e.unit || "" };
-    storeTotals[e.item].amount += e.amount;
-    if (e.quantity && (!storeTotals[e.item].unit || storeTotals[e.item].unit === e.unit)) {
-      storeTotals[e.item].qty += Number(e.quantity);
-      storeTotals[e.item].unit = e.unit || storeTotals[e.item].unit;
-    }
+    (e.items || []).forEach(function (it) {
+      if (!storeTotals[it.item]) storeTotals[it.item] = { item: it.item, amount: 0, qty: 0, unit: it.unit || "" };
+      storeTotals[it.item].amount += it.amount;
+      if (it.quantity && (!storeTotals[it.item].unit || storeTotals[it.item].unit === it.unit)) {
+        storeTotals[it.item].qty += Number(it.quantity);
+        storeTotals[it.item].unit = it.unit || storeTotals[it.item].unit;
+      }
+    });
   });
   var storeRows = Object.keys(storeTotals).map(function (k) { return storeTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
   var storeMonthTotal = monthExpenses.reduce(function (s, e) { return s + e.amount; }, 0);
@@ -1305,7 +1615,7 @@ function closeMonthConfirmModal(monthKey, finalized) {
 function renderBalance() {
   var all = computeAllTimeSummary();
   var moneyIn = DB.deposits.map(function (d) { return { type: "in", date: d.date, label: (memberById(d.memberId) || {}).name || "Unknown", amount: d.amount }; });
-  var moneyOut = DB.expenses.map(function (e) { return { type: "out", date: e.date, label: e.item, amount: e.amount }; });
+  var moneyOut = DB.expenses.map(function (e) { return { type: "out", date: e.date, label: expenseItemsSummary(e) || "Expense", amount: e.amount }; });
   var recent = moneyIn.concat(moneyOut).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 20);
 
   var recentHtml = recent.length === 0 ? emptyState("banknote", "No transactions yet") : recent.map(function (t) {
@@ -1462,18 +1772,13 @@ function openExpenseEditModal(id) {
   var e = DB.expenses.filter(function (x) { return x.id === id; })[0];
   if (!e) return;
   var modal = document.getElementById("expense-edit-modal");
+  var form = modal.querySelector("form");
   modal.querySelector('[name="id"]').value = e.id;
-  modal.querySelector('[name="category"]').value = e.category || "";
-  modal.querySelector('[name="item"]').value = e.item;
   var buyerIds = e.buyerIds || [];
   modal.querySelectorAll('[name="buyerIds"]').forEach(function (cb) { cb.checked = buyerIds.indexOf(cb.value) >= 0; });
   modal.querySelector('[name="date"]').value = e.date;
-  modal.querySelector('[name="amount"]').value = e.amount;
-  modal.querySelector('[name="quantity"]').value = e.quantity || "";
-  modal.querySelector('[name="unit"]').value = e.unit || "";
   modal.querySelector('[name="note"]').value = e.note || "";
-  var editSuggestions = modal.querySelector("[data-item-suggestions]");
-  if (editSuggestions) editSuggestions.hidden = true;
+  setExpenseItemRows(form, e.items || []);
   modal.hidden = false;
 }
 
@@ -1515,6 +1820,7 @@ document.addEventListener("click", function (e) {
       if (el.dataset.modal === "deposit-add-modal" || el.dataset.modal === "expense-add-modal") {
         var form = m1.querySelector("form");
         if (form) form.reset();
+        if (el.dataset.modal === "expense-add-modal" && form) setExpenseItemRows(form, []);
         var dateInput = m1.querySelector('[name="date"]');
         if (dateInput) dateInput.value = latestDateAcross();
       }
@@ -1560,11 +1866,24 @@ document.addEventListener("click", function (e) {
     var ef = eModal.querySelector("form");
     if (ef) ef.reset();
     eModal.querySelector('[name="date"]').value = latestDateAcross();
-    var eSuggestions = eModal.querySelector("[data-item-suggestions]");
-    if (eSuggestions) eSuggestions.hidden = true;
+    if (ef) setExpenseItemRows(ef, []);
     eModal.hidden = false;
   } else if (action === "edit-expense") {
     openExpenseEditModal(el.dataset.id);
+  } else if (action === "add-item-row") {
+    var rowForm = el.closest("form");
+    if (rowForm) { addExpenseItemRow(rowForm); refreshExpenseItemTotal(rowForm); }
+  } else if (action === "remove-item-row") {
+    var removeForm = el.closest("form");
+    var rowToRemove = el.closest("[data-item-row]");
+    if (removeForm && rowToRemove) {
+      var rowCount = removeForm.querySelectorAll("[data-item-row]").length;
+      if (rowCount > 1) {
+        rowToRemove.parentNode.removeChild(rowToRemove);
+        updateRemoveRowButtons(removeForm);
+        refreshExpenseItemTotal(removeForm);
+      }
+    }
   } else if (action === "delete-expense") {
     PENDING_DELETE = { type: "expense", id: el.dataset.id };
     document.getElementById("delete-expense-modal").hidden = false;
@@ -1597,7 +1916,7 @@ document.addEventListener("click", function (e) {
     resetAllData();
   } else if (action === "select-item-suggestion") {
     var itemField = el.closest("[data-item-field]");
-    var itemInput = itemField ? itemField.querySelector('[name="item"]') : null;
+    var itemInput = itemField ? itemField.querySelector('[data-field="item"]') : null;
     if (itemInput) {
       itemInput.value = el.dataset.value;
       var list = itemField.querySelector("[data-item-suggestions]");
@@ -1632,6 +1951,8 @@ document.addEventListener("input", function (e) {
     }, 350);
   } else if (e.target.dataset.action === "item-input") {
     refreshItemSuggestions(e.target);
+  } else if (e.target.dataset.action === "item-amount-input") {
+    refreshExpenseItemTotal(e.target);
   }
 });
 
@@ -1642,9 +1963,9 @@ document.addEventListener("focusin", function (e) {
 });
 
 document.addEventListener("change", function (e) {
-  if (e.target.dataset.action === "category-select") {
-    var form = e.target.closest("form");
-    var itemInput = form ? form.querySelector('[name="item"]') : null;
+  if (e.target.dataset.field === "category") {
+    var row = e.target.closest("[data-item-row]");
+    var itemInput = row ? row.querySelector('[data-field="item"]') : null;
     if (itemInput) refreshItemSuggestions(itemInput);
   } else if (e.target.dataset.action === "picture-input") {
     var fileInput = e.target;
@@ -1738,20 +2059,19 @@ document.addEventListener("submit", function (e) {
   } else if (type === "expense") {
     var emode = form.dataset.mode;
     var buyerIds = fd.getAll("buyerIds").map(String);
-    var ecategory = String(fd.get("category") || "").trim();
-    var item = String(fd.get("item") || "").trim();
     var edate = String(fd.get("date") || "");
-    var eamount = parseFloat(fd.get("amount"));
-    var equantity = fd.get("quantity") ? parseFloat(fd.get("quantity")) : null;
-    var eunit = String(fd.get("unit") || "").trim();
     var enote = String(fd.get("note") || "").trim();
-    if (!buyerIds.length || item.length < 2 || !edate || !(eamount > 0)) { toast("Please fill in all required fields, including who did it.", "error"); return; }
+    var itemsResult = parseExpenseItemRows(form);
+    if (itemsResult.error) { toast(itemsResult.error, "error"); return; }
+    var eitems = itemsResult.items;
+    if (!buyerIds.length || !edate || !eitems.length) { toast("Please fill in all required fields, including who did it.", "error"); return; }
+    var eamount = eitems.reduce(function (s, it) { return s + it.amount; }, 0);
     if (emode === "edit") {
       var eid = String(fd.get("id") || "");
       var ex = DB.expenses.filter(function (x) { return x.id === eid; })[0];
-      if (ex) { ex.buyerIds = buyerIds; ex.category = ecategory || null; ex.item = item; ex.date = edate; ex.amount = eamount; ex.quantity = equantity; ex.unit = eunit || null; ex.note = enote || null; }
+      if (ex) { ex.buyerIds = buyerIds; ex.date = edate; ex.note = enote || null; ex.items = eitems; ex.amount = eamount; }
     } else {
-      DB.expenses.push({ id: uid("exp"), buyerIds: buyerIds, category: ecategory || null, item: item, date: edate, amount: eamount, quantity: equantity, unit: eunit || null, note: enote || null });
+      DB.expenses.push({ id: uid("exp"), buyerIds: buyerIds, date: edate, note: enote || null, items: eitems, amount: eamount });
     }
     saveDB();
     document.getElementById(emode === "edit" ? "expense-edit-modal" : "expense-add-modal").hidden = true;
