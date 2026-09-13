@@ -100,21 +100,27 @@
 .hover\:-translate-y-0\.5:hover{transform:translateY(-0.125rem)}
 .hover\:-translate-y-1:hover{transform:translateY(-0.25rem)}
 
-/* -- generic premium card surface: soft ambient shadow + gentle hover lift.
+/* -- generic premium card surface: soft ambient shadow + bouncy hover lift.
    Applied alongside the existing rounded-2xl/border/bg-surface utilities so
-   it layers on top rather than replacing them. -- */
+   it layers on top rather than replacing them. A spring/overshoot easing
+   curve (rather than a flat ease-out) is what reads as a "bounce" instead
+   of a plain slide. -- */
 .card-premium{
-  transition: transform .22s var(--ease-out, cubic-bezier(0,0,.2,1)), box-shadow .22s var(--ease-out, cubic-bezier(0,0,.2,1));
+  transition: transform .45s cubic-bezier(.34,1.56,.64,1), box-shadow .3s var(--ease-out, cubic-bezier(0,0,.2,1));
 }
 .card-premium.card-premium--interactive{ cursor:pointer; }
 .card-premium.card-premium--interactive:hover{
-  transform: translateY(-3px);
+  transform: translateY(-8px) scale(1.03);
   box-shadow: var(--shadow-card-hover);
 }
+.card-premium.card-premium--interactive:active{
+  transform: translateY(-4px) scale(1.01);
+  transition: transform .1s ease-out;
+}
 
-/* -- stat card icon badge: lift slightly + deepen tint on card hover -- */
-.stat-card-icon{ transition: transform .22s var(--ease-out, cubic-bezier(0,0,.2,1)); }
-.card-premium.card-premium--interactive:hover .stat-card-icon{ transform: translateY(-1px) scale(1.04); }
+/* -- stat card icon badge: lift/scale more on card hover, matching bounce -- */
+.stat-card-icon{ transition: transform .45s cubic-bezier(.34,1.56,.64,1); }
+.card-premium.card-premium--interactive:hover .stat-card-icon{ transform: translateY(-2px) scale(1.12); }
 
 /* -- primary pill button: solid navy fill, soft navy-tinted shadow, gentle
    scale-down on press. Reuses --navy-900/--navy-800/--navy-600 only. -- */
@@ -182,6 +188,89 @@
    draw-in animation and the center label a consistent layout. -- */
 .donut-ring circle.donut-ring-fill{ transition: stroke-dashoffset .8s var(--ease-out, cubic-bezier(0,0,.2,1)); }
 .donut-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+/* ===== manual patch 5: Summary report page + print/PDF export. New markup
+   (renderSummary()) only ever uses utility classes already compiled above
+   (verified by grep against the existing Store/Hisab/Meals markup this was
+   modeled on), so this patch only needs to hand-author the handful of
+   genuinely new classes: the collapsible per-member details row and the
+   print stylesheet itself (this file has no @media print anywhere else).
+
+   Why a class toggle instead of the `hidden` attribute for the details row:
+   the rest of the app toggles visibility with the `hidden` attribute, but
+   `[hidden]` cannot be selectively re-enabled for print only — a plain
+   `@media print{ [hidden]{ display:block } }` would un-hide every other
+   hidden element in the app too (modals, the mobile drawer backdrop, the
+   user menu, etc.), which is exactly the opposite of what printing needs.
+   Using a dedicated `.details-collapsed` class scopes the "always show on
+   print regardless of on-screen state" rule to just this one feature. -- */
+.details-collapsed{ display:none; }
+.summary-print-header{ display:none; }
+
+/* -- on-screen: nothing to hide/show here, @media print (below) does the
+   real work. These selectors just need to exist for the classes used in
+   renderSummary()'s markup to be valid no-ops outside of print. -- */
+.no-print{ }
+.summary-report{ }
+.summary-section{ }
+.summary-cards-grid{ }
+.summary-row-avoid-break{ }
+
+@media print{
+  /* Hide all interactive/chrome-only UI — only the report content prints. */
+  aside, header, #mobile-drawer-backdrop, #user-menu,
+  .no-print,
+  [data-action="print-summary"],
+  [data-action="toggle-summary-details"] {
+    display:none !important;
+  }
+
+  /* Force the per-member details rows to show when printing, regardless of
+     whether they were ever expanded on screen. */
+  .details-collapsed{ display:table-row !important; }
+
+  /* Show the print-only header (title / month / generated-at timestamp)
+     that stays hidden on screen since the on-screen page already has its
+     own heading + Download PDF button in the no-print toolbar row above. */
+  .summary-print-header{ display:block !important; margin-bottom:1rem; }
+
+  /* Clean print theme: white background, navy/black text, visible borders,
+     no shadows/animations/hover-lift (harmless if left in, but explicitly
+     neutralized so layout can't shift while the browser paginates). */
+  html, body{ background:#fff !important; }
+  main{ padding:0 !important; }
+  .summary-report{ background:#fff; color:#000; }
+  .summary-report *{
+    box-shadow:none !important;
+    animation:none !important;
+    transition:none !important;
+    transform:none !important;
+  }
+  .summary-report .card-premium,
+  .summary-report .rounded-2xl,
+  .summary-report table{
+    border:1px solid #333 !important;
+  }
+  .summary-report table{ border-collapse:collapse; }
+  .summary-report th, .summary-report td{
+    border-bottom:1px solid #999 !important;
+    color:#000 !important;
+  }
+  .summary-report thead tr{ background:#eee !important; }
+  .summary-report tr.bg-navy-50{ background:#eee !important; }
+  .summary-report .text-foreground,
+  .summary-report .text-muted,
+  .summary-report h1, .summary-report h2, .summary-report p, .summary-report span{
+    color:#000 !important;
+  }
+  .summary-print-header p{ color:#333 !important; }
+  .summary-print-header h1{ color:#0b1f4b !important; }
+
+  /* Page-break hygiene: avoid splitting a table row or a card across pages
+     where reasonably possible. */
+  .summary-row-avoid-break, tr{ page-break-inside:avoid; }
+  .summary-section, .card-premium{ page-break-inside:avoid; }
+}
 </style>
 </head>
 <body class="h-full bg-background">
@@ -427,6 +516,8 @@ function render() {
     app.innerHTML = renderShell(renderStore(query.month || ""), "store", mobileDrawerWasOpen);
   } else if (path === "hisab") {
     app.innerHTML = renderShell(renderHisab(query.month || ""), "hisab", mobileDrawerWasOpen);
+  } else if (path === "summary") {
+    app.innerHTML = renderShell(renderSummary(query.month || ""), "summary", mobileDrawerWasOpen);
   } else if (path === "balance") {
     app.innerHTML = renderShell(renderBalance(), "", mobileDrawerWasOpen);
   } else if (path === "settings/password") {
@@ -872,6 +963,7 @@ var NAV_ITEMS = [
   { key: "members", label: "Members", icon: "users" },
   { key: "store", label: "Store", icon: "shopping-basket" },
   { key: "hisab", label: "Settlement", icon: "scale" },
+  { key: "summary", label: "Summary", icon: "receipt" },
 ];
 
 function sidebarHtml(activeKey, mobile) {
@@ -1643,6 +1735,164 @@ function closeMonthConfirmModal(monthKey, finalized) {
   return modalWrapper("close-month-modal", finalized ? "Re-finalize Settlement" : "Close Month / Finalize Settlement", body);
 }
 
+/* ============================== SUMMARY REPORT ============================== */
+/* Scoped-to-month available balance, mirroring computeAllTimeSummary()'s
+   deposits-minus-expenses pattern exactly but filtered to the month instead
+   of all time. No new calculation logic — same calcAvailableBalance() helper. */
+function computeMonthAvailableBalance(monthKey) {
+  var monthDeposits = DB.deposits.filter(function (d) { return inMonth(d.date, monthKey); });
+  var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, monthKey); });
+  var totalMoneyAdded = monthDeposits.reduce(function (s, d) { return s + d.amount; }, 0);
+  var totalMealExpense = monthExpenses.reduce(function (s, e) { return s + e.amount; }, 0);
+  return calcAvailableBalance(totalMoneyAdded, totalMealExpense);
+}
+
+/* Per-member day-by-day meal breakdown for a month — same iteration rule
+   (eachDateInMonth × mealFor, capped at latestDateAcross()) already used by
+   computeMonthSummary()/computeHisabSummary()/renderMeals()'s monthly table. */
+function computeMemberDailyMeals(memberId, monthKey) {
+  var today = latestDateAcross();
+  var dates = eachDateInMonth(monthKey).filter(function (d) { return d <= today; });
+  return dates.map(function (d) {
+    var meal = mealFor(memberId, d);
+    var total = (meal.breakfast ? 1 : 0) + (meal.lunch ? 1 : 0) + (meal.dinner ? 1 : 0);
+    return { date: d, breakfast: meal.breakfast, lunch: meal.lunch, dinner: meal.dinner, total: total };
+  });
+}
+
+function renderSummary(monthKeyParam) {
+  var monthKey = monthKeyParam && /^\d{4}-\d{2}$/.test(monthKeyParam) ? monthKeyParam : latestMonthKey();
+  var s = computeHisabSummary(monthKey);
+  var availableBalance = computeMonthAvailableBalance(monthKey);
+  var generatedAt = new Date();
+  var generatedAtLabel = generatedAt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) +
+    " at " + generatedAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+
+  var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, monthKey); }).slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  var monthDeposits = DB.deposits.filter(function (d) { return inMonth(d.date, monthKey); }).slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+
+  function buyerNamesHtml(e) {
+    var names = (e.buyerIds || []).map(function (id) { var m = memberById(id); return m ? esc(m.name) : null; }).filter(Boolean);
+    return names.length ? names.join(", ") : "Unknown";
+  }
+
+  var memberRowsHtml = s.members.map(function (r) {
+    var daily = computeMemberDailyMeals(r.memberId, monthKey);
+    var dailyRowsHtml = daily.map(function (d) {
+      return (
+        '<tr class="border-b border-border last:border-0">' +
+          '<td class="px-4 py-2 text-muted">' + dateLabelMed(d.date) + "</td>" +
+          '<td class="px-3 py-2 text-center">' + (d.breakfast ? "Yes" : "—") + "</td>" +
+          '<td class="px-3 py-2 text-center">' + (d.lunch ? "Yes" : "—") + "</td>" +
+          '<td class="px-3 py-2 text-center">' + (d.dinner ? "Yes" : "—") + "</td>" +
+          '<td class="px-4 py-2 text-right font-semibold tabular-nums">' + d.total + "</td>" +
+        "</tr>"
+      );
+    }).join("");
+    var detailsId = "summary-details-" + r.memberId;
+    return (
+      '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50 summary-row-avoid-break">' +
+        '<td class="px-5 py-3"><div class="flex items-center gap-3">' +
+          avatarHtml(r.pictureUrl, r.name, "h-8 w-8", r.avatarColor) +
+          '<span class="font-medium text-foreground">' + esc(r.name) + "</span>" +
+        "</div></td>" +
+        '<td class="px-5 py-3 text-right tabular-nums text-success-700">' + formatCurrency(r.paid) + "</td>" +
+        '<td class="px-5 py-3 text-right tabular-nums text-foreground">' + formatNumber(r.meals) + "</td>" +
+        '<td class="px-5 py-3 text-right tabular-nums text-danger-600">' + formatCurrency(r.mealCost) + "</td>" +
+        '<td class="px-5 py-3 text-right font-semibold tabular-nums ' + (r.balance > 0.01 ? "text-success-700" : r.balance < -0.01 ? "text-danger-600" : "text-muted") + '">' + (r.balance > 0 ? "+" : r.balance < 0 ? "−" : "") + formatCurrency(Math.abs(r.balance)) + "</td>" +
+        '<td class="px-5 py-3">' + statusBadgeForBalance(r.balance) + "</td>" +
+        '<td class="px-5 py-3 text-right no-print">' +
+          '<button type="button" data-action="toggle-summary-details" data-target="' + detailsId + '" class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-navy-900 transition-colors hover:bg-navy-50">' + icon("chevron-down", "h-3.5 w-3.5") + "Details</button>" +
+        "</td>" +
+      "</tr>" +
+      '<tr class="details-collapsed border-b border-border last:border-0" id="' + detailsId + '">' +
+        '<td colspan="7" class="bg-gray-100/40 px-5 py-4">' +
+          '<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">' + esc(r.name) + " — Day-by-Day Meal Breakdown (" + esc(monthLabel(monthKey)) + ")</p>" +
+          (daily.length === 0 ? emptyState("utensils-crossed", "No days recorded yet") :
+          '<div class="overflow-x-auto rounded-xl border border-border"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-4 py-2">Date</th><th class="px-3 py-2 text-center">Breakfast</th><th class="px-3 py-2 text-center">Lunch</th><th class="px-3 py-2 text-center">Dinner</th><th class="px-4 py-2 text-right">Total</th></tr></thead><tbody>' + dailyRowsHtml + "</tbody></table></div>") +
+        "</td>" +
+      "</tr>"
+    );
+  }).join("");
+
+  var expenseRowsHtml = monthExpenses.map(function (e) {
+    return (
+      '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50 summary-row-avoid-break">' +
+        '<td class="px-5 py-3 text-muted">' + dateLabelMed(e.date) + "</td>" +
+        '<td class="px-5 py-3 font-medium text-foreground">' + esc(expenseItemsSummary(e)) + "</td>" +
+        '<td class="px-5 py-3 text-foreground">' + buyerNamesHtml(e) + "</td>" +
+        '<td class="px-5 py-3 text-right font-semibold tabular-nums text-danger-600">−' + formatCurrency(e.amount) + "</td>" +
+      "</tr>"
+    );
+  }).join("");
+
+  var depositRowsHtml = monthDeposits.map(function (d) {
+    var m = memberById(d.memberId);
+    return (
+      '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50 summary-row-avoid-break">' +
+        '<td class="px-5 py-3 text-muted">' + dateLabelMed(d.date) + "</td>" +
+        '<td class="px-5 py-3 font-medium text-foreground">' + esc(m ? m.name : "Unknown") + "</td>" +
+        '<td class="px-5 py-3 text-right font-semibold tabular-nums text-success-700">+' + formatCurrency(d.amount) + "</td>" +
+        '<td class="px-5 py-3 text-muted">' + esc(d.note || "—") + "</td>" +
+      "</tr>"
+    );
+  }).join("");
+
+  return (
+    '<div class="space-y-6 summary-report">' +
+      '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between no-print">' +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Summary</h1><p class="mt-1 text-sm text-muted">A complete printable report for ' + esc(monthLabel(monthKey)) + ".</p></div>" +
+        '<div class="flex items-center gap-2">' +
+          monthSwitcherHtml(monthKey, "summary-month-nav") +
+          '<button type="button" data-action="print-summary" class="btn-primary">' + icon("receipt", "h-4 w-4") + "Download PDF</button>" +
+        "</div>" +
+      "</div>" +
+
+      '<div class="summary-print-header hidden">' +
+        '<h1 class="text-2xl font-bold tracking-tight">Monthly Summary Report</h1>' +
+        '<p class="mt-1 text-sm">' + esc(monthLabel(monthKey)) + "</p>" +
+        '<p class="mt-1 text-xs">Report generated on: ' + esc(generatedAtLabel) + "</p>" +
+      "</div>" +
+
+      '<div class="grid grid-cols-2 gap-4 lg:grid-cols-3 summary-cards-grid">' +
+        statCard({ label: "Total Bazar/Meal Cost", value: s.totalBazarCost, prefix: "৳", icon: "shopping-basket", tone: "danger" }) +
+        statCard({ label: "Total Money Deposited", value: s.totalPaid, prefix: "৳", icon: "wallet", tone: "success" }) +
+        statCard({ label: "Total Meals", value: s.totalMeals, icon: "utensils-crossed", tone: "gray" }) +
+        statCard({ label: "Meal Rate", value: s.mealRate, decimals: 2, prefix: "৳", suffix: " / meal", icon: "gauge", tone: "warning" }) +
+        statCard({ label: "Available Balance", value: Math.abs(availableBalance), prefix: (availableBalance < 0 ? "−৳" : "৳"), icon: "banknote", tone: availableBalance < 0 ? "danger" : "navy" }) +
+      "</div>" +
+
+      '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)] summary-section">' +
+        '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Member Breakdown</h2></div>' +
+        (s.members.length === 0 ? '<div class="p-6">' + emptyState("users", "No active members") + "</div>" :
+        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted">' +
+          '<th class="px-5 py-3">Name</th><th class="px-5 py-3 text-right">Total Paid</th><th class="px-5 py-3 text-right">Total Meals</th><th class="px-5 py-3 text-right">Meal Cost</th><th class="px-5 py-3 text-right">Balance</th><th class="px-5 py-3">Status</th><th class="px-5 py-3 text-right no-print">Details</th>' +
+        "</tr></thead><tbody>" + memberRowsHtml + "</tbody></table></div>") +
+      "</div>" +
+
+      '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)] summary-section">' +
+        '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Full Expense List — ' + esc(monthLabel(monthKey)) + "</h2></div>" +
+        (monthExpenses.length === 0 ? '<div class="p-6">' + emptyState("shopping-cart", "No expenses this month") + "</div>" :
+        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted">' +
+          '<th class="px-5 py-3">Date</th><th class="px-5 py-3">Items</th><th class="px-5 py-3">Bought By</th><th class="px-5 py-3 text-right">Amount</th>' +
+        "</tr></thead><tbody>" + expenseRowsHtml +
+        '<tr class="bg-navy-50"><td class="px-5 py-3 text-sm font-semibold text-navy-900" colspan="3">Total</td><td class="px-5 py-3 text-right text-base font-bold tabular-nums text-navy-900">' + formatCurrency(s.totalBazarCost) + "</td></tr>" +
+        "</tbody></table></div>") +
+      "</div>" +
+
+      '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)] summary-section">' +
+        '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Full Deposit List — ' + esc(monthLabel(monthKey)) + "</h2></div>" +
+        (monthDeposits.length === 0 ? '<div class="p-6">' + emptyState("wallet", "No deposits this month") + "</div>" :
+        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted">' +
+          '<th class="px-5 py-3">Date</th><th class="px-5 py-3">Member</th><th class="px-5 py-3 text-right">Amount</th><th class="px-5 py-3">Note</th>' +
+        "</tr></thead><tbody>" + depositRowsHtml +
+        '<tr class="bg-navy-50"><td class="px-5 py-3 text-sm font-semibold text-navy-900" colspan="2">Total</td><td class="px-5 py-3 text-right text-base font-bold tabular-nums text-navy-900">' + formatCurrency(s.totalPaid) + "</td><td></td></tr>" +
+        "</tbody></table></div>") +
+      "</div>" +
+    "</div>"
+  );
+}
+
 /* ============================== AVAILABLE BALANCE ============================== */
 function renderBalance() {
   var all = computeAllTimeSummary();
@@ -1839,6 +2089,13 @@ document.addEventListener("click", function (e) {
     navigate("store", { month: el.dataset.month });
   } else if (action === "hisab-month-nav") {
     navigate("hisab", { month: el.dataset.month });
+  } else if (action === "summary-month-nav") {
+    navigate("summary", { month: el.dataset.month });
+  } else if (action === "print-summary") {
+    window.print();
+  } else if (action === "toggle-summary-details") {
+    var detailsRow = document.getElementById(el.dataset.target);
+    if (detailsRow) detailsRow.classList.toggle("details-collapsed");
   } else if (action === "open-close-month") {
     document.getElementById("close-month-modal").hidden = false;
   } else if (action === "confirm-close-month") {
