@@ -796,7 +796,8 @@ function renderMeals(dateKey) {
 
   var monthKey = monthKeyOf(dateKey);
   var members = activeMembers();
-  var monthDates = eachDateInMonth(monthKey);
+  var today = latestDateAcross();
+  var monthDates = eachDateInMonth(monthKey).filter(function (d) { return d <= today; });
   var monthRows = monthDates.map(function (d) {
     var dayTotal = 0;
     var cells = members.map(function (m) {
