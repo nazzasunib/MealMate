@@ -79,65 +79,9 @@
 .pl-12{padding-left:calc(var(--spacing) * 12)}
 
 @keyframes float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,-20px); } }
-
-/* ===== Global animated food-icon background (#food-bg) ===== */
-/* Renders once at boot (see foodBgInit / DOMContentLoaded) as a sibling of
-   #app, so it is never destroyed/recreated by render()'s innerHTML swaps
-   on navigation. Sits behind all authenticated app pages via z-index; the
-   sidebar/topbar/main panels are opaque (bg-navy-950 / bg-surface / bg-
-   background) and simply paint over it where content exists. */
-#food-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-#food-bg[hidden] { display: none; }
-#app { position: relative; z-index: 1; }
-#food-bg .food-bg-icon {
-  position: absolute;
-  color: var(--navy-900);
-  opacity: .6;
-  pointer-events: none;
-  will-change: transform;
-}
-#food-bg .food-bg-icon svg { display: block; width: 100%; height: 100%; }
-/* Slightly fewer/smaller on small phones (requirement: fewer AND smaller
-   icons on narrow viewports). */
-@media (max-width: 640px) {
-  #food-bg .food-bg-icon { transform: scale(.72); }
-  #food-bg .food-bg-icon.food-bg-mobile-hide { display: none; }
-}
-@media (prefers-reduced-motion: no-preference) {
-  #food-bg .food-bg-icon.food-bg-a { animation: food-float-a var(--food-dur, 20s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
-  #food-bg .food-bg-icon.food-bg-b { animation: food-float-b var(--food-dur, 24s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
-  #food-bg .food-bg-icon.food-bg-c { animation: food-bob var(--food-dur, 18s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
-  #food-bg .food-bg-icon.food-bg-d { animation: food-rotate-drift var(--food-dur, 27s) ease-in-out infinite; animation-delay: var(--food-delay, 0s); }
-}
-@keyframes food-float-a {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(10px, -12px) rotate(2deg); }
-  50% { transform: translate(-6px, -18px) rotate(-1deg); }
-  75% { transform: translate(-12px, -4px) rotate(1deg); }
-}
-@keyframes food-float-b {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(-14px, 8px) rotate(-2deg); }
-  66% { transform: translate(8px, 14px) rotate(2deg); }
-}
-@keyframes food-bob {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-16px) rotate(1.5deg); }
-}
-@keyframes food-rotate-drift {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  50% { transform: translate(9px, -10px) rotate(-4deg); }
-}
 </style>
 </head>
 <body class="h-full bg-background">
-<div id="food-bg" aria-hidden="true"></div>
 <div id="app" class="h-full"></div>
 <div id="toast-host" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
 <script>
@@ -156,94 +100,6 @@ function icon(name, cls) {
   var svg = ICONS[name] || "";
   if (cls) svg = svg.replace('class="lucide', 'class="' + cls + " lucide");
   return svg;
-}
-
-/* ============================== FOOD BACKGROUND (global decorative layer) ============================== */
-/* Hand-authored minimal line-art food icons, same stroke convention as
-   window.ICONS (24x24 viewBox, stroke="currentColor", stroke-width 2,
-   round caps/joins). Used only by the subtle animated #food-bg layer
-   behind every authenticated page (see renderShell / foodBgInit). */
-var FOOD_BG_ICONS = [
-  // fish
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-4 8-6 13-4 2 .8 4 2.2 5 4-1 1.8-3 3.2-5 4-5 2-10 0-13-4Z"></path><path d="M17 9.5 20 7"></path><path d="M17 14.5 20 17"></path><circle cx="7.5" cy="11.2" r=".8" fill="currentColor" stroke="none"></circle></svg>',
-  // chicken leg (drumstick)
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c2 0 4 2 4 4.5 0 2-1.2 3.2-2.6 4.3l-4.6 4.6a2.6 2.6 0 1 1-3.7-3.7l4.6-4.6C13 7.7 14 6.3 14 4Z"></path><path d="M8 15.5 4.5 19"></path><path d="M6.2 21.3c-1-.4-1.5-.9-1.9-1.9"></path><path d="M9.3 18.4c.8 1 .8 2 .3 3"></path></svg>',
-  // rice bowl
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"></path><path d="M4 11a8 6 0 0 0 16 0"></path><path d="M4 11c0-3 3.6-5.5 8-5.5s8 2.5 8 5.5"></path><path d="M18 16.5c1.4.5 2 1.2 2 1.5 0 1-3.6 2-8 2s-8-1-8-2c0-.3.6-1 2-1.5"></path></svg>',
-  // egg
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4.4 0 7-3.4 7-7.8C19 8.4 15.5 3 12 3S5 8.4 5 13.2C5 17.6 7.6 21 12 21Z"></path></svg>',
-  // milk carton
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v3.5L18 10v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V10l2-2.5Z"></path><path d="M8 4V2.5h8V4"></path><path d="M6 13h12"></path></svg>',
-  // potato
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8.5C5 10 4 12 4.5 14.5c.5 2.7 3 4.8 6 5.3 3.5.6 7-.6 8.7-3.3 1.4-2.2 1.2-5-.4-6.9-1.3-1.6-1-3-2.8-4C14.2 4.5 12 4.3 10 5c-1.6.5-2.2 2.2-3.5 3.5Z"></path><circle cx="9.5" cy="12.5" r=".6" fill="currentColor" stroke="none"></circle><circle cx="13.5" cy="15" r=".6" fill="currentColor" stroke="none"></circle></svg>',
-  // onion
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c-.6 1-1 1.8-1 2.6C7.5 8 5.5 11 5.5 14.5 5.5 18.6 8.4 21 12 21s6.5-2.4 6.5-6.5c0-3.5-2-6.5-5.5-7.9 0-.8-.4-1.6-1-2.6Z"></path><path d="M12 6.6c1.2 1.6 1.8 3.4 1.8 5.4"></path><path d="M9.5 3.5 12 6"></path><path d="M14.5 3.5 12 6"></path></svg>',
-  // garlic
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2.2"></path><path d="M9 4.5 10 6"></path><path d="M15 4.5 14 6"></path><path d="M8.5 6.5C6.5 8 5.5 10.6 5.5 13c0 4.4 3 8 6.5 8s6.5-3.6 6.5-8c0-2.4-1-5-3-6.5-1-.7-2.2-1-3.5-1s-2.5.3-3.5 1Z"></path><path d="M12 6v15"></path><path d="M9 8.5c-.8 1.4-1.2 3-1.2 4.8"></path><path d="M15 8.5c.8 1.4 1.2 3 1.2 4.8"></path></svg>',
-  // chili
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4c1.2-.8 2.4-1 3.3-.3"></path><path d="M8 4c-.5 1.6.4 2.4 1.8 3"></path><path d="M9.5 7C7 8 5 10.5 5 13.8 5 17.8 7.8 21 12 21c3.6 0 6.7-2.7 6.7-6.5 0-3.6-2.7-6.5-6-6.8-1.2-.1-2.3 0-3.2.3Z"></path></svg>',
-  // carrot
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5c1.5-1.5 3-2.3 4.5-2.5"></path><path d="M15.5 3.5c.8.6 1 1.6.8 2.8"></path><path d="M11.5 6.8c1 1.2 1.8 2 3.3 2.3"></path><path d="M6 20c-1-1-1.3-2.3-1-3.7L9 8.5c.4-1.4 1.6-2.2 3-2 1.6.2 3.2 1 4.3 2.3 1 1.2 1.4 2.8 1 4.3l-3.6 8.5c-.6 1.4-2 2.2-3.5 1.9C8.7 22.9 7 21.4 6 20Z"></path></svg>',
-  // tomato
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-1-1.4-.4-2.6.5-3.3"></path><path d="M12 6c1-1.4 2.6-1.8 3.7-1.3"></path><path d="M12 6c-.9-1-2.4-1.2-3.6-.6"></path><path d="M5 13.5C5 9.4 8.1 6.5 12 6.5s7 2.9 7 7-3.1 8-7 8-7-3.4-7-8Z"></path></svg>',
-  // vegetable leaf
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4C10 4 4 10 4 18v2h2c8 0 14-6 14-16Z"></path><path d="M6 20c1-5 4.5-9.5 12-13.5"></path></svg>',
-  // apple
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-.3-1.6.4-3 1.8-4"></path><path d="M12 8c2.8-1.2 5.8-.7 7.5 1.6 1.8 2.4 1.8 6-.2 9-1.7 2.6-3.9 4-5.8 4-.7 0-1.3-.2-1.9-.5-.6.3-1.2.5-1.9.5-1.9 0-4.1-1.4-5.8-4-2-3-2-6.6-.2-9C5.4 7.3 8.4 6.8 12 8Z"></path></svg>',
-  // banana
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4c-1 3 0 6 2 8.5 2.3 2.8 5.5 4 8.5 3.7"></path><path d="M18.5 13c1 .6 1.7 1.6 1.5 2.8-.3 1.8-2.4 3.2-5 3.6-3.6.6-7.4-.7-9.6-3.4"></path><path d="M5.3 16c-.8.6-1.2 1.6-.8 2.6"></path></svg>',
-  // beans
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5c-2.2 2-3 5-1.6 7.8C5.6 15 8 16 10.3 15.3 12.7 14.6 14 12.2 13 9.8 12 7.4 9 5 6 5Z"></path><path d="M17 9c-2.2 2-3 5-1.6 7.8 1.2 2.2 3.6 3.2 5.9 2.5 2.4-.7 3.7-3.1 2.7-5.5C22.9 11.4 19.9 9 17 9Z"></path><path d="M8 9.2c.6.4 1.3.6 2 .6"></path><path d="M19 13.2c.6.4 1.3.6 2 .6"></path></svg>'
-];
-
-/* Deterministic-but-varied placements: percent-based top/left so it's
-   naturally responsive, plus per-instance size/rotation/animation class/
-   duration/delay so nearby icons never move in unison. A handful are
-   flagged mobile-hide (fewer AND smaller icons on narrow screens). */
-var FOOD_BG_LAYOUT = [
-  { l: 4,  t: 8,  s: 52, r: -8,  a: "a", d: 21, y: -2 },
-  { l: 16, t: 32, s: 40, r: 10,  a: "c", d: 18, y: -5 },
-  { l: 9,  t: 62, s: 60, r: 6,   a: "b", d: 25, y: -1, mh: true },
-  { l: 22, t: 85, s: 36, r: -12, a: "d", d: 27, y: -9 },
-  { l: 34, t: 15, s: 44, r: 14,  a: "a", d: 19, y: -12, mh: true },
-  { l: 40, t: 46, s: 32, r: -6,  a: "c", d: 22, y: -4 },
-  { l: 47, t: 74, s: 56, r: 8,   a: "b", d: 24, y: -15 },
-  { l: 58, t: 6,  s: 38, r: -14, a: "d", d: 20, y: -7, mh: true },
-  { l: 63, t: 28, s: 48, r: 5,   a: "a", d: 26, y: -10 },
-  { l: 70, t: 58, s: 34, r: -10, a: "c", d: 17, y: -3 },
-  { l: 78, t: 82, s: 50, r: 12,  a: "b", d: 23, y: -6, mh: true },
-  { l: 86, t: 12, s: 42, r: -4,  a: "d", d: 29, y: -13 },
-  { l: 91, t: 40, s: 30, r: 9,   a: "a", d: 18, y: -8 },
-  { l: 84, t: 65, s: 46, r: -9,  a: "c", d: 21, y: -11, mh: true },
-  { l: 12, t: 44, s: 34, r: 7,   a: "d", d: 28, y: -1 },
-  { l: 28, t: 68, s: 38, r: -13, a: "b", d: 20, y: -14, mh: true },
-  { l: 52, t: 92, s: 44, r: 4,   a: "a", d: 24, y: -6 },
-  { l: 66, t: 90, s: 32, r: -7,  a: "c", d: 16, y: -9, mh: true },
-  { l: 3,  t: 90, s: 40, r: 11,  a: "b", d: 22, y: -5 },
-  { l: 96, t: 68, s: 36, r: -5,  a: "d", d: 19, y: -12, mh: true }
-];
-
-function renderFoodBackground() {
-  var isMobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
-  var placements = isMobile ? FOOD_BG_LAYOUT.filter(function (p) { return !p.mh; }) : FOOD_BG_LAYOUT;
-  var html = placements.map(function (p, i) {
-    var svg = FOOD_BG_ICONS[i % FOOD_BG_ICONS.length];
-    var style = (
-      "left:" + p.l + "%;top:" + p.t + "%;" +
-      "width:" + p.s + "px;height:" + p.s + "px;" +
-      "--food-dur:" + p.d + "s;--food-delay:" + p.y + "s;" +
-      "transform:rotate(" + p.r + "deg);"
-    );
-    var cls = "food-bg-icon food-bg-" + p.a + (p.mh ? " food-bg-mobile-hide" : "");
-    return '<span class="' + cls + '" style="' + style + '">' + svg + "</span>";
-  }).join("");
-  return html;
-}
-
-function foodBgInit() {
-  var host = document.getElementById("food-bg");
-  if (!host) return;
-  host.innerHTML = renderFoodBackground();
 }
 
 /* ============================== UTIL ============================== */
@@ -436,7 +292,6 @@ window.addEventListener("hashchange", render);
 window.addEventListener("DOMContentLoaded", function () {
   DB = loadDB();
   SESSION = loadSession();
-  foodBgInit();
   render();
 });
 
@@ -449,14 +304,6 @@ function render() {
 
   var app = document.getElementById("app");
   var mobileDrawerWasOpen = app && app.dataset.drawerOpen === "1";
-
-  /* #food-bg is a persistent sibling of #app (created once at boot by
-     foodBgInit) so its animations never restart on navigation. It only
-     belongs behind the authenticated app pages (renderShell), not the
-     login/signup screens which have their own distinct navy decoration -
-     so just toggle its visibility here rather than touching its DOM. */
-  var foodBg = document.getElementById("food-bg");
-  if (foodBg) foodBg.hidden = (path === "login" || path === "signup");
 
   if (path === "login") {
     app.innerHTML = renderLogin();
