@@ -721,6 +721,7 @@ function renderMeals(dateKey) {
         '<td class="px-5 py-2.5 text-muted">' + dateLabelMed(d) + "</td>" +
         cells +
         '<td class="px-5 py-2.5 text-right font-semibold tabular-nums">' + dayTotal + "</td>" +
+        '<td class="px-5 py-2.5 text-right"><button data-action="date-nav" data-date="' + d + '" class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-navy-900 transition-colors hover:bg-navy-50">' + icon("pencil", "h-3.5 w-3.5") + "Edit</button></td>" +
       "</tr>"
     );
   }).join("");
@@ -748,7 +749,7 @@ function renderMeals(dateKey) {
         (members.length === 0 ? '<div class="p-6">' + emptyState("utensils-crossed", "No active members") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-2">Date</th>' +
           members.map(function (m) { return '<th class="px-3 py-2 text-right">' + esc(m.name) + "</th>"; }).join("") +
-          '<th class="px-5 py-2 text-right">Total</th></tr></thead><tbody>' + monthRows + "</tbody></table></div>") +
+          '<th class="px-5 py-2 text-right">Total</th><th class="px-5 py-2 text-right">Actions</th></tr></thead><tbody>' + monthRows + "</tbody></table></div>") +
       "</div>" +
     "</div>"
   );
