@@ -46,6 +46,30 @@
 @media (min-width:40rem){.sm\:p-6{padding:calc(var(--spacing) * 6)}}
 @media (min-width:64rem){.lg\:block{display:block}}
 
+/* ===== manual patch 2: utility classes added for Hisab / Settings / member
+   contact-picture features that the extracted Tailwind build did not happen
+   to compile. Same rationale as the patch block above. ===== */
+.object-cover{object-fit:cover}
+.h-16{height:calc(var(--spacing) * 16)}
+.w-16{width:calc(var(--spacing) * 16)}
+.h-20{height:calc(var(--spacing) * 20)}
+.w-20{width:calc(var(--spacing) * 20)}
+.h-24{height:calc(var(--spacing) * 24)}
+.w-24{width:calc(var(--spacing) * 24)}
+.max-w-2xl{max-width:42rem}
+.max-w-xl{max-width:36rem}
+.cursor-not-allowed{cursor:not-allowed}
+.opacity-60{opacity:.6}
+.italic{font-style:italic}
+.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.max-h-96{max-height:calc(var(--spacing) * 96)}
+.mb-5{margin-bottom:calc(var(--spacing) * 5)}
+.underline{text-decoration-line:underline}
+@media (min-width:40rem){.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:40rem){.sm\:max-w-xs{max-width:20rem}}
+@media (min-width:64rem){.lg\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
 @keyframes float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,-20px); } }
 </style>
 </head>
@@ -53,8 +77,8 @@
 <div id="app" class="h-full"></div>
 <div id="toast-host" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
 <script>
-window.SEED = {"members": [], "meals": [], "deposits": [], "expenses": [], "users": []};
-window.ICONS = {"layout-dashboard": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-layout-dashboard h-4.5 w-4.5 transition-transform duration-150\" aria-hidden=\"true\"><rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"></rect></svg>", "users": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-users h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><path d=\"M16 3.128a4 4 0 0 1 0 7.744\"></path><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle></svg>", "utensils-crossed": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-utensils-crossed h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8\"></path><path d=\"M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7\"></path><path d=\"m2.1 21.8 6.4-6.3\"></path><path d=\"m19 5-7 7\"></path></svg>", "wallet": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-wallet h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\"></path><path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\"></path></svg>", "shopping-cart": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shopping-cart h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18\"></path><path d=\"M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25\"></path><circle cx=\"18\" cy=\"20\" r=\"2\"></circle><circle cx=\"8\" cy=\"20\" r=\"2\"></circle></svg>", "menu": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-menu h-5 w-5\" aria-hidden=\"true\"><path d=\"M4 5h16\"></path><path d=\"M4 12h16\"></path><path d=\"M4 19h16\"></path></svg>", "bell": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-bell h-5 w-5\" aria-hidden=\"true\"><path d=\"M10.268 21a2 2 0 0 0 3.464 0\"></path><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"></path></svg>", "chevron-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down hidden h-4 w-4 text-muted sm:block\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"></path></svg>", "chevron-left": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-left h-4 w-4\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg>", "chevron-right": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-right h-4 w-4\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg>", "trending-up": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trending-up h-5 w-5\" aria-hidden=\"true\"><path d=\"M16 7h6v6\"></path><path d=\"m22 7-8.5 8.5-5-5L2 17\"></path></svg>", "trending-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trending-down h-5 w-5\" aria-hidden=\"true\"><path d=\"M16 17h6v-6\"></path><path d=\"m22 17-8.5-8.5-5 5L2 7\"></path></svg>", "gauge": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-gauge h-5 w-5\" aria-hidden=\"true\"><path d=\"m12 14 4-4\"></path><path d=\"M3.34 19a10 10 0 1 1 17.32 0\"></path></svg>", "arrow-right": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-right hidden h-5 w-5 shrink-0 text-muted sm:block\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg>", "coffee": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coffee h-4 w-4\" aria-hidden=\"true\"><path d=\"M10 2v2\"></path><path d=\"M14 2v2\"></path><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\"></path><path d=\"M6 2v2\"></path></svg>", "sun": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sun h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"></circle><path d=\"M12 2v2\"></path><path d=\"M12 20v2\"></path><path d=\"m4.93 4.93 1.41 1.41\"></path><path d=\"m17.66 17.66 1.41 1.41\"></path><path d=\"M2 12h2\"></path><path d=\"M20 12h2\"></path><path d=\"m6.34 17.66-1.41 1.41\"></path><path d=\"m19.07 4.93-1.41 1.41\"></path></svg>", "moon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-moon h-4 w-4\" aria-hidden=\"true\"><path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"></path></svg>", "triangle-alert": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-triangle-alert mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"></path><path d=\"M12 9v4\"></path><path d=\"M12 17h.01\"></path></svg>", "info": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg>", "circle-check": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-check mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m16 9-5.5 5.5L8 12\"></path></svg>", "circle-arrow-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-arrow-down h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 8v8\"></path><path d=\"m8 12 4 4 4-4\"></path></svg>", "user-plus": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-plus h-4 w-4\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"></line><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"></line></svg>", "pencil": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-pencil h-4 w-4\" aria-hidden=\"true\"><path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"></path><path d=\"m15 5 4 4\"></path></svg>", "ban": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-ban h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M4.929 4.929 19.07 19.071\"></path></svg>", "coins": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coins h-5 w-5\" aria-hidden=\"true\"><path d=\"M13.744 17.736a6 6 0 1 1-7.48-7.48\"></path><path d=\"M15 6h1v4\"></path><path d=\"m6.134 14.768.866-.5 2 3.464\"></path><circle cx=\"16\" cy=\"8\" r=\"6\"></circle></svg>", "search": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle></svg>", "trash": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash h-4 w-4\" aria-hidden=\"true\"><path d=\"M10 11v6\"></path><path d=\"M14 11v6\"></path><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"></path><path d=\"M3 6h18\"></path><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path></svg>", "receipt": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-receipt h-5 w-5\" aria-hidden=\"true\"><path d=\"M12 17V7\"></path><path d=\"M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8\"></path><path d=\"M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z\"></path></svg>", "arrow-left": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left h-4 w-4\" aria-hidden=\"true\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg>", "calendar-days": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-days h-3.5 w-3.5\" aria-hidden=\"true\"><path d=\"M8 2v3\"></path><path d=\"M16 2v3\"></path><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"></rect><path d=\"M3 9h18\"></path><path d=\"M8 13h.01\"></path><path d=\"M12 13h.01\"></path><path d=\"M16 13h.01\"></path><path d=\"M8 17h.01\"></path><path d=\"M12 17h.01\"></path><path d=\"M16 17h.01\"></path></svg>", "banknote": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-banknote h-5 w-5\" aria-hidden=\"true\"><rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\"></rect><circle cx=\"12\" cy=\"12\" r=\"2\"></circle><path d=\"M6 12h.01M18 12h.01\"></path></svg>", "circle-arrow-up": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-arrow-up h-4 w-4 text-success-600\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m16 12-4-4-4 4\"></path><path d=\"M12 16V8\"></path></svg>", "shopping-basket": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shopping-basket h-4 w-4 text-danger-600\" aria-hidden=\"true\"><path d=\"m15 11-1 9\"></path><path d=\"m19 11-4-7\"></path><path d=\"M2 11h20\"></path><path d=\"m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4\"></path><path d=\"M4.5 15.5h15\"></path><path d=\"m5 11 4-7\"></path><path d=\"m9 11 1 9\"></path></svg>", "mail": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-mail pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><path d=\"m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7\"></path><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"></rect></svg>", "lock": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg>", "eye": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-eye h-4 w-4\" aria-hidden=\"true\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>", "shield-check": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shield-check h-3.5 w-3.5\" aria-hidden=\"true\"><path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"></path><path d=\"m9 12 2 2 4-4\"></path></svg>", "x": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>", "log-out": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-log-out\"><path d=\"m16 17 5-5-5-5\"></path><path d=\"M21 12H9\"></path><path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"></path></svg>", "rotate-ccw": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rotate-ccw\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path></svg>", "plus": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg>"};
+window.SEED = {"members": [], "meals": [], "deposits": [], "expenses": [], "users": [], "settlements": []};
+window.ICONS = {"layout-dashboard": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-layout-dashboard h-4.5 w-4.5 transition-transform duration-150\" aria-hidden=\"true\"><rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"></rect></svg>", "users": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-users h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><path d=\"M16 3.128a4 4 0 0 1 0 7.744\"></path><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle></svg>", "utensils-crossed": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-utensils-crossed h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8\"></path><path d=\"M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7\"></path><path d=\"m2.1 21.8 6.4-6.3\"></path><path d=\"m19 5-7 7\"></path></svg>", "wallet": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-wallet h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\"></path><path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\"></path></svg>", "shopping-cart": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shopping-cart h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18\"></path><path d=\"M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25\"></path><circle cx=\"18\" cy=\"20\" r=\"2\"></circle><circle cx=\"8\" cy=\"20\" r=\"2\"></circle></svg>", "menu": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-menu h-5 w-5\" aria-hidden=\"true\"><path d=\"M4 5h16\"></path><path d=\"M4 12h16\"></path><path d=\"M4 19h16\"></path></svg>", "bell": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-bell h-5 w-5\" aria-hidden=\"true\"><path d=\"M10.268 21a2 2 0 0 0 3.464 0\"></path><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"></path></svg>", "chevron-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down hidden h-4 w-4 text-muted sm:block\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"></path></svg>", "chevron-left": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-left h-4 w-4\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg>", "chevron-right": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-right h-4 w-4\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg>", "trending-up": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trending-up h-5 w-5\" aria-hidden=\"true\"><path d=\"M16 7h6v6\"></path><path d=\"m22 7-8.5 8.5-5-5L2 17\"></path></svg>", "trending-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trending-down h-5 w-5\" aria-hidden=\"true\"><path d=\"M16 17h6v-6\"></path><path d=\"m22 17-8.5-8.5-5 5L2 7\"></path></svg>", "gauge": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-gauge h-5 w-5\" aria-hidden=\"true\"><path d=\"m12 14 4-4\"></path><path d=\"M3.34 19a10 10 0 1 1 17.32 0\"></path></svg>", "arrow-right": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-right hidden h-5 w-5 shrink-0 text-muted sm:block\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg>", "coffee": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coffee h-4 w-4\" aria-hidden=\"true\"><path d=\"M10 2v2\"></path><path d=\"M14 2v2\"></path><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\"></path><path d=\"M6 2v2\"></path></svg>", "sun": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sun h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"></circle><path d=\"M12 2v2\"></path><path d=\"M12 20v2\"></path><path d=\"m4.93 4.93 1.41 1.41\"></path><path d=\"m17.66 17.66 1.41 1.41\"></path><path d=\"M2 12h2\"></path><path d=\"M20 12h2\"></path><path d=\"m6.34 17.66-1.41 1.41\"></path><path d=\"m19.07 4.93-1.41 1.41\"></path></svg>", "moon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-moon h-4 w-4\" aria-hidden=\"true\"><path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"></path></svg>", "triangle-alert": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-triangle-alert mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"></path><path d=\"M12 9v4\"></path><path d=\"M12 17h.01\"></path></svg>", "info": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg>", "circle-check": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-check mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m16 9-5.5 5.5L8 12\"></path></svg>", "circle-arrow-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-arrow-down h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 8v8\"></path><path d=\"m8 12 4 4 4-4\"></path></svg>", "user-plus": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-plus h-4 w-4\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"></line><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"></line></svg>", "pencil": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-pencil h-4 w-4\" aria-hidden=\"true\"><path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"></path><path d=\"m15 5 4 4\"></path></svg>", "ban": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-ban h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M4.929 4.929 19.07 19.071\"></path></svg>", "coins": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coins h-5 w-5\" aria-hidden=\"true\"><path d=\"M13.744 17.736a6 6 0 1 1-7.48-7.48\"></path><path d=\"M15 6h1v4\"></path><path d=\"m6.134 14.768.866-.5 2 3.464\"></path><circle cx=\"16\" cy=\"8\" r=\"6\"></circle></svg>", "search": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle></svg>", "trash": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash h-4 w-4\" aria-hidden=\"true\"><path d=\"M10 11v6\"></path><path d=\"M14 11v6\"></path><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"></path><path d=\"M3 6h18\"></path><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path></svg>", "receipt": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-receipt h-5 w-5\" aria-hidden=\"true\"><path d=\"M12 17V7\"></path><path d=\"M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8\"></path><path d=\"M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z\"></path></svg>", "arrow-left": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left h-4 w-4\" aria-hidden=\"true\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg>", "calendar-days": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-days h-3.5 w-3.5\" aria-hidden=\"true\"><path d=\"M8 2v3\"></path><path d=\"M16 2v3\"></path><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"></rect><path d=\"M3 9h18\"></path><path d=\"M8 13h.01\"></path><path d=\"M12 13h.01\"></path><path d=\"M16 13h.01\"></path><path d=\"M8 17h.01\"></path><path d=\"M12 17h.01\"></path><path d=\"M16 17h.01\"></path></svg>", "banknote": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-banknote h-5 w-5\" aria-hidden=\"true\"><rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\"></rect><circle cx=\"12\" cy=\"12\" r=\"2\"></circle><path d=\"M6 12h.01M18 12h.01\"></path></svg>", "circle-arrow-up": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-arrow-up h-4 w-4 text-success-600\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m16 12-4-4-4 4\"></path><path d=\"M12 16V8\"></path></svg>", "shopping-basket": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shopping-basket h-4 w-4 text-danger-600\" aria-hidden=\"true\"><path d=\"m15 11-1 9\"></path><path d=\"m19 11-4-7\"></path><path d=\"M2 11h20\"></path><path d=\"m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4\"></path><path d=\"M4.5 15.5h15\"></path><path d=\"m5 11 4-7\"></path><path d=\"m9 11 1 9\"></path></svg>", "mail": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-mail pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><path d=\"m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7\"></path><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"></rect></svg>", "lock": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg>", "eye": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-eye h-4 w-4\" aria-hidden=\"true\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>", "shield-check": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shield-check h-3.5 w-3.5\" aria-hidden=\"true\"><path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"></path><path d=\"m9 12 2 2 4-4\"></path></svg>", "x": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>", "log-out": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-log-out\"><path d=\"m16 17 5-5-5-5\"></path><path d=\"M21 12H9\"></path><path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"></path></svg>", "rotate-ccw": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rotate-ccw\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path></svg>", "plus": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg>", "scale": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-scale h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"M12 3v18\"></path><path d=\"M3 7h4l3-3\"></path><path d=\"M21 7h-4l-3-3\"></path><path d=\"m3 7 2.5 6.5a2.7 2.7 0 0 0 5 0L13 7\"></path><path d=\"m21 7-2.5 6.5a2.7 2.7 0 0 1-5 0L11 7\"></path><path d=\"M8 21h8\"></path></svg>", "camera": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-camera h-4 w-4\" aria-hidden=\"true\"><path d=\"M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z\"></path><circle cx=\"12\" cy=\"13\" r=\"3\"></circle></svg>"};
 var SEED = window.SEED, ICONS = window.ICONS;
 </script>
 <script>
@@ -153,13 +177,19 @@ var SESSION_KEY = "mealmate_session_v2";
 
 function cloneSeed() { return JSON.parse(JSON.stringify(SEED)); }
 function loadDB() {
+  var db;
   try {
     var raw = localStorage.getItem(DB_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) db = JSON.parse(raw);
   } catch (e) {}
-  var fresh = cloneSeed();
-  saveDBRaw(fresh);
-  return fresh;
+  if (!db) {
+    db = cloneSeed();
+    saveDBRaw(db);
+  }
+  /* defensive: DBs saved before the Hisab feature was added won't have this
+     collection yet; avoid bumping DB_KEY just for one new array. */
+  db.settlements = db.settlements || [];
+  return db;
 }
 function saveDBRaw(db) {
   try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {}
@@ -272,10 +302,12 @@ function render() {
     app.innerHTML = renderShell(renderExpenses(query.q || ""), "expenses", mobileDrawerWasOpen);
   } else if (path === "store") {
     app.innerHTML = renderShell(renderStore(query.month || ""), "store", mobileDrawerWasOpen);
+  } else if (path === "hisab") {
+    app.innerHTML = renderShell(renderHisab(query.month || ""), "hisab", mobileDrawerWasOpen);
   } else if (path === "balance") {
     app.innerHTML = renderShell(renderBalance(), "", mobileDrawerWasOpen);
   } else if (path === "settings/password") {
-    app.innerHTML = renderShell(renderSettingsPassword(), "", mobileDrawerWasOpen);
+    app.innerHTML = renderShell(renderSettingsPage(), "", mobileDrawerWasOpen);
   } else {
     navigate("dashboard");
     return;
@@ -540,16 +572,32 @@ function itemsForCategory(categoryName) {
   return cat ? cat.items : [];
 }
 
+/* Renders either the member's/user's uploaded picture (data-URL) as a circular
+   <img>, or a colored initials circle as a fallback — reused for members,
+   the topbar and the profile settings page. sizeClass e.g. "h-9 w-9". */
+function avatarHtml(pictureUrl, name, sizeClass, bgColor, textSizeClass) {
+  if (pictureUrl) {
+    return '<img src="' + esc(pictureUrl) + '" alt="' + esc(name) + '" class="' + sizeClass + ' shrink-0 rounded-full object-cover" />';
+  }
+  return '<span class="flex ' + sizeClass + ' shrink-0 items-center justify-center rounded-full font-semibold text-white ' + (textSizeClass || "text-xs") + '" style="background:' + (bgColor || "#888") + '">' + esc(initials(name)) + "</span>";
+}
+
 function renderMembers() {
   var rows = DB.members.slice().sort(function (a, b) {
     if (a.status !== b.status) return a.status === "ACTIVE" ? -1 : 1;
     return a.name < b.name ? -1 : 1;
   }).map(function (m) {
+    var contactBits = [];
+    if (m.phone) contactBits.push(esc(m.phone));
+    if (m.email) contactBits.push(esc(m.email));
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
         '<td class="px-5 py-3"><div class="flex items-center gap-3">' +
-          '<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style="background:' + m.avatarColor + '">' + esc(initials(m.name)) + "</span>" +
-          '<span class="font-medium text-foreground">' + esc(m.name) + "</span>" +
+          avatarHtml(m.pictureUrl, m.name, "h-9 w-9", m.avatarColor) +
+          "<div>" +
+            '<span class="block font-medium text-foreground">' + esc(m.name) + "</span>" +
+            (contactBits.length ? '<span class="block text-xs text-muted">' + contactBits.join(" · ") + "</span>" : "") +
+          "</div>" +
         "</div></td>" +
         '<td class="px-5 py-3">' + badge(m.status === "ACTIVE" ? "Active" : "Inactive", m.status === "ACTIVE" ? "success" : "gray") + "</td>" +
         '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
@@ -581,14 +629,36 @@ function renderMembers() {
   );
 }
 
+function pictureUploadFieldHtml(inputName, previewId, previewPictureUrl, previewName, previewColor) {
+  return (
+    '<div>' + fieldLabel("Picture (optional)") +
+      '<div class="flex items-center gap-3">' +
+        '<span id="' + previewId + '">' + avatarHtml(previewPictureUrl, previewName || "?", "h-14 w-14", previewColor, "text-base") + "</span>" +
+        '<label class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">' +
+          icon("camera", "h-4 w-4") + "Upload Photo" +
+          '<input type="file" accept="image/*" data-action="picture-input" data-preview="' + previewId + '" data-target="' + inputName + '" class="hidden" />' +
+        "</label>" +
+        '<button type="button" data-action="remove-picture" data-preview="' + previewId + '" data-target="' + inputName + '" class="text-sm font-medium text-muted underline decoration-dotted hover:text-foreground">Remove</button>' +
+        '<input type="hidden" name="' + inputName + '" />' +
+      "</div>" +
+    "</div>"
+  );
+}
+
 function memberFormModal(mode) {
   var isEdit = mode === "__EDIT__";
   var id = isEdit ? "member-edit-modal" : "member-add-modal";
   var title = isEdit ? "Edit Member" : "Add Member";
+  var previewId = isEdit ? "member-edit-picture-preview" : "member-add-picture-preview";
   var body = (
     '<form data-form="member" data-mode="' + (isEdit ? "edit" : "add") + '" class="space-y-4">' +
       (isEdit ? '<input type="hidden" name="id" />' : "") +
       "<div>" + fieldLabel("Name") + '<input name="name" required placeholder="Full name" class="' + FIELD_CLASS + '" /></div>' +
+      '<div class="grid grid-cols-2 gap-4">' +
+        "<div>" + fieldLabel("Phone (optional)") + '<input name="phone" type="tel" placeholder="e.g. 01xxxxxxxxx" class="' + FIELD_CLASS + '" /></div>' +
+        "<div>" + fieldLabel("Email (optional)") + '<input name="email" type="email" placeholder="name@example.com" class="' + FIELD_CLASS + '" /></div>' +
+      "</div>" +
+      pictureUploadFieldHtml("pictureUrl", previewId, null, "?", "#888") +
       (isEdit ? (
         "<div>" + fieldLabel("Status") +
           '<select name="status" class="' + FIELD_CLASS + ' cursor-pointer"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select>' +
@@ -611,6 +681,7 @@ var NAV_ITEMS = [
   { key: "expenses", label: "Expenses", icon: "shopping-cart" },
   { key: "members", label: "Members", icon: "users" },
   { key: "store", label: "Store", icon: "shopping-basket" },
+  { key: "hisab", label: "Hisab", icon: "scale" },
 ];
 
 function sidebarHtml(activeKey, mobile) {
@@ -647,14 +718,14 @@ function topbarHtml() {
         '<button class="rounded-lg p-2 text-muted transition-colors hover:bg-gray-100 hover:text-foreground" aria-label="Notifications">' + icon("bell", "h-4.5 w-4.5") + "</button>" +
         '<div class="relative">' +
           '<button data-action="toggle-usermenu" class="flex items-center gap-2 rounded-xl p-1.5 pr-2.5 transition-colors hover:bg-gray-100">' +
-            '<span class="flex h-8 w-8 items-center justify-center rounded-full bg-navy-900 text-xs font-semibold text-white">' + esc(initials(name)) + "</span>" +
+            avatarHtml(SESSION.avatarUrl, name, "h-8 w-8", "var(--navy-900)") +
             '<span class="hidden text-left sm:block">' +
               '<span class="block text-sm font-medium leading-tight text-foreground">' + esc(name) + "</span>" +
             "</span>" +
             icon("chevron-down", "h-3.5 w-3.5 text-muted") +
           "</button>" +
           '<div id="user-menu" hidden class="absolute right-0 top-full z-30 mt-2 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-[var(--shadow-popover)]">' +
-            '<a href="#/settings/password" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-gray-100">' + icon("lock", "h-4 w-4") + " Change Password</a>" +
+            '<a href="#/settings/password" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-gray-100">' + icon("lock", "h-4 w-4") + " Profile &amp; Settings</a>" +
             '<button data-action="logout" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger-600 hover:bg-danger-100">' + icon("log-out", "h-4 w-4") + " Sign Out</button>" +
           "</div>" +
         "</div>" +
@@ -986,17 +1057,18 @@ function shiftMonthKey(monthKey, delta) {
   var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1 + delta, 1));
   return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0");
 }
-function monthSwitcherHtml(monthKey) {
+function monthSwitcherHtml(monthKey, navAction) {
+  navAction = navAction || "store-month-nav";
   var latest = latestMonthKey();
   var isLatest = monthKey === latest;
   return (
     '<div class="flex items-center gap-2">' +
       '<div class="flex items-center gap-1 rounded-xl border border-border bg-surface p-1 shadow-[var(--shadow-card)]">' +
-        '<button data-action="store-month-nav" data-month="' + shiftMonthKey(monthKey, -1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-left", "h-4 w-4") + "</button>" +
+        '<button data-action="' + navAction + '" data-month="' + shiftMonthKey(monthKey, -1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-left", "h-4 w-4") + "</button>" +
         '<span class="min-w-[9rem] text-center text-sm font-semibold text-foreground">' + esc(monthLabel(monthKey)) + "</span>" +
-        '<button data-action="store-month-nav" data-month="' + shiftMonthKey(monthKey, 1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-right", "h-4 w-4") + "</button>" +
+        '<button data-action="' + navAction + '" data-month="' + shiftMonthKey(monthKey, 1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-right", "h-4 w-4") + "</button>" +
       "</div>" +
-      (isLatest ? "" : '<button data-action="store-month-nav" data-month="' + latest + '" class="rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-navy-900 shadow-[var(--shadow-card)] transition-colors hover:bg-navy-50">Latest</button>') +
+      (isLatest ? "" : '<button data-action="' + navAction + '" data-month="' + latest + '" class="rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-navy-900 shadow-[var(--shadow-card)] transition-colors hover:bg-navy-50">Latest</button>') +
     "</div>"
   );
 }
@@ -1048,6 +1120,186 @@ function renderStore(monthKey) {
   );
 }
 
+/* ============================== HISAB (SETTLEMENT) ============================== */
+/* Pure calculated view over existing DB.deposits / DB.expenses / DB.meals —
+   no new money-entry data model. Mirrors the same date-iteration rule as
+   computeMonthSummary() (eachDateInMonth × activeMembers via mealFor) so the
+   numbers always agree with the rest of the app. */
+function computeHisabSummary(monthKey) {
+  var today = latestDateAcross();
+  var dates = eachDateInMonth(monthKey).filter(function (d) { return d <= today; });
+  var members = activeMembers();
+
+  var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, monthKey); });
+  var totalBazarCost = monthExpenses.reduce(function (s, e) { return s + e.amount; }, 0);
+
+  var monthDeposits = DB.deposits.filter(function (d) { return inMonth(d.date, monthKey); });
+  var totalPaid = monthDeposits.reduce(function (s, d) { return s + d.amount; }, 0);
+
+  var memberRows = members.map(function (m) {
+    var paid = monthDeposits.filter(function (d) { return d.memberId === m.id; }).reduce(function (s, d) { return s + d.amount; }, 0);
+    var meals = 0;
+    dates.forEach(function (d) {
+      var meal = mealFor(m.id, d);
+      meals += (meal.breakfast ? 1 : 0) + (meal.lunch ? 1 : 0) + (meal.dinner ? 1 : 0);
+    });
+    return { memberId: m.id, name: m.name, avatarColor: m.avatarColor, pictureUrl: m.pictureUrl, paid: paid, meals: meals };
+  });
+
+  var totalMeals = memberRows.reduce(function (s, r) { return s + r.meals; }, 0);
+  var mealRate = calcMealRate(totalBazarCost, totalMeals);
+
+  memberRows.forEach(function (r) {
+    r.mealCost = r.meals * mealRate;
+    r.balance = r.paid - r.mealCost;
+  });
+
+  return {
+    monthKey: monthKey,
+    totalBazarCost: totalBazarCost,
+    totalPaid: totalPaid,
+    totalMeals: totalMeals,
+    mealRate: mealRate,
+    memberCount: members.length,
+    members: memberRows,
+    transfers: computeSettlementTransfers(memberRows),
+  };
+}
+
+/* Standard greedy minimal-transfer debt settlement: repeatedly match the
+   largest debtor with the largest creditor for min(|debt|, credit). */
+function computeSettlementTransfers(memberRows) {
+  var EPS = 0.01;
+  var debtors = memberRows.filter(function (r) { return r.balance < -EPS; })
+    .map(function (r) { return { memberId: r.memberId, name: r.name, amount: -r.balance }; });
+  var creditors = memberRows.filter(function (r) { return r.balance > EPS; })
+    .map(function (r) { return { memberId: r.memberId, name: r.name, amount: r.balance }; });
+
+  var transfers = [];
+  var i = 0, j = 0;
+  while (i < debtors.length && j < creditors.length) {
+    debtors.sort(function (a, b) { return b.amount - a.amount; });
+    creditors.sort(function (a, b) { return b.amount - a.amount; });
+    var debtor = debtors[0], creditor = creditors[0];
+    var amount = Math.min(debtor.amount, creditor.amount);
+    if (amount > EPS) {
+      transfers.push({ from: debtor.name, to: creditor.name, amount: amount });
+    }
+    debtor.amount -= amount;
+    creditor.amount -= amount;
+    if (debtor.amount <= EPS) debtors.shift();
+    if (creditor.amount <= EPS) creditors.shift();
+  }
+  return transfers;
+}
+
+function findSettlement(monthKey) {
+  return DB.settlements.filter(function (s) { return s.monthKey === monthKey; })[0] || null;
+}
+
+function statusBadgeForBalance(balance) {
+  if (balance > 0.01) return badge("Will Receive " + formatCurrency(balance), "success");
+  if (balance < -0.01) return badge("Needs to Pay " + formatCurrency(Math.abs(balance)), "danger");
+  return badge("Settled", "gray");
+}
+
+function renderHisab(monthKeyParam) {
+  var monthKey = monthKeyParam && /^\d{4}-\d{2}$/.test(monthKeyParam) ? monthKeyParam : latestMonthKey();
+  var s = computeHisabSummary(monthKey);
+  var finalized = findSettlement(monthKey);
+
+  var memberRowsHtml = s.members.map(function (r) {
+    return (
+      '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
+        '<td class="px-5 py-3"><div class="flex items-center gap-3">' +
+          avatarHtml(r.pictureUrl, r.name, "h-8 w-8", r.avatarColor) +
+          '<span class="font-medium text-foreground">' + esc(r.name) + "</span>" +
+        "</div></td>" +
+        '<td class="px-5 py-3 text-right tabular-nums text-success-700">' + formatCurrency(r.paid) + "</td>" +
+        '<td class="px-5 py-3 text-right tabular-nums text-foreground">' + formatNumber(r.meals) + "</td>" +
+        '<td class="px-5 py-3 text-right tabular-nums text-muted">' + formatCurrency(s.mealRate) + "</td>" +
+        '<td class="px-5 py-3 text-right tabular-nums text-danger-600">' + formatCurrency(r.mealCost) + "</td>" +
+        '<td class="px-5 py-3 text-right font-semibold tabular-nums ' + (r.balance > 0.01 ? "text-success-700" : r.balance < -0.01 ? "text-danger-600" : "text-muted") + '">' + (r.balance > 0 ? "+" : r.balance < 0 ? "−" : "") + formatCurrency(Math.abs(r.balance)) + "</td>" +
+        '<td class="px-5 py-3">' + statusBadgeForBalance(r.balance) + "</td>" +
+      "</tr>"
+    );
+  }).join("");
+
+  var transfersHtml;
+  if (s.transfers.length === 0) {
+    transfersHtml = emptyState("circle-check", "All settled up", "No transfers are needed for this month.");
+  } else {
+    transfersHtml = '<div class="space-y-2">' + s.transfers.map(function (t) {
+      return (
+        '<div class="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">' +
+          '<div class="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">' +
+            '<span class="truncate">' + esc(t.from) + "</span>" + icon("arrow-right", "h-4 w-4 shrink-0 text-muted") + '<span class="truncate">' + esc(t.to) + "</span>" +
+          "</div>" +
+          '<span class="shrink-0 font-semibold tabular-nums text-navy-900">' + formatCurrency(t.amount) + "</span>" +
+        "</div>"
+      );
+    }).join("") + "</div>";
+  }
+
+  return (
+    '<div class="space-y-6">' +
+      '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
+        '<div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground">Hisab' + (finalized ? " " + badge("Finalized", "navy") : "") + '</h1><p class="mt-1 text-sm text-muted">Who paid what, who ate how much, and who owes whom — for ' + esc(monthLabel(monthKey)) + ".</p></div>" +
+        monthSwitcherHtml(monthKey, "hisab-month-nav") +
+      "</div>" +
+
+      '<div class="grid grid-cols-2 gap-4 lg:grid-cols-3">' +
+        statCard({ label: "Total Bazar Cost", value: s.totalBazarCost, prefix: "৳", icon: "shopping-basket", tone: "danger" }) +
+        statCard({ label: "Total Paid", value: s.totalPaid, prefix: "৳", icon: "wallet", tone: "success" }) +
+        statCard({ label: "Total Meals", value: s.totalMeals, icon: "utensils-crossed", tone: "gray" }) +
+        statCard({ label: "Meal Rate", value: s.mealRate, decimals: 2, prefix: "৳", suffix: " / meal", icon: "gauge", tone: "warning" }) +
+        statCard({ label: "Total Members", value: s.memberCount, icon: "users", tone: "navy" }) +
+      "</div>" +
+
+      '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
+        '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Member Settlement</h2></div>' +
+        (s.members.length === 0 ? '<div class="p-6">' + emptyState("users", "No active members", "Add active members to calculate a settlement.") + "</div>" :
+        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted">' +
+          '<th class="px-5 py-3">Member</th><th class="px-5 py-3 text-right">Total Paid</th><th class="px-5 py-3 text-right">Total Meals</th><th class="px-5 py-3 text-right">Meal Rate</th><th class="px-5 py-3 text-right">Meal Cost</th><th class="px-5 py-3 text-right">Balance</th><th class="px-5 py-3">Status</th>' +
+        "</tr></thead><tbody>" + memberRowsHtml + "</tbody></table></div>") +
+      "</div>" +
+
+      '<div class="animate-slide-up rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)]">' +
+        '<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">' +
+          '<h2 class="text-sm font-semibold text-foreground">Final Settlement Summary</h2>' +
+          (finalized ?
+            '<span class="text-xs text-muted">Finalized ' + dateLabelMed(finalized.finalizedAt.slice(0, 10)) + "</span>" :
+            '<button data-action="open-close-month" data-month="' + monthKey + '" class="inline-flex h-9 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-3.5 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("shield-check", "h-3.5 w-3.5") + "Close Month</button>"
+          ) +
+        "</div>" +
+        '<div class="mb-5 grid grid-cols-3 gap-3">' +
+          '<div class="rounded-xl border border-border px-4 py-3"><p class="text-xs text-muted">Total Bazar Cost</p><p class="mt-1 text-base font-semibold tabular-nums text-danger-600">' + formatCurrency(s.totalBazarCost) + "</p></div>" +
+          '<div class="rounded-xl border border-border px-4 py-3"><p class="text-xs text-muted">Total Meals</p><p class="mt-1 text-base font-semibold tabular-nums text-foreground">' + formatNumber(s.totalMeals) + "</p></div>" +
+          '<div class="rounded-xl border border-border px-4 py-3"><p class="text-xs text-muted">Meal Rate</p><p class="mt-1 text-base font-semibold tabular-nums text-warning-700">' + formatCurrency(s.mealRate) + " / meal</p></div>" +
+        "</div>" +
+        '<h3 class="mb-3 text-sm font-semibold text-foreground">Who Needs to Pay Whom?</h3>' +
+        transfersHtml +
+      "</div>" +
+    "</div>" +
+    closeMonthConfirmModal(monthKey, finalized)
+  );
+}
+
+function closeMonthConfirmModal(monthKey, finalized) {
+  var body = finalized ?
+    ('<p class="text-sm text-muted">' + esc(monthLabel(monthKey)) + " was already finalized on " + dateLabelMed(finalized.finalizedAt.slice(0, 10)) + '. Finalizing again will overwrite the preserved snapshot with the current numbers.</p>' +
+      '<div class="mt-5 flex justify-end gap-2">' +
+        '<button type="button" data-action="close-modal" data-modal="close-month-modal" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
+        '<button type="button" data-action="confirm-close-month" data-month="' + monthKey + '" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">Re-finalize</button>' +
+      "</div>") :
+    ('<p class="text-sm text-muted">This will snapshot the ' + esc(monthLabel(monthKey)) + " settlement — bazar cost, meals, meal rate, per-member balances and suggested transfers — so the numbers stay preserved even if data changes later.</p>" +
+      '<div class="mt-5 flex justify-end gap-2">' +
+        '<button type="button" data-action="close-modal" data-modal="close-month-modal" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
+        '<button type="button" data-action="confirm-close-month" data-month="' + monthKey + '" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">Close Month</button>' +
+      "</div>");
+  return modalWrapper("close-month-modal", finalized ? "Re-finalize Hisab" : "Close Month / Finalize Hisab", body);
+}
+
 /* ============================== AVAILABLE BALANCE ============================== */
 function renderBalance() {
   var all = computeAllTimeSummary();
@@ -1092,11 +1344,22 @@ function renderBalance() {
 }
 
 /* ============================== SETTINGS / PASSWORD ============================== */
-function renderSettingsPassword() {
+function renderSettingsPage() {
+  var name = SESSION.name || "";
   return (
-    '<div class="mx-auto max-w-md space-y-6">' +
-      '<h1 class="text-2xl font-semibold tracking-tight text-foreground">Change Password</h1>' +
+    '<div class="mx-auto max-w-2xl space-y-6">' +
+      '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Profile &amp; Settings</h1><p class="mt-1 text-sm text-muted">Update your name, profile picture and password.</p></div>' +
+
+      '<form data-form="profile" class="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-card)]">' +
+        '<h2 class="text-sm font-semibold text-foreground">Profile</h2>' +
+        pictureUploadFieldHtml("avatarUrl", "profile-picture-preview", SESSION.avatarUrl || null, name, "var(--navy-900)") +
+        "<div>" + fieldLabel("Display Name") + '<input name="name" required value="' + esc(name) + '" placeholder="Your name" class="' + FIELD_CLASS + '" /></div>' +
+        "<div>" + fieldLabel("Email") + '<input value="' + esc(SESSION.email || "") + '" disabled class="' + FIELD_CLASS + ' cursor-not-allowed opacity-60" /></div>' +
+        '<button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-navy-900 text-sm font-medium text-white hover:bg-navy-800">Save Profile</button>' +
+      "</form>" +
+
       '<form data-form="change-password" class="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-card)]">' +
+        '<h2 class="text-sm font-semibold text-foreground">Change Password</h2>' +
         "<div>" + fieldLabel("Current Password") + '<input name="current" type="password" required class="' + FIELD_CLASS + '" /></div>' +
         "<div>" + fieldLabel("New Password") + '<input name="next" type="password" required class="' + FIELD_CLASS + '" /></div>' +
         "<div>" + fieldLabel("Confirm New Password") + '<input name="confirm" type="password" required class="' + FIELD_CLASS + '" /></div>' +
@@ -1117,13 +1380,70 @@ function setMealValue(memberId, dateKey, type, value) {
   row[type] = value;
 }
 
+function setPicturePreview(previewId, pictureUrl, name, color) {
+  var span = document.getElementById(previewId);
+  if (span) span.outerHTML = '<span id="' + previewId + '">' + avatarHtml(pictureUrl, name, "h-14 w-14", color, "text-base") + "</span>";
+}
+
+/* Reads an <input type=file>'s chosen image, downsizes it to at most
+   256x256 on a canvas and resolves with a JPEG data-URL (quality ~0.8) —
+   used for both member pictures and the profile picture. */
+function downsizeImageFile(file, callback) {
+  var reader = new FileReader();
+  reader.onload = function () {
+    var img = new Image();
+    img.onload = function () {
+      var maxDim = 256;
+      var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      var w = Math.max(1, Math.round(img.width * scale));
+      var h = Math.max(1, Math.round(img.height * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = function () { callback(null); };
+    img.src = reader.result;
+  };
+  reader.onerror = function () { callback(null); };
+  reader.readAsDataURL(file);
+}
+
+function closeMonth(monthKey) {
+  var s = computeHisabSummary(monthKey);
+  var snapshot = {
+    id: uid("settlement"),
+    monthKey: monthKey,
+    finalizedAt: new Date().toISOString(),
+    totalBazarCost: s.totalBazarCost,
+    totalPaid: s.totalPaid,
+    totalMeals: s.totalMeals,
+    mealRate: s.mealRate,
+    members: s.members.map(function (r) {
+      return { memberId: r.memberId, name: r.name, paid: r.paid, meals: r.meals, mealCost: r.mealCost, balance: r.balance };
+    }),
+    transfers: s.transfers,
+  };
+  var existingIndex = -1;
+  DB.settlements.forEach(function (row, i) { if (row.monthKey === monthKey) existingIndex = i; });
+  if (existingIndex >= 0) DB.settlements[existingIndex] = snapshot;
+  else DB.settlements.push(snapshot);
+  saveDB();
+}
+
 function openMemberEditModal(id) {
   var m = memberById(id);
   if (!m) return;
   var modal = document.getElementById("member-edit-modal");
   modal.querySelector('[name="id"]').value = m.id;
   modal.querySelector('[name="name"]').value = m.name;
+  modal.querySelector('[name="phone"]').value = m.phone || "";
+  modal.querySelector('[name="email"]').value = m.email || "";
+  modal.querySelector('[name="pictureUrl"]').value = m.pictureUrl || "";
   modal.querySelector('[name="status"]').value = m.status;
+  setPicturePreview("member-edit-picture-preview", m.pictureUrl || null, m.name, m.avatarColor);
   modal.hidden = false;
 }
 function openDepositEditModal(id) {
@@ -1179,6 +1499,15 @@ document.addEventListener("click", function (e) {
     navigate("meals", { date: el.dataset.date });
   } else if (action === "store-month-nav") {
     navigate("store", { month: el.dataset.month });
+  } else if (action === "hisab-month-nav") {
+    navigate("hisab", { month: el.dataset.month });
+  } else if (action === "open-close-month") {
+    document.getElementById("close-month-modal").hidden = false;
+  } else if (action === "confirm-close-month") {
+    closeMonth(el.dataset.month);
+    document.getElementById("close-month-modal").hidden = true;
+    toast("Hisab for " + monthLabel(el.dataset.month) + " finalized.", "success");
+    render();
   } else if (action === "open-modal") {
     var m1 = document.getElementById(el.dataset.modal);
     if (m1) {
@@ -1197,9 +1526,15 @@ document.addEventListener("click", function (e) {
     var addModal = document.getElementById("member-add-modal");
     var f = addModal.querySelector("form");
     if (f) f.reset();
+    setPicturePreview("member-add-picture-preview", null, "?", "#888");
     addModal.hidden = false;
   } else if (action === "edit-member") {
     openMemberEditModal(el.dataset.id);
+  } else if (action === "remove-picture") {
+    var pForm = el.closest("form");
+    var pHidden = pForm ? pForm.querySelector('[name="' + el.dataset.target + '"]') : null;
+    if (pHidden) pHidden.value = "";
+    setPicturePreview(el.dataset.preview, null, (pForm && pForm.querySelector('[name="name"]') ? pForm.querySelector('[name="name"]').value : "") || "?", "#888");
   } else if (action === "toggle-member-status") {
     var mem = memberById(el.dataset.id);
     if (mem) {
@@ -1310,6 +1645,19 @@ document.addEventListener("change", function (e) {
     var form = e.target.closest("form");
     var itemInput = form ? form.querySelector('[name="item"]') : null;
     if (itemInput) refreshItemSuggestions(itemInput);
+  } else if (e.target.dataset.action === "picture-input") {
+    var fileInput = e.target;
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    var pf = fileInput.closest("form");
+    var hiddenInput = pf ? pf.querySelector('[name="' + fileInput.dataset.target + '"]') : null;
+    var nameInput = pf ? pf.querySelector('[name="name"]') : null;
+    var previewName = (nameInput ? nameInput.value : "") || SESSION.name || "?";
+    downsizeImageFile(file, function (dataUrl) {
+      if (!dataUrl) { toast("Could not read that image.", "error"); return; }
+      if (hiddenInput) hiddenInput.value = dataUrl;
+      setPicturePreview(fileInput.dataset.preview, dataUrl, previewName, "#888");
+    });
   }
 });
 
@@ -1329,7 +1677,7 @@ document.addEventListener("submit", function (e) {
       render();
       return;
     }
-    saveSession({ name: user.name, email: user.email });
+    saveSession({ name: user.name, email: user.email, avatarUrl: user.avatarUrl || null });
     navigate("dashboard");
   } else if (type === "signup") {
     var suName = String(fd.get("name") || "").trim();
@@ -1351,15 +1699,18 @@ document.addEventListener("submit", function (e) {
   } else if (type === "member") {
     var mode = form.dataset.mode;
     var name = String(fd.get("name") || "").trim();
+    var phone = String(fd.get("phone") || "").trim();
+    var memberEmail = String(fd.get("email") || "").trim();
+    var pictureUrl = String(fd.get("pictureUrl") || "").trim();
     if (name.length < 2) { toast("Name must be at least 2 characters.", "error"); return; }
     if (mode === "edit") {
       var id = String(fd.get("id") || "");
       var status = String(fd.get("status") || "ACTIVE") === "INACTIVE" ? "INACTIVE" : "ACTIVE";
       var m = memberById(id);
-      if (m) { m.name = name; m.status = status; }
+      if (m) { m.name = name; m.status = status; m.phone = phone || null; m.email = memberEmail || null; m.pictureUrl = pictureUrl || null; }
     } else {
       var color = AVATAR_COLORS[DB.members.length % AVATAR_COLORS.length];
-      DB.members.push({ id: uid("mem"), name: name, avatarColor: color, status: "ACTIVE", joinedAt: latestDateAcross() });
+      DB.members.push({ id: uid("mem"), name: name, avatarColor: color, status: "ACTIVE", joinedAt: latestDateAcross(), phone: phone || null, email: memberEmail || null, pictureUrl: pictureUrl || null });
     }
     saveDB();
     document.getElementById(mode === "edit" ? "member-edit-modal" : "member-add-modal").hidden = true;
@@ -1404,6 +1755,16 @@ document.addEventListener("submit", function (e) {
     saveDB();
     document.getElementById(emode === "edit" ? "expense-edit-modal" : "expense-add-modal").hidden = true;
     toast(emode === "edit" ? "Expense updated." : "Expense added.", "success");
+    render();
+  } else if (type === "profile") {
+    var profileName = String(fd.get("name") || "").trim();
+    var profileAvatarUrl = String(fd.get("avatarUrl") || "").trim();
+    if (profileName.length < 2) { toast("Name must be at least 2 characters.", "error"); return; }
+    var pu = DB.users.filter(function (x) { return x.email === SESSION.email; })[0];
+    if (pu) { pu.name = profileName; pu.avatarUrl = profileAvatarUrl || null; }
+    saveDB();
+    saveSession({ name: profileName, email: SESSION.email, avatarUrl: profileAvatarUrl || null });
+    toast("Profile updated.", "success");
     render();
   } else if (type === "change-password") {
     var current = String(fd.get("current") || "");
