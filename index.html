@@ -13,6 +13,11 @@
    existing CSS custom properties. ===== */
 .active\:scale-\[0\.98\]:active{transform:scale(.98)}
 .bg-navy-800\/40{background-color:rgba(18,41,92,.4)}
+.bg-success-600{background-color:var(--success-600)}
+.hover\:bg-success-700:hover{background-color:var(--success-700)}
+.has-\[\:checked\]\:border-navy-900:has(:checked){border-color:var(--navy-900)}
+.has-\[\:checked\]\:bg-navy-900:has(:checked){background-color:var(--navy-900)}
+.has-\[\:checked\]\:text-white:has(:checked){color:#fff}
 .decoration-dotted{text-decoration-style:dotted}
 .font-normal{font-weight:400}
 .h-11{height:calc(var(--spacing) * 11)}
@@ -89,9 +94,6 @@ function initials(name) {
 }
 
 /* ============================== CALCULATIONS (mirrors src/lib/calculations.ts) ============================== */
-function totalMealCount(meals) {
-  return meals.reduce(function (s, m) { return s + m.breakfast + m.lunch + m.dinner; }, 0);
-}
 function calcMealRate(totalExpense, totalMeals) {
   return totalMeals > 0 ? totalExpense / totalMeals : 0;
 }
@@ -449,14 +451,20 @@ var FIELD_CLASS = "w-full rounded-xl border border-border bg-surface px-3.5 py-2
 /* This Month / Current Meal Rate are scoped to a month. Everything else on the
    dashboard (Total Money Added, Meal Expense, Available Balance) is all-time. */
 function computeMonthSummary(monthKey) {
-  var meals = DB.meals.filter(function (m) { return inMonth(m.date, monthKey); });
-  var deposits = DB.deposits.filter(function (d) { return inMonth(d.date, monthKey); });
+  var today = latestDateAcross();
+  var dates = eachDateInMonth(monthKey).filter(function (d) { return d <= today; });
+  var members = activeMembers();
+  var totalMeals = 0;
+  dates.forEach(function (d) {
+    members.forEach(function (m) {
+      var meal = mealFor(m.id, d);
+      totalMeals += (meal.breakfast ? 1 : 0) + (meal.lunch ? 1 : 0) + (meal.dinner ? 1 : 0);
+    });
+  });
   var expenses = DB.expenses.filter(function (e) { return inMonth(e.date, monthKey); });
-  var totalMeals = totalMealCount(meals);
-  var moneyAdded = deposits.reduce(function (s, d) { return s + d.amount; }, 0);
   var mealExpense = expenses.reduce(function (s, e) { return s + e.amount; }, 0);
   var mealRate = calcMealRate(mealExpense, totalMeals);
-  return { meals: meals, deposits: deposits, expenses: expenses, totalMeals: totalMeals, moneyAdded: moneyAdded, mealExpense: mealExpense, mealRate: mealRate };
+  return { totalMeals: totalMeals, mealExpense: mealExpense, mealRate: mealRate };
 }
 function computeAllTimeSummary() {
   var totalMoneyAdded = DB.deposits.reduce(function (s, d) { return s + d.amount; }, 0);
@@ -652,45 +660,45 @@ function renderShell(contentHtml, activeKey, drawerOpen) {
 }
 
 /* ============================== DAILY MEALS ============================== */
-var QUICK_VALUES = [0, 0.5, 1, 2];
-
+/* Lunch and dinner default to "eaten" (Yes) every day for every active member
+   unless explicitly turned off. Breakfast defaults to "not eaten" (No) and
+   must be turned on manually. A DB.meals row only exists once someone has
+   actually toggled something away from these defaults for that day. */
 function mealFor(memberId, dateKey) {
   var row = DB.meals.filter(function (m) { return m.memberId === memberId && m.date === dateKey; })[0];
-  return row || { breakfast: 0, lunch: 0, dinner: 0 };
+  return row || { breakfast: false, lunch: true, dinner: true };
 }
 
 function renderMeals(dateKey) {
   var rows = activeMembers().map(function (m) { return { member: m, meal: mealFor(m.id, dateKey) }; });
-  var totals = rows.reduce(function (acc, r) { acc.b += r.meal.breakfast; acc.l += r.meal.lunch; acc.d += r.meal.dinner; return acc; }, { b: 0, l: 0, d: 0 });
+  var totals = rows.reduce(function (acc, r) { acc.b += r.meal.breakfast ? 1 : 0; acc.l += r.meal.lunch ? 1 : 0; acc.d += r.meal.dinner ? 1 : 0; return acc; }, { b: 0, l: 0, d: 0 });
 
-  function quickPicker(memberId, type, value) {
+  function yesNoToggle(memberId, type, value) {
     return (
       '<div class="mx-auto flex w-fit items-center gap-1 rounded-lg bg-gray-100 p-1">' +
-        QUICK_VALUES.map(function (v) {
-          return '<button type="button" data-action="set-meal" data-member="' + memberId + '" data-type="' + type + '" data-value="' + v + '" data-date="' + dateKey + '" class="h-7 w-8 rounded-md text-xs font-semibold tabular-nums transition-colors ' + (value === v ? "bg-navy-900 text-white" : "text-muted hover:bg-white hover:text-foreground") + '">' + v + "</button>";
-        }).join("") +
+        '<button type="button" data-action="set-meal" data-member="' + memberId + '" data-type="' + type + '" data-value="false" data-date="' + dateKey + '" class="h-7 w-12 rounded-md text-xs font-semibold transition-colors ' + (!value ? "bg-danger-600 text-white" : "text-muted hover:bg-white hover:text-foreground") + '">No</button>' +
+        '<button type="button" data-action="set-meal" data-member="' + memberId + '" data-type="' + type + '" data-value="true" data-date="' + dateKey + '" class="h-7 w-12 rounded-md text-xs font-semibold transition-colors ' + (value ? "bg-success-600 text-white" : "text-muted hover:bg-white hover:text-foreground") + '">Yes</button>' +
       "</div>"
     );
   }
-  function setAllPicker(type) {
+  function setAllToggle(type) {
     return (
       '<div class="mx-auto flex w-fit items-center gap-1 rounded-lg bg-gray-100 p-1">' +
-        QUICK_VALUES.map(function (v) {
-          return '<button type="button" data-action="set-meal-all" data-type="' + type + '" data-value="' + v + '" data-date="' + dateKey + '" class="h-7 w-8 rounded-md text-xs font-semibold tabular-nums text-muted transition-colors hover:bg-white hover:text-foreground">' + v + "</button>";
-        }).join("") +
+        '<button type="button" data-action="set-meal-all" data-type="' + type + '" data-value="false" data-date="' + dateKey + '" class="h-7 w-12 rounded-md text-xs font-semibold text-muted transition-colors hover:bg-white hover:text-foreground">No</button>' +
+        '<button type="button" data-action="set-meal-all" data-type="' + type + '" data-value="true" data-date="' + dateKey + '" class="h-7 w-12 rounded-md text-xs font-semibold text-muted transition-colors hover:bg-white hover:text-foreground">Yes</button>' +
       "</div>"
     );
   }
 
   var tableRows = rows.map(function (r) {
-    var total = r.meal.breakfast + r.meal.lunch + r.meal.dinner;
+    var total = (r.meal.breakfast ? 1 : 0) + (r.meal.lunch ? 1 : 0) + (r.meal.dinner ? 1 : 0);
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
         '<td class="px-5 py-3"><div class="flex items-center gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style="background:' + r.member.avatarColor + '">' + esc(initials(r.member.name)) + '</span><span class="font-medium text-foreground">' + esc(r.member.name) + "</span></div></td>" +
-        '<td class="px-3 py-3">' + quickPicker(r.member.id, "breakfast", r.meal.breakfast) + "</td>" +
-        '<td class="px-3 py-3">' + quickPicker(r.member.id, "lunch", r.meal.lunch) + "</td>" +
-        '<td class="px-3 py-3">' + quickPicker(r.member.id, "dinner", r.meal.dinner) + "</td>" +
-        '<td class="px-5 py-3 text-right font-semibold tabular-nums">' + formatNumber(total, total % 1 ? 1 : 0) + "</td>" +
+        '<td class="px-3 py-3">' + yesNoToggle(r.member.id, "breakfast", r.meal.breakfast) + "</td>" +
+        '<td class="px-3 py-3">' + yesNoToggle(r.member.id, "lunch", r.meal.lunch) + "</td>" +
+        '<td class="px-3 py-3">' + yesNoToggle(r.member.id, "dinner", r.meal.dinner) + "</td>" +
+        '<td class="px-5 py-3 text-right font-semibold tabular-nums">' + total + "</td>" +
       "</tr>"
     );
   }).join("");
@@ -704,15 +712,15 @@ function renderMeals(dateKey) {
     var dayTotal = 0;
     var cells = members.map(function (m) {
       var meal = mealFor(m.id, d);
-      var t = meal.breakfast + meal.lunch + meal.dinner;
+      var t = (meal.breakfast ? 1 : 0) + (meal.lunch ? 1 : 0) + (meal.dinner ? 1 : 0);
       dayTotal += t;
-      return '<td class="px-3 py-2.5 text-right tabular-nums">' + formatNumber(t, t % 1 ? 1 : 0) + "</td>";
+      return '<td class="px-3 py-2.5 text-right tabular-nums">' + t + "</td>";
     }).join("");
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50' + (d === dateKey ? " bg-navy-50/50" : "") + '">' +
         '<td class="px-5 py-2.5 text-muted">' + dateLabelMed(d) + "</td>" +
         cells +
-        '<td class="px-5 py-2.5 text-right font-semibold tabular-nums">' + formatNumber(dayTotal, dayTotal % 1 ? 1 : 0) + "</td>" +
+        '<td class="px-5 py-2.5 text-right font-semibold tabular-nums">' + dayTotal + "</td>" +
       "</tr>"
     );
   }).join("");
@@ -720,7 +728,7 @@ function renderMeals(dateKey) {
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Meals</h1><p class="mt-1 text-sm text-muted">Tap a value to record each member\'s meals.</p></div>' +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Meals</h1><p class="mt-1 text-sm text-muted">Lunch and dinner are Yes by default every day — turn them off if someone skips. Breakfast is No by default — turn it on manually.</p></div>' +
         dateSwitcherHtml(dateKey) +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
@@ -732,7 +740,7 @@ function renderMeals(dateKey) {
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         (rows.length === 0 ? '<div class="p-6">' + emptyState("users", "No active members", "Add members from the Members page to start recording meals.") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full min-w-[640px] text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Member</th><th class="px-3 py-3 text-center">Breakfast</th><th class="px-3 py-3 text-center">Lunch</th><th class="px-3 py-3 text-center">Dinner</th><th class="px-5 py-3 text-right">Total</th></tr></thead><tbody>' +
-          '<tr class="border-b border-border bg-navy-50/50"><td class="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-navy-900">Set all</td><td class="px-3 py-3">' + setAllPicker("breakfast") + '</td><td class="px-3 py-3">' + setAllPicker("lunch") + '</td><td class="px-3 py-3">' + setAllPicker("dinner") + '</td><td></td></tr>' +
+          '<tr class="border-b border-border bg-navy-50/50"><td class="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-navy-900">Set all</td><td class="px-3 py-3">' + setAllToggle("breakfast") + '</td><td class="px-3 py-3">' + setAllToggle("lunch") + '</td><td class="px-3 py-3">' + setAllToggle("dinner") + '</td><td></td></tr>' +
           tableRows + "</tbody></table></div>") +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
@@ -852,7 +860,7 @@ function renderExpenses(search) {
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
         '<td class="px-5 py-3 text-muted">' + dateLabelMed(e.date) + "</td>" +
-        '<td class="px-5 py-3 font-medium text-foreground">' + esc(e.item) + "</td>" +
+        '<td class="px-5 py-3 font-medium text-foreground">' + esc(e.item) + (e.quantity ? ' <span class="font-normal text-muted">(' + formatNumber(e.quantity, e.quantity % 1 ? 1 : 0) + (e.unit ? " " + esc(e.unit) : "") + ")</span>" : "") + "</td>" +
         '<td class="px-5 py-3 text-foreground">' + buyerNamesHtml(e) + "</td>" +
         '<td class="px-5 py-3 text-muted">' + esc(e.note || "—") + "</td>" +
         '<td class="px-5 py-3 text-right font-semibold tabular-nums text-danger-600">−' + formatCurrency(e.amount) + "</td>" +
@@ -904,19 +912,21 @@ function expenseFormModal(mode) {
   var id = isEdit ? "expense-edit-modal" : "expense-add-modal";
   var memberCheckboxes = activeMembers().map(function (m) {
     return (
-      '<label class="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium text-foreground has-[:checked]:border-navy-600 has-[:checked]:bg-navy-50 has-[:checked]:text-navy-900">' +
+      '<label class="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium text-foreground transition-colors has-[:checked]:border-navy-900 has-[:checked]:bg-navy-900 has-[:checked]:text-white">' +
         '<input type="checkbox" name="buyerIds" value="' + m.id + '" class="hidden" />' +
         '<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white" style="background:' + m.avatarColor + '">' + esc(initials(m.name)) + "</span>" +
         esc(m.name) +
       "</label>"
     );
   }).join("");
+  var unitOptions = ["kg", "gm", "piece"].map(function (u) { return '<option value="' + u + '">' + u + "</option>"; }).join("");
   var body = (
     '<form data-form="expense" data-mode="' + (isEdit ? "edit" : "add") + '" class="space-y-4">' +
       (isEdit ? '<input type="hidden" name="id" />' : "") +
       "<div>" + fieldLabel("Item") + '<input name="item" required placeholder="e.g. Rice, Fish, Vegetables" class="' + FIELD_CLASS + '" /></div>' +
       "<div>" + fieldLabel("Done By (select one or more)") + '<div class="grid grid-cols-2 gap-2" data-buyer-picker>' + memberCheckboxes + "</div></div>" +
       '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Date") + '<input name="date" type="date" required class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Amount (৳)") + '<input name="amount" type="number" min="0" step="1" required placeholder="500" class="' + FIELD_CLASS + '" /></div></div>' +
+      '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Quantity (optional)") + '<input name="quantity" type="number" min="0" step="0.1" placeholder="e.g. 25" class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Unit") + '<select name="unit" class="' + FIELD_CLASS + ' cursor-pointer"><option value="">—</option>' + unitOptions + "</select></div></div>" +
       "<div>" + fieldLabel("Note (optional)") + '<textarea name="note" rows="2" placeholder="e.g. Price increased this week" class="' + FIELD_CLASS + '"></textarea></div>' +
       '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button><button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Expense") + "</button></div>" +
     "</form>"
@@ -986,7 +996,8 @@ function renderSettingsPassword() {
 function setMealValue(memberId, dateKey, type, value) {
   var row = DB.meals.filter(function (m) { return m.memberId === memberId && m.date === dateKey; })[0];
   if (!row) {
-    row = { id: uid("meal"), memberId: memberId, date: dateKey, breakfast: 0, lunch: 0, dinner: 0 };
+    var defaults = mealFor(memberId, dateKey);
+    row = { id: uid("meal"), memberId: memberId, date: dateKey, breakfast: defaults.breakfast, lunch: defaults.lunch, dinner: defaults.dinner };
     DB.meals.push(row);
   }
   row[type] = value;
@@ -1022,6 +1033,8 @@ function openExpenseEditModal(id) {
   modal.querySelectorAll('[name="buyerIds"]').forEach(function (cb) { cb.checked = buyerIds.indexOf(cb.value) >= 0; });
   modal.querySelector('[name="date"]').value = e.date;
   modal.querySelector('[name="amount"]').value = e.amount;
+  modal.querySelector('[name="quantity"]').value = e.quantity || "";
+  modal.querySelector('[name="unit"]').value = e.unit || "";
   modal.querySelector('[name="note"]').value = e.note || "";
   modal.hidden = false;
 }
@@ -1112,15 +1125,16 @@ document.addEventListener("click", function (e) {
     document.getElementById(el.dataset.modal).hidden = true;
     render();
   } else if (action === "set-meal") {
-    setMealValue(el.dataset.member, el.dataset.date, el.dataset.type, parseFloat(el.dataset.value));
+    setMealValue(el.dataset.member, el.dataset.date, el.dataset.type, el.dataset.value === "true");
     saveDB();
     render();
   } else if (action === "set-meal-all") {
+    var allValue = el.dataset.value === "true";
     activeMembers().forEach(function (m) {
-      setMealValue(m.id, el.dataset.date, el.dataset.type, parseFloat(el.dataset.value));
+      setMealValue(m.id, el.dataset.date, el.dataset.type, allValue);
     });
     saveDB();
-    toast("Set all members' " + el.dataset.type + " to " + el.dataset.value + ".", "success");
+    toast("Set all members' " + el.dataset.type + " to " + (allValue ? "Yes" : "No") + ".", "success");
     render();
   } else if (action === "reset-all") {
     resetAllData();
@@ -1212,14 +1226,16 @@ document.addEventListener("submit", function (e) {
     var item = String(fd.get("item") || "").trim();
     var edate = String(fd.get("date") || "");
     var eamount = parseFloat(fd.get("amount"));
+    var equantity = fd.get("quantity") ? parseFloat(fd.get("quantity")) : null;
+    var eunit = String(fd.get("unit") || "").trim();
     var enote = String(fd.get("note") || "").trim();
     if (!buyerIds.length || item.length < 2 || !edate || !(eamount > 0)) { toast("Please fill in all required fields, including who did it.", "error"); return; }
     if (emode === "edit") {
       var eid = String(fd.get("id") || "");
       var ex = DB.expenses.filter(function (x) { return x.id === eid; })[0];
-      if (ex) { ex.buyerIds = buyerIds; ex.item = item; ex.date = edate; ex.amount = eamount; ex.note = enote || null; }
+      if (ex) { ex.buyerIds = buyerIds; ex.item = item; ex.date = edate; ex.amount = eamount; ex.quantity = equantity; ex.unit = eunit || null; ex.note = enote || null; }
     } else {
-      DB.expenses.push({ id: uid("exp"), buyerIds: buyerIds, item: item, date: edate, amount: eamount, note: enote || null });
+      DB.expenses.push({ id: uid("exp"), buyerIds: buyerIds, item: item, date: edate, amount: eamount, quantity: equantity, unit: eunit || null, note: enote || null });
     }
     saveDB();
     document.getElementById(emode === "edit" ? "expense-edit-modal" : "expense-add-modal").hidden = true;
