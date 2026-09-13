@@ -25,6 +25,7 @@
 .hover\:text-white\/70:hover{color:rgba(255,255,255,.7)}
 .items-end{align-items:flex-end}
 .max-w-\[10px\]{max-width:10px}
+.max-h-48{max-height:calc(var(--spacing) * 48)}
 .mb-1{margin-bottom:var(--spacing)}
 .mb-3{margin-bottom:calc(var(--spacing) * 3)}
 .mb-6{margin-bottom:calc(var(--spacing) * 6)}
@@ -525,6 +526,20 @@ function cashRow(label, value, tone, sign, bold) {
 /* ============================== MEMBERS ============================== */
 var AVATAR_COLORS = ["#0B1F4B", "#1A3570", "#16A34A", "#B45309", "#7C3AED", "#DC2626"];
 
+/* ============================== EXPENSE CATEGORIES ============================== */
+var EXPENSE_CATEGORIES = [
+  { name: "Fish & Meat", items: ["Chicken", "Beef", "Fish", "Egg"] },
+  { name: "Vegetables", items: ["Potato", "Onion", "Garlic", "Ginger", "Tomato", "Green Chili", "Brinjal", "Cabbage", "Cauliflower", "Other Vegetables"] },
+  { name: "Grocery", items: ["Rice", "Dal", "Flour / Atta", "Salt", "Sugar", "Cooking Oil", "Soy Sauce", "Noodles", "Pasta", "Biscuit", "Bread"] },
+  { name: "Spices", items: ["Turmeric", "Chili Powder", "Cumin", "Coriander", "Garam Masala", "Black Pepper", "Other Spices"] },
+  { name: "Fruits", items: ["Banana", "Apple", "Orange", "Guava", "Papaya", "Lemon", "Other Fruits"] },
+  { name: "Household", items: ["Drinking Water", "Tissue", "Dishwashing Liquid", "Detergent", "Garbage Bag", "Soap", "Shampoo", "Toothpaste", "Other Household"] },
+];
+function itemsForCategory(categoryName) {
+  var cat = EXPENSE_CATEGORIES.filter(function (c) { return c.name === categoryName; })[0];
+  return cat ? cat.items : [];
+}
+
 function renderMembers() {
   var rows = DB.members.slice().sort(function (a, b) {
     if (a.status !== b.status) return a.status === "ACTIVE" ? -1 : 1;
@@ -924,10 +939,15 @@ function expenseFormModal(mode) {
     );
   }).join("");
   var unitOptions = ["kg", "gm", "piece"].map(function (u) { return '<option value="' + u + '">' + u + "</option>"; }).join("");
+  var categoryOptions = EXPENSE_CATEGORIES.map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.name) + "</option>"; }).join("");
   var body = (
     '<form data-form="expense" data-mode="' + (isEdit ? "edit" : "add") + '" class="space-y-4">' +
       (isEdit ? '<input type="hidden" name="id" />' : "") +
-      "<div>" + fieldLabel("Item") + '<input name="item" required placeholder="e.g. Rice, Fish, Vegetables" class="' + FIELD_CLASS + '" /></div>' +
+      "<div>" + fieldLabel("Category") + '<select name="category" data-action="category-select" class="' + FIELD_CLASS + ' cursor-pointer"><option value="">Select a category</option>' + categoryOptions + "</select></div>" +
+      "<div class=\"relative\" data-item-field>" + fieldLabel("Item") +
+        '<input name="item" required autocomplete="off" placeholder="e.g. Rice, Fish, Vegetables" data-action="item-input" class="' + FIELD_CLASS + '" />' +
+        '<ul data-item-suggestions hidden class="absolute z-20 mt-1.5 max-h-48 w-full overflow-y-auto rounded-xl border border-border bg-surface py-1 shadow-[var(--shadow-popover)]"></ul>' +
+      "</div>" +
       "<div>" + fieldLabel("Done By (select one or more)") + '<div class="grid grid-cols-2 gap-2" data-buyer-picker>' + memberCheckboxes + "</div></div>" +
       '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Date") + '<input name="date" type="date" required class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Amount (৳)") + '<input name="amount" type="number" min="0" step="1" required placeholder="500" class="' + FIELD_CLASS + '" /></div></div>' +
       '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Quantity (optional)") + '<input name="quantity" type="number" min="0" step="0.1" placeholder="e.g. 25" class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Unit") + '<select name="unit" class="' + FIELD_CLASS + ' cursor-pointer"><option value="">—</option>' + unitOptions + "</select></div></div>" +
@@ -936,6 +956,28 @@ function expenseFormModal(mode) {
     "</form>"
   );
   return modalWrapper(id, isEdit ? "Edit Expense" : "Add Expense", body);
+}
+
+function itemSuggestionsHtml(categoryName, query) {
+  var items = itemsForCategory(categoryName);
+  var q = (query || "").trim().toLowerCase();
+  var matches = q ? items.filter(function (it) { return it.toLowerCase().indexOf(q) >= 0; }) : items;
+  if (!matches.length) return "";
+  return matches.map(function (it) {
+    return '<li data-action="select-item-suggestion" data-value="' + esc(it) + '" class="cursor-pointer px-3.5 py-2 text-sm text-foreground hover:bg-navy-50">' + esc(it) + "</li>";
+  }).join("");
+}
+function refreshItemSuggestions(itemInput) {
+  var field = itemInput.closest("[data-item-field]");
+  if (!field) return;
+  var list = field.querySelector("[data-item-suggestions]");
+  if (!list) return;
+  var form = itemInput.closest("form");
+  var categorySelect = form ? form.querySelector('[name="category"]') : null;
+  var categoryName = categorySelect ? categorySelect.value : "";
+  var html = categoryName ? itemSuggestionsHtml(categoryName, itemInput.value) : "";
+  list.innerHTML = html;
+  list.hidden = !html;
 }
 
 /* ============================== STORE (monthly bazaar summary) ============================== */
@@ -1100,6 +1142,7 @@ function openExpenseEditModal(id) {
   if (!e) return;
   var modal = document.getElementById("expense-edit-modal");
   modal.querySelector('[name="id"]').value = e.id;
+  modal.querySelector('[name="category"]').value = e.category || "";
   modal.querySelector('[name="item"]').value = e.item;
   var buyerIds = e.buyerIds || [];
   modal.querySelectorAll('[name="buyerIds"]').forEach(function (cb) { cb.checked = buyerIds.indexOf(cb.value) >= 0; });
@@ -1108,6 +1151,8 @@ function openExpenseEditModal(id) {
   modal.querySelector('[name="quantity"]').value = e.quantity || "";
   modal.querySelector('[name="unit"]').value = e.unit || "";
   modal.querySelector('[name="note"]').value = e.note || "";
+  var editSuggestions = modal.querySelector("[data-item-suggestions]");
+  if (editSuggestions) editSuggestions.hidden = true;
   modal.hidden = false;
 }
 
@@ -1179,6 +1224,8 @@ document.addEventListener("click", function (e) {
     var ef = eModal.querySelector("form");
     if (ef) ef.reset();
     eModal.querySelector('[name="date"]').value = latestDateAcross();
+    var eSuggestions = eModal.querySelector("[data-item-suggestions]");
+    if (eSuggestions) eSuggestions.hidden = true;
     eModal.hidden = false;
   } else if (action === "edit-expense") {
     openExpenseEditModal(el.dataset.id);
@@ -1212,16 +1259,58 @@ document.addEventListener("click", function (e) {
     render();
   } else if (action === "reset-all") {
     resetAllData();
+  } else if (action === "select-item-suggestion") {
+    var itemField = el.closest("[data-item-field]");
+    var itemInput = itemField ? itemField.querySelector('[name="item"]') : null;
+    if (itemInput) {
+      itemInput.value = el.dataset.value;
+      var list = itemField.querySelector("[data-item-suggestions]");
+      if (list) list.hidden = true;
+    }
   }
 });
 
+document.addEventListener("mousedown", function (e) {
+  if (e.target.closest("[data-action='select-item-suggestion']")) {
+    e.preventDefault();
+  }
+});
+
+document.addEventListener("focusout", function (e) {
+  var field = e.target.closest("[data-item-field]");
+  if (!field) return;
+  setTimeout(function () {
+    if (!field.contains(document.activeElement)) {
+      var list = field.querySelector("[data-item-suggestions]");
+      if (list) list.hidden = true;
+    }
+  }, 120);
+});
+
 document.addEventListener("input", function (e) {
-  if (e.target.dataset.action !== "search-input") return;
-  var value = e.target.value;
-  clearTimeout(SEARCH_DEBOUNCE);
-  SEARCH_DEBOUNCE = setTimeout(function () {
-    navigate(parseHash().path, currentQueryWith({ q: value }));
-  }, 350);
+  if (e.target.dataset.action === "search-input") {
+    var value = e.target.value;
+    clearTimeout(SEARCH_DEBOUNCE);
+    SEARCH_DEBOUNCE = setTimeout(function () {
+      navigate(parseHash().path, currentQueryWith({ q: value }));
+    }, 350);
+  } else if (e.target.dataset.action === "item-input") {
+    refreshItemSuggestions(e.target);
+  }
+});
+
+document.addEventListener("focusin", function (e) {
+  if (e.target.dataset.action === "item-input") {
+    refreshItemSuggestions(e.target);
+  }
+});
+
+document.addEventListener("change", function (e) {
+  if (e.target.dataset.action === "category-select") {
+    var form = e.target.closest("form");
+    var itemInput = form ? form.querySelector('[name="item"]') : null;
+    if (itemInput) refreshItemSuggestions(itemInput);
+  }
 });
 
 document.addEventListener("submit", function (e) {
@@ -1297,6 +1386,7 @@ document.addEventListener("submit", function (e) {
   } else if (type === "expense") {
     var emode = form.dataset.mode;
     var buyerIds = fd.getAll("buyerIds").map(String);
+    var ecategory = String(fd.get("category") || "").trim();
     var item = String(fd.get("item") || "").trim();
     var edate = String(fd.get("date") || "");
     var eamount = parseFloat(fd.get("amount"));
@@ -1307,9 +1397,9 @@ document.addEventListener("submit", function (e) {
     if (emode === "edit") {
       var eid = String(fd.get("id") || "");
       var ex = DB.expenses.filter(function (x) { return x.id === eid; })[0];
-      if (ex) { ex.buyerIds = buyerIds; ex.item = item; ex.date = edate; ex.amount = eamount; ex.quantity = equantity; ex.unit = eunit || null; ex.note = enote || null; }
+      if (ex) { ex.buyerIds = buyerIds; ex.category = ecategory || null; ex.item = item; ex.date = edate; ex.amount = eamount; ex.quantity = equantity; ex.unit = eunit || null; ex.note = enote || null; }
     } else {
-      DB.expenses.push({ id: uid("exp"), buyerIds: buyerIds, item: item, date: edate, amount: eamount, quantity: equantity, unit: eunit || null, note: enote || null });
+      DB.expenses.push({ id: uid("exp"), buyerIds: buyerIds, category: ecategory || null, item: item, date: edate, amount: eamount, quantity: equantity, unit: eunit || null, note: enote || null });
     }
     saveDB();
     document.getElementById(emode === "edit" ? "expense-edit-modal" : "expense-add-modal").hidden = true;
