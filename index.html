@@ -47,7 +47,7 @@
 <div id="app" class="h-full"></div>
 <div id="toast-host" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
 <script>
-window.SEED = {"members": [], "meals": [], "deposits": [], "expenses": [], "users": [], "shoppingItems": [], "notes": []};
+window.SEED = {"members": [], "meals": [], "deposits": [], "expenses": [], "users": []};
 window.ICONS = {"layout-dashboard": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-layout-dashboard h-4.5 w-4.5 transition-transform duration-150\" aria-hidden=\"true\"><rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"></rect><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"></rect></svg>", "users": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-users h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><path d=\"M16 3.128a4 4 0 0 1 0 7.744\"></path><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle></svg>", "utensils-crossed": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-utensils-crossed h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8\"></path><path d=\"M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7\"></path><path d=\"m2.1 21.8 6.4-6.3\"></path><path d=\"m19 5-7 7\"></path></svg>", "wallet": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-wallet h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\"></path><path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\"></path></svg>", "shopping-cart": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shopping-cart h-4.5 w-4.5 transition-transform duration-150 group-hover:scale-110\" aria-hidden=\"true\"><path d=\"m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18\"></path><path d=\"M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25\"></path><circle cx=\"18\" cy=\"20\" r=\"2\"></circle><circle cx=\"8\" cy=\"20\" r=\"2\"></circle></svg>", "menu": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-menu h-5 w-5\" aria-hidden=\"true\"><path d=\"M4 5h16\"></path><path d=\"M4 12h16\"></path><path d=\"M4 19h16\"></path></svg>", "bell": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-bell h-5 w-5\" aria-hidden=\"true\"><path d=\"M10.268 21a2 2 0 0 0 3.464 0\"></path><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"></path></svg>", "chevron-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down hidden h-4 w-4 text-muted sm:block\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"></path></svg>", "chevron-left": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-left h-4 w-4\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg>", "chevron-right": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-right h-4 w-4\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg>", "trending-up": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trending-up h-5 w-5\" aria-hidden=\"true\"><path d=\"M16 7h6v6\"></path><path d=\"m22 7-8.5 8.5-5-5L2 17\"></path></svg>", "trending-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trending-down h-5 w-5\" aria-hidden=\"true\"><path d=\"M16 17h6v-6\"></path><path d=\"m22 17-8.5-8.5-5 5L2 7\"></path></svg>", "gauge": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-gauge h-5 w-5\" aria-hidden=\"true\"><path d=\"m12 14 4-4\"></path><path d=\"M3.34 19a10 10 0 1 1 17.32 0\"></path></svg>", "arrow-right": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-right hidden h-5 w-5 shrink-0 text-muted sm:block\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg>", "coffee": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coffee h-4 w-4\" aria-hidden=\"true\"><path d=\"M10 2v2\"></path><path d=\"M14 2v2\"></path><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\"></path><path d=\"M6 2v2\"></path></svg>", "sun": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sun h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"></circle><path d=\"M12 2v2\"></path><path d=\"M12 20v2\"></path><path d=\"m4.93 4.93 1.41 1.41\"></path><path d=\"m17.66 17.66 1.41 1.41\"></path><path d=\"M2 12h2\"></path><path d=\"M20 12h2\"></path><path d=\"m6.34 17.66-1.41 1.41\"></path><path d=\"m19.07 4.93-1.41 1.41\"></path></svg>", "moon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-moon h-4 w-4\" aria-hidden=\"true\"><path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"></path></svg>", "triangle-alert": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-triangle-alert mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"></path><path d=\"M12 9v4\"></path><path d=\"M12 17h.01\"></path></svg>", "info": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg>", "circle-check": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-check mt-0.5 h-4 w-4 shrink-0\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m16 9-5.5 5.5L8 12\"></path></svg>", "circle-arrow-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-arrow-down h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 8v8\"></path><path d=\"m8 12 4 4 4-4\"></path></svg>", "user-plus": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-user-plus h-4 w-4\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"></path><circle cx=\"9\" cy=\"7\" r=\"4\"></circle><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"></line><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"></line></svg>", "pencil": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-pencil h-4 w-4\" aria-hidden=\"true\"><path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"></path><path d=\"m15 5 4 4\"></path></svg>", "ban": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-ban h-4 w-4\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M4.929 4.929 19.07 19.071\"></path></svg>", "coins": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-coins h-5 w-5\" aria-hidden=\"true\"><path d=\"M13.744 17.736a6 6 0 1 1-7.48-7.48\"></path><path d=\"M15 6h1v4\"></path><path d=\"m6.134 14.768.866-.5 2 3.464\"></path><circle cx=\"16\" cy=\"8\" r=\"6\"></circle></svg>", "search": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle></svg>", "trash": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash h-4 w-4\" aria-hidden=\"true\"><path d=\"M10 11v6\"></path><path d=\"M14 11v6\"></path><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"></path><path d=\"M3 6h18\"></path><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path></svg>", "receipt": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-receipt h-5 w-5\" aria-hidden=\"true\"><path d=\"M12 17V7\"></path><path d=\"M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8\"></path><path d=\"M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z\"></path></svg>", "arrow-left": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left h-4 w-4\" aria-hidden=\"true\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg>", "calendar-days": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-days h-3.5 w-3.5\" aria-hidden=\"true\"><path d=\"M8 2v3\"></path><path d=\"M16 2v3\"></path><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"></rect><path d=\"M3 9h18\"></path><path d=\"M8 13h.01\"></path><path d=\"M12 13h.01\"></path><path d=\"M16 13h.01\"></path><path d=\"M8 17h.01\"></path><path d=\"M12 17h.01\"></path><path d=\"M16 17h.01\"></path></svg>", "banknote": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-banknote h-5 w-5\" aria-hidden=\"true\"><rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\"></rect><circle cx=\"12\" cy=\"12\" r=\"2\"></circle><path d=\"M6 12h.01M18 12h.01\"></path></svg>", "circle-arrow-up": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-arrow-up h-4 w-4 text-success-600\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m16 12-4-4-4 4\"></path><path d=\"M12 16V8\"></path></svg>", "shopping-basket": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shopping-basket h-4 w-4 text-danger-600\" aria-hidden=\"true\"><path d=\"m15 11-1 9\"></path><path d=\"m19 11-4-7\"></path><path d=\"M2 11h20\"></path><path d=\"m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4\"></path><path d=\"M4.5 15.5h15\"></path><path d=\"m5 11 4-7\"></path><path d=\"m9 11 1 9\"></path></svg>", "mail": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-mail pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><path d=\"m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7\"></path><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"></rect></svg>", "lock": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg>", "eye": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-eye h-4 w-4\" aria-hidden=\"true\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>", "shield-check": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shield-check h-3.5 w-3.5\" aria-hidden=\"true\"><path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"></path><path d=\"m9 12 2 2 4-4\"></path></svg>", "x": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>", "log-out": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-log-out\"><path d=\"m16 17 5-5-5-5\"></path><path d=\"M21 12H9\"></path><path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"></path></svg>", "rotate-ccw": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rotate-ccw\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path></svg>", "plus": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg>"};
 var SEED = window.SEED, ICONS = window.ICONS;
 </script>
@@ -95,18 +95,8 @@ function totalMealCount(meals) {
 function calcMealRate(totalExpense, totalMeals) {
   return totalMeals > 0 ? totalExpense / totalMeals : 0;
 }
-function calcMealCost(totalMeals, rate) {
-  return totalMeals * rate;
-}
-function calcBalance(moneyAdded, mealCost) {
-  return moneyAdded - mealCost;
-}
-function calcCash(totalMoneyAdded, totalMealExpenses) {
-  return totalMoneyAdded - totalMealExpenses;
-}
-function balanceStatus(balance) {
-  if (Math.abs(balance) < 0.005) return "settled";
-  return balance > 0 ? "credit" : "due";
+function calcAvailableBalance(totalMoneyAdded, totalMealExpense) {
+  return totalMoneyAdded - totalMealExpense;
 }
 
 /* ============================== DATE / MONTH HELPERS ============================== */
@@ -117,12 +107,6 @@ function monthLabel(monthKey) {
   var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, 1));
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 }
-function shiftMonth(monthKey, delta) {
-  var parts = monthKey.split("-");
-  var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1 + delta, 1));
-  return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0");
-}
-function isValidMonthKey(k) { return !!k && /^\d{4}-\d{2}$/.test(k); }
 function daysInMonth(monthKey) {
   var parts = monthKey.split("-");
   return new Date(Date.UTC(Number(parts[0]), Number(parts[1]), 0)).getUTCDate();
@@ -158,10 +142,16 @@ function latestMonthKey() { return monthKeyOf(latestDateAcross()); }
 /* ============================== DATA LAYER ============================== */
 var DB, SESSION, TOASTS = [];
 
+/* v2: rebuilt for a simple 2-person mess (no roles, no stock, all-time totals).
+   Storage keys are bumped so any older schema (roles, stock, per-member balances)
+   left in a browser's localStorage is never read by this version. */
+var DB_KEY = "mealmate_db_v2";
+var SESSION_KEY = "mealmate_session_v2";
+
 function cloneSeed() { return JSON.parse(JSON.stringify(SEED)); }
 function loadDB() {
   try {
-    var raw = localStorage.getItem("mealmate_db");
+    var raw = localStorage.getItem(DB_KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
   var fresh = cloneSeed();
@@ -169,13 +159,13 @@ function loadDB() {
   return fresh;
 }
 function saveDBRaw(db) {
-  try { localStorage.setItem("mealmate_db", JSON.stringify(db)); } catch (e) {}
+  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {}
 }
 function saveDB() { saveDBRaw(DB); }
-function resetDemoData() {
+function resetAllData() {
   try {
-    localStorage.removeItem("mealmate_db");
-    localStorage.removeItem("mealmate_session");
+    localStorage.removeItem(DB_KEY);
+    localStorage.removeItem(SESSION_KEY);
   } catch (e) {}
   location.hash = "#/login";
   location.reload();
@@ -183,17 +173,17 @@ function resetDemoData() {
 
 function loadSession() {
   try {
-    var raw = localStorage.getItem("mealmate_session");
+    var raw = localStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
 }
 function saveSession(s) {
   SESSION = s;
-  try { localStorage.setItem("mealmate_session", JSON.stringify(s)); } catch (e) {}
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
 }
 function clearSession() {
   SESSION = null;
-  try { localStorage.removeItem("mealmate_session"); } catch (e) {}
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
 }
 
 function activeMembers() { return DB.members.filter(function (m) { return m.status === "ACTIVE"; }); }
@@ -267,26 +257,18 @@ function render() {
   } else if (path === "signup") {
     app.innerHTML = renderSignup();
   } else if (path === "dashboard") {
-    var mk = isValidMonthKey(query.month) ? query.month : latestMonthKey();
-    app.innerHTML = renderShell(renderDashboard(mk), "dashboard", mobileDrawerWasOpen);
+    app.innerHTML = renderShell(renderDashboard(), "dashboard", mobileDrawerWasOpen);
   } else if (path === "members") {
-    var mk2 = isValidMonthKey(query.month) ? query.month : latestMonthKey();
-    app.innerHTML = renderShell(renderMembers(mk2), "members", mobileDrawerWasOpen);
-  } else if (path.indexOf("members/") === 0) {
-    var id = path.slice("members/".length);
-    var mk3 = isValidMonthKey(query.month) ? query.month : latestMonthKey();
-    app.innerHTML = renderShell(renderMemberProfile(id, mk3), "members", mobileDrawerWasOpen);
+    app.innerHTML = renderShell(renderMembers(), "members", mobileDrawerWasOpen);
   } else if (path === "meals") {
     var dk = query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : latestDateAcross();
     app.innerHTML = renderShell(renderMeals(dk), "meals", mobileDrawerWasOpen);
   } else if (path === "money") {
-    var mk4 = isValidMonthKey(query.month) ? query.month : latestMonthKey();
-    app.innerHTML = renderShell(renderMoney(mk4, query.q || ""), "money", mobileDrawerWasOpen);
-  } else if (path === "market") {
-    var mk5 = isValidMonthKey(query.month) ? query.month : latestMonthKey();
-    app.innerHTML = renderShell(renderMarket(mk5, query.q || ""), "market", mobileDrawerWasOpen);
-  } else if (path === "stock") {
-    app.innerHTML = renderShell(renderStock(), "stock", mobileDrawerWasOpen);
+    app.innerHTML = renderShell(renderMoney(query.q || ""), "money", mobileDrawerWasOpen);
+  } else if (path === "expenses") {
+    app.innerHTML = renderShell(renderExpenses(query.q || ""), "expenses", mobileDrawerWasOpen);
+  } else if (path === "balance") {
+    app.innerHTML = renderShell(renderBalance(), "", mobileDrawerWasOpen);
   } else if (path === "settings/password") {
     app.innerHTML = renderShell(renderSettingsPassword(), "", mobileDrawerWasOpen);
   } else {
@@ -357,12 +339,6 @@ function renderSignup() {
           '<p class="mt-1.5 text-sm text-muted">Join your mess on MealMate.</p>' +
         "</div>" +
         '<form data-form="signup" class="mt-7 space-y-4">' +
-          '<div>' + fieldLabel("I am signing up as") +
-            '<div class="grid grid-cols-2 gap-2">' +
-              '<label class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium text-foreground has-[:checked]:border-navy-600 has-[:checked]:bg-navy-50 has-[:checked]:text-navy-900"><input type="radio" name="role" value="ADMIN" class="hidden" checked />' + icon("shield-check", "h-4 w-4") + " Admin</label>" +
-              '<label class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium text-foreground has-[:checked]:border-navy-600 has-[:checked]:bg-navy-50 has-[:checked]:text-navy-900"><input type="radio" name="role" value="MEMBER" class="hidden" />' + icon("users", "h-4 w-4") + " Member</label>" +
-            "</div>" +
-          "</div>" +
           '<div>' + fieldLabel("Full Name") +
             '<input name="name" required placeholder="Your name" class="' + FIELD_CLASS + '" />' +
           "</div>" +
@@ -430,15 +406,6 @@ function emptyState(iconName, title, description) {
     "</div>"
   );
 }
-function monthSwitcherHtml(monthKey, basePath) {
-  return (
-    '<div class="flex items-center gap-1 rounded-xl border border-border bg-surface p-1 shadow-[var(--shadow-card)]">' +
-      '<button data-action="month-nav" data-base="' + basePath + '" data-month="' + shiftMonth(monthKey, -1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-left", "h-4 w-4") + "</button>" +
-      '<span class="min-w-[9rem] text-center text-sm font-semibold text-foreground">' + monthLabel(monthKey) + "</span>" +
-      '<button data-action="month-nav" data-base="' + basePath + '" data-month="' + shiftMonth(monthKey, 1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-right", "h-4 w-4") + "</button>" +
-    "</div>"
-  );
-}
 function dateSwitcherHtml(dateKey) {
   var today = latestDateAcross();
   var isToday = dateKey === today;
@@ -478,87 +445,9 @@ function modalWrapper(id, title, bodyHtml) {
 function fieldLabel(text) { return '<label class="mb-1.5 block text-sm font-medium text-foreground">' + esc(text) + "</label>"; }
 var FIELD_CLASS = "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted transition-all focus:border-navy-600 focus:outline-none focus:ring-2 focus:ring-navy-600/20";
 
-/* ============================== CHARTS (vanilla SVG / CSS, no chart library) ============================== */
-var CHART_PALETTE = ["#0B1F4B", "#D97706", "#DC2626", "#16A34A", "#7C3AED", "#0891B2"];
-
-function barChart(labels, values, colorVar, height) {
-  height = height || 160;
-  var max = Math.max.apply(null, values.concat([1]));
-  var bars = values.map(function (v, i) {
-    var h = Math.max(2, Math.round((v / max) * (height - 24)));
-    return (
-      '<div class="flex flex-1 flex-col items-center justify-end gap-1" title="' + esc(labels[i]) + ": " + v + '">' +
-        '<div class="w-full max-w-[10px] rounded-t-sm transition-all" style="height:' + h + "px;background:" + colorVar + ';"></div>' +
-      "</div>"
-    );
-  }).join("");
-  var showEvery = Math.max(1, Math.ceil(labels.length / 8));
-  var axis = labels.map(function (l, i) {
-    return '<span class="flex-1 text-center">' + (i % showEvery === 0 ? dateLabelShort(l) : "") + "</span>";
-  }).join("");
-  return (
-    '<div style="height:' + height + 'px" class="flex items-end gap-1">' + bars + "</div>" +
-    '<div class="mt-1 flex text-[10px] text-muted">' + axis + "</div>"
-  );
-}
-
-function lineChart(labels, seriesA, seriesB, colorA, colorB, height) {
-  height = height || 180;
-  var width = 600;
-  var all = seriesA.concat(seriesB);
-  var max = Math.max.apply(null, all.concat([1]));
-  var pad = 8;
-  function pointsFor(series) {
-    return series.map(function (v, i) {
-      var x = pad + (i / Math.max(1, series.length - 1)) * (width - pad * 2);
-      var y = height - pad - (v / max) * (height - pad * 2);
-      return x.toFixed(1) + "," + y.toFixed(1);
-    }).join(" ");
-  }
-  var showEvery = Math.max(1, Math.ceil(labels.length / 8));
-  var axis = labels.map(function (l, i) {
-    return '<span class="flex-1 text-center">' + (i % showEvery === 0 ? dateLabelShort(l) : "") + "</span>";
-  }).join("");
-  return (
-    '<svg viewBox="0 0 ' + width + " " + height + '" preserveAspectRatio="none" style="width:100%;height:' + height + 'px">' +
-      '<polyline fill="none" stroke="' + colorA + '" stroke-width="2" points="' + pointsFor(seriesA) + '"/>' +
-      '<polyline fill="none" stroke="' + colorB + '" stroke-width="2" points="' + pointsFor(seriesB) + '"/>' +
-    "</svg>" +
-    '<div class="mt-1 flex text-[10px] text-muted">' + axis + "</div>" +
-    '<div class="mt-2 flex items-center gap-4 text-xs text-muted">' +
-      '<span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full" style="background:' + colorA + '"></span>Added</span>' +
-      '<span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full" style="background:' + colorB + '"></span>Spent</span>' +
-    "</div>"
-  );
-}
-
-function donutChart(slices) {
-  var total = slices.reduce(function (s, x) { return s + x.value; }, 0);
-  if (total <= 0) return emptyState("utensils-crossed", "No meal data yet", "Once meals are logged, the split will show here.");
-  var acc = 0;
-  var stops = slices.map(function (s) {
-    var start = (acc / total) * 360;
-    acc += s.value;
-    var end = (acc / total) * 360;
-    return s.color + " " + start.toFixed(1) + "deg " + end.toFixed(1) + "deg";
-  }).join(", ");
-  var legend = slices.map(function (s) {
-    return (
-      '<div class="flex items-center justify-between text-xs">' +
-        '<span class="flex items-center gap-1.5 text-muted"><span class="h-2 w-2 rounded-full" style="background:' + s.color + '"></span>' + esc(s.label) + "</span>" +
-        '<span class="font-medium text-foreground">' + formatNumber(Math.round(s.value * 10) / 10) + "</span>" +
-      "</div>"
-    );
-  }).join("");
-  return (
-    '<div class="flex items-center gap-6">' +
-      '<div style="width:120px;height:120px;border-radius:9999px;background:conic-gradient(' + stops + ')" class="shrink-0"></div>' +
-      '<div class="flex-1 space-y-1.5">' + legend + "</div>" +
-    "</div>"
-  );
-}
-
 /* ============================== DASHBOARD ============================== */
+/* This Month / Current Meal Rate are scoped to a month. Everything else on the
+   dashboard (Total Money Added, Meal Expense, Available Balance) is all-time. */
 function computeMonthSummary(monthKey) {
   var meals = DB.meals.filter(function (m) { return inMonth(m.date, monthKey); });
   var deposits = DB.deposits.filter(function (d) { return inMonth(d.date, monthKey); });
@@ -567,78 +456,19 @@ function computeMonthSummary(monthKey) {
   var moneyAdded = deposits.reduce(function (s, d) { return s + d.amount; }, 0);
   var mealExpense = expenses.reduce(function (s, e) { return s + e.amount; }, 0);
   var mealRate = calcMealRate(mealExpense, totalMeals);
-  var cash = calcCash(moneyAdded, mealExpense);
-  return { meals: meals, deposits: deposits, expenses: expenses, totalMeals: totalMeals, moneyAdded: moneyAdded, mealExpense: mealExpense, mealRate: mealRate, cash: cash };
+  return { meals: meals, deposits: deposits, expenses: expenses, totalMeals: totalMeals, moneyAdded: moneyAdded, mealExpense: mealExpense, mealRate: mealRate };
+}
+function computeAllTimeSummary() {
+  var totalMoneyAdded = DB.deposits.reduce(function (s, d) { return s + d.amount; }, 0);
+  var totalMealExpense = DB.expenses.reduce(function (s, e) { return s + e.amount; }, 0);
+  var availableBalance = calcAvailableBalance(totalMoneyAdded, totalMealExpense);
+  return { totalMoneyAdded: totalMoneyAdded, totalMealExpense: totalMealExpense, availableBalance: availableBalance };
 }
 
-function renderDashboard(monthKey) {
+function renderDashboard() {
+  var monthKey = latestMonthKey();
   var s = computeMonthSummary(monthKey);
-  var today = latestDateAcross();
-  var todayMeals = DB.meals.filter(function (m) { return m.date === today; });
-  var todayTotals = todayMeals.reduce(function (acc, m) { acc.b += m.breakfast; acc.l += m.lunch; acc.d += m.dinner; return acc; }, { b: 0, l: 0, d: 0 });
-  var todayTotal = todayTotals.b + todayTotals.l + todayTotals.d;
-
-  var lowStock = DB.shoppingItems.filter(function (i) { return i.status === "RUNNING_LOW"; });
-  var needed = DB.shoppingItems.filter(function (i) { return i.status === "NEEDED"; });
-  var membersSummary = activeMembers().map(function (m) {
-    var mMeals = s.meals.filter(function (x) { return x.memberId === m.id; });
-    var mDeposits = s.deposits.filter(function (x) { return x.memberId === m.id; });
-    var totalM = totalMealCount(mMeals);
-    var added = mDeposits.reduce(function (a, d) { return a + d.amount; }, 0);
-    var cost = calcMealCost(totalM, s.mealRate);
-    return { member: m, totalMeals: totalM, balance: calcBalance(added, cost) };
-  });
-  var membersDue = membersSummary.filter(function (x) { return balanceStatus(x.balance) === "due"; });
-
-  var alerts = [];
-  lowStock.forEach(function (item) {
-    alerts.push({ level: "warning", icon: "triangle-alert", text: esc(item.name) + " is running low." });
-  });
-  if (needed.length) alerts.push({ level: "info", icon: "info", text: needed.length + " item" + (needed.length === 1 ? "" : "s") + " still need to be bought." });
-  if (membersDue.length) {
-    alerts.push({ level: "danger", icon: "triangle-alert", text: membersDue.length + " member" + (membersDue.length === 1 ? "" : "s") + " have an outstanding balance this month." });
-  } else {
-    alerts.push({ level: "success", icon: "circle-check", text: "All member balances are settled or in credit." });
-  }
-
-  var shoppingCounts = { BOUGHT: 0, NEEDED: 0, RUNNING_LOW: 0, FINISHED: 0 };
-  DB.shoppingItems.forEach(function (i) { shoppingCounts[i.status] = (shoppingCounts[i.status] || 0) + 1; });
-
-  var dateList = eachDateInMonth(monthKey).filter(function (d) { return d <= today; });
-  var dailyMealCount = dateList.map(function (d) { return totalMealCount(DB.meals.filter(function (m) { return m.date === d; })); });
-  var dailyExpense = dateList.map(function (d) { return DB.expenses.filter(function (e) { return e.date === d; }).reduce(function (a, e) { return a + e.amount; }, 0); });
-  var dailyMoney = dateList.map(function (d) { return DB.deposits.filter(function (dep) { return dep.date === d; }).reduce(function (a, dep) { return a + dep.amount; }, 0); });
-
-  var distribution = activeMembers().map(function (m, i) {
-    var mMeals = s.meals.filter(function (x) { return x.memberId === m.id; });
-    return { label: m.name, value: totalMealCount(mMeals), color: m.avatarColor || CHART_PALETTE[i % CHART_PALETTE.length] };
-  }).filter(function (d) { return d.value > 0; });
-
-  var recent = []
-    .concat(s.deposits.map(function (d) { return { type: "deposit", date: d.date, memberId: d.memberId, amount: d.amount }; }))
-    .concat(s.expenses.map(function (e) { return { type: "expense", date: e.date, buyerId: e.buyerId, item: e.item, amount: e.amount }; }))
-    .concat((function () {
-      var seen = {};
-      return s.meals.filter(function (m) {
-        var k = m.memberId + "|" + m.date;
-        if (seen[k]) return false;
-        seen[k] = true;
-        return m.breakfast + m.lunch + m.dinner > 0;
-      }).map(function (m) { return { type: "meal", date: m.date, memberId: m.memberId }; });
-    })())
-    .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
-    .slice(0, 8);
-
-  var recentHtml = recent.length === 0 ? emptyState("layout-dashboard", "No recent activity") : recent.map(function (a) {
-    var member = memberById(a.memberId || a.buyerId);
-    var name = member ? member.name : "Someone";
-    if (a.type === "deposit") {
-      return activityRow("circle-arrow-up", "text-success-600 bg-success-100", name + " added " + formatCurrency(a.amount), a.date);
-    } else if (a.type === "expense") {
-      return activityRow("circle-arrow-down", "text-danger-600 bg-danger-100", name + " bought " + esc(a.item) + " for " + formatCurrency(a.amount), a.date);
-    }
-    return activityRow("utensils-crossed", "text-navy-900 bg-navy-100", name + "'s meals updated", a.date);
-  }).join("");
+  var all = computeAllTimeSummary();
 
   return (
     '<div class="space-y-6">' +
@@ -647,145 +477,31 @@ function renderDashboard(monthKey) {
           '<h1 class="text-2xl font-semibold tracking-tight text-foreground">Good Morning, ' + esc(SESSION.name) + ' 👋</h1>' +
           '<p class="mt-1 text-sm text-muted">Here\'s your mess overview for ' + monthLabel(monthKey) + ".</p>" +
         "</div>" +
-        monthSwitcherHtml(monthKey, "dashboard") +
       "</div>" +
 
       '<div class="flex flex-wrap gap-2">' +
         quickActionLink("utensils-crossed", "Add Meal", "meals") +
         quickActionLink("wallet", "Add Money", "money") +
-        quickActionLink("shopping-cart", "Add Market", "market") +
-        (SESSION.role === "ADMIN" ? quickActionLink("user-plus", "Add Member", "members") : "") +
-        (SESSION.role === "ADMIN" ? quickActionLink("shopping-basket", "Add Stock", "stock") : "") +
+        quickActionLink("shopping-cart", "Add Expense", "expenses") +
+        quickActionLink("user-plus", "Add Member", "members") +
       "</div>" +
-
-      (needed.length ? (
-      '<div class="rounded-2xl border border-warning-100 bg-warning-100/40 p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-        '<h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-warning-700">' + icon("info", "h-4 w-4") + "Today's Market Note — Needed Items</h3>" +
-        '<div class="flex flex-wrap gap-2">' + needed.map(function (item) {
-          return '<span class="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-xs font-medium text-foreground shadow-[var(--shadow-card)]">' + icon("shopping-basket", "h-3.5 w-3.5 text-warning-700") + esc(item.name) + (item.quantity ? " (" + item.quantity + (item.unit ? " " + esc(item.unit) : "") + ")" : "") + "</span>";
-        }).join("") + "</div>" +
-      "</div>") : "") +
 
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-3">' +
-        statCard({ label: "Total Money Added", value: s.moneyAdded, prefix: "৳", icon: "trending-up", tone: "success", href: "#/money" }) +
-        statCard({ label: "Meal Expenses", value: s.mealExpense, prefix: "৳", icon: "trending-down", tone: "danger", href: "#/market" }) +
-        '<button data-action="open-modal" data-modal="cash-modal" class="text-left">' + statCard({ label: "Available Cash", value: s.cash, prefix: "৳", icon: "banknote", tone: "navy", helperText: "Click for a breakdown" }) + "</button>" +
-        statCard({ label: "This Month", value: s.totalMeals, icon: "utensils-crossed", tone: "gray", href: "#/meals" }) +
-        statCard({ label: "Current Rate", value: s.mealRate, decimals: 2, prefix: "৳", icon: "gauge", tone: "warning", helperText: "Market expense ÷ total meals" }) +
+        statCard({ label: "Total Money Added", value: all.totalMoneyAdded, prefix: "৳", icon: "trending-up", tone: "success", href: "#/money" }) +
+        statCard({ label: "Available Balance", value: all.availableBalance, prefix: "৳", icon: "banknote", tone: "navy", href: "#/balance", helperText: "Click for a breakdown" }) +
+        statCard({ label: "Meal Expense", value: all.totalMealExpense, prefix: "৳", icon: "trending-down", tone: "danger", href: "#/expenses" }) +
+        statCard({ label: "This Month", value: s.totalMeals, icon: "utensils-crossed", tone: "gray", href: "#/meals", helperText: monthLabel(monthKey) }) +
+        statCard({ label: "Current Meal Rate", value: s.mealRate, decimals: 2, prefix: "৳", suffix: " / meal", icon: "gauge", tone: "warning", href: "#/meals", helperText: "This month's expense ÷ meals" }) +
         statCard({ label: "Active Members", value: activeMembers().length, icon: "users", tone: "gray", href: "#/members" }) +
       "</div>" +
-
-      '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-        '<h3 class="mb-4 text-sm font-semibold text-foreground">Money Flow</h3>' +
-        '<div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">' +
-          flowStep("trending-up", "success", "Money Added", s.moneyAdded) +
-          '<span class="hidden text-muted sm:block">' + icon("arrow-right", "h-4 w-4") + "</span>" +
-          flowStep("trending-down", "danger", "Meal Expense", s.mealExpense) +
-          '<span class="hidden text-muted sm:block">' + icon("arrow-right", "h-4 w-4") + "</span>" +
-          flowStep("banknote", "navy", "Current Cash", s.cash, true) +
-        "</div>" +
-      "</div>" +
-
-      '<div class="grid gap-6 lg:grid-cols-2">' +
-        '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-          '<div class="mb-3 flex items-center justify-between"><h3 class="text-sm font-semibold text-foreground">Today</h3><span class="text-xs font-medium text-muted">' + dateLabelLong(today) + "</span></div>" +
-          '<div class="space-y-3">' +
-            mealRow("coffee", "Breakfast", todayTotals.b) +
-            mealRow("sun", "Lunch", todayTotals.l) +
-            mealRow("moon", "Dinner", todayTotals.d) +
-            '<div class="flex items-center justify-between rounded-xl bg-navy-50 px-4 py-3"><span class="text-sm font-semibold text-navy-900">Total</span><span class="text-base font-bold tabular-nums text-navy-900">' + formatNumber(todayTotal, todayTotal % 1 ? 1 : 0) + "</span></div>" +
-            '<a href="#/meals" class="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-navy-50 text-sm font-medium text-navy-900 transition-colors hover:bg-navy-100">' + icon("utensils-crossed", "h-3.5 w-3.5") + " Manage Today's Meals</a>" +
-          "</div>" +
-        "</div>" +
-        '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-          '<h3 class="mb-3 text-sm font-semibold text-foreground">Smart Alerts</h3>' +
-          '<div class="space-y-2">' + alerts.map(function (a) { return alertRow(a); }).join("") + "</div>" +
-        "</div>" +
-      "</div>" +
-
-      '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-        '<h3 class="mb-4 text-sm font-semibold text-foreground">Shopping Snapshot <span class="font-normal text-muted">— Food &amp; meal items</span></h3>' +
-        '<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">' +
-          shoppingTile("Bought", shoppingCounts.BOUGHT, "success") +
-          shoppingTile("Needed", shoppingCounts.NEEDED, "warning") +
-          shoppingTile("Running Low", shoppingCounts.RUNNING_LOW, "danger") +
-          shoppingTile("Finished", shoppingCounts.FINISHED, "gray") +
-        "</div>" +
-      "</div>" +
-
-      '<div class="grid gap-6 lg:grid-cols-2">' +
-        '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-          '<h3 class="mb-4 text-sm font-semibold text-foreground">Daily Meal Count</h3>' + barChart(dateList, dailyMealCount, "#0B1F4B") +
-        "</div>" +
-        '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-          '<h3 class="mb-4 text-sm font-semibold text-foreground">Daily Meal Expense</h3>' + barChart(dateList, dailyExpense, "#DC2626") +
-        "</div>" +
-        '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-          '<h3 class="mb-4 text-sm font-semibold text-foreground">Money Added vs Spent</h3>' + lineChart(dateList, dailyMoney, dailyExpense, "#16A34A", "#DC2626") +
-        "</div>" +
-        '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-          '<h3 class="mb-4 text-sm font-semibold text-foreground">Member Meal Distribution</h3>' + donutChart(distribution) +
-        "</div>" +
-      "</div>" +
-
-      '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-        '<h3 class="mb-3 text-sm font-semibold text-foreground">Recent Activity</h3>' +
-        '<div class="space-y-1">' + recentHtml + "</div>" +
-      "</div>" +
-    "</div>" +
-
-    modalWrapper("cash-modal", "Cash Breakdown",
-      '<div class="space-y-3">' +
-        cashRow("Money Added", s.moneyAdded, "success", "+") +
-        cashRow("Meal Expenses", s.mealExpense, "danger", "−") +
-        cashRow("Current Cash", s.cash, "navy", null, true) +
-      "</div>")
+    "</div>"
   );
 }
 
 function quickActionLink(iconName, label, path) {
   return '<a href="#/' + path + '" class="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]">' + icon(iconName, "h-4 w-4") + esc(label) + "</a>";
 }
-function flowStep(iconName, tone, label, value, bold) {
-  return (
-    '<div class="flex flex-1 items-center gap-3 rounded-xl ' + (bold ? "bg-navy-50" : "") + ' px-4 py-3">' +
-      '<span class="flex h-9 w-9 items-center justify-center rounded-lg ' + (TONE_CLASSES[tone] || "") + '">' + icon(iconName, "h-4.5 w-4.5") + "</span>" +
-      "<div>" +
-        '<p class="text-xs text-muted">' + esc(label) + "</p>" +
-        '<p class="' + (bold ? "font-bold" : "font-semibold") + ' tabular-nums text-foreground">' + formatCurrency(value) + "</p>" +
-      "</div>" +
-    "</div>"
-  );
-}
-function mealRow(iconName, label, value) {
-  return (
-    '<div class="flex items-center justify-between rounded-xl border border-border px-4 py-2.5">' +
-      '<span class="flex items-center gap-2 text-sm text-muted">' + icon(iconName, "h-4 w-4") + esc(label) + "</span>" +
-      '<span class="text-sm font-semibold tabular-nums text-foreground">' + formatNumber(value, value % 1 ? 1 : 0) + " meals</span>" +
-    "</div>"
-  );
-}
-function alertRow(a) {
-  var toneClass = a.level === "danger" ? "bg-danger-100 text-danger-700" : a.level === "warning" ? "bg-warning-100 text-warning-700" : a.level === "success" ? "bg-success-100 text-success-700" : "bg-navy-50 text-navy-900";
-  return '<div class="flex items-start gap-2.5 rounded-xl ' + toneClass + ' px-3.5 py-2.5 text-sm"><span class="mt-0.5 shrink-0">' + icon(a.icon, "h-4 w-4") + "</span><span>" + a.text + "</span></div>";
-}
-function shoppingTile(label, value, tone) {
-  return (
-    '<div class="rounded-xl ' + (TONE_CLASSES[tone] || "") + ' px-4 py-3">' +
-      '<p class="text-2xl font-semibold tabular-nums">' + value + "</p>" +
-      '<p class="text-xs font-medium opacity-80">' + esc(label) + "</p>" +
-    "</div>"
-  );
-}
-function activityRow(iconName, iconClass, text, date) {
-  return (
-    '<div class="flex items-center gap-3 rounded-xl px-2 py-2 text-sm">' +
-      '<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full ' + iconClass + '">' + icon(iconName, "h-4 w-4") + "</span>" +
-      '<span class="flex-1 text-foreground">' + text + "</span>" +
-      '<span class="shrink-0 text-xs text-muted">' + dateLabelMed(date) + "</span>" +
-    "</div>"
-  );
-}
+
 function cashRow(label, value, tone, sign, bold) {
   var s = sign !== undefined && sign !== null ? sign : (value < 0 ? "−" : "");
   return (
@@ -799,35 +515,22 @@ function cashRow(label, value, tone, sign, bold) {
 /* ============================== MEMBERS ============================== */
 var AVATAR_COLORS = ["#0B1F4B", "#1A3570", "#16A34A", "#B45309", "#7C3AED", "#DC2626"];
 
-function renderMembers(monthKey) {
-  var s = computeMonthSummary(monthKey);
-  var isAdmin = SESSION.role === "ADMIN";
+function renderMembers() {
   var rows = DB.members.slice().sort(function (a, b) {
     if (a.status !== b.status) return a.status === "ACTIVE" ? -1 : 1;
     return a.name < b.name ? -1 : 1;
   }).map(function (m) {
-    var mMeals = s.meals.filter(function (x) { return x.memberId === m.id; });
-    var mDeposits = s.deposits.filter(function (x) { return x.memberId === m.id; });
-    var totalM = totalMealCount(mMeals);
-    var added = mDeposits.reduce(function (a, d) { return a + d.amount; }, 0);
-    var cost = calcMealCost(totalM, s.mealRate);
-    var balance = calcBalance(added, cost);
-    var status = balanceStatus(balance);
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
-        '<td class="px-5 py-3"><a href="#/members/' + m.id + '" class="group flex items-center gap-3">' +
+        '<td class="px-5 py-3"><div class="flex items-center gap-3">' +
           '<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style="background:' + m.avatarColor + '">' + esc(initials(m.name)) + "</span>" +
-          '<span class="font-medium text-foreground group-hover:underline">' + esc(m.name) + "</span>" +
-        "</a></td>" +
-        '<td class="px-5 py-3 text-right tabular-nums">' + formatNumber(totalM, totalM % 1 ? 1 : 0) + "</td>" +
-        '<td class="px-5 py-3 text-right tabular-nums text-success-700">' + formatCurrency(added) + "</td>" +
-        '<td class="px-5 py-3 text-right tabular-nums text-danger-600">' + formatCurrency(cost) + "</td>" +
-        '<td class="px-5 py-3 text-right tabular-nums font-semibold"><span class="' + (status === "credit" ? "text-success-700" : status === "due" ? "text-danger-600" : "text-muted") + '">' + formatCurrency(Math.abs(balance)) + "</span></td>" +
-        '<td class="px-5 py-3">' + badge(status === "credit" ? "Credit" : status === "due" ? "Due" : "Settled", status === "credit" ? "success" : status === "due" ? "danger" : "gray") + "</td>" +
-        (isAdmin ? '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
+          '<span class="font-medium text-foreground">' + esc(m.name) + "</span>" +
+        "</div></td>" +
+        '<td class="px-5 py-3">' + badge(m.status === "ACTIVE" ? "Active" : "Inactive", m.status === "ACTIVE" ? "success" : "gray") + "</td>" +
+        '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
           '<button data-action="edit-member" data-id="' + m.id + '" class="rounded-lg p-2 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("pencil", "h-4 w-4") + "</button>" +
           '<button data-action="toggle-member-status" data-id="' + m.id + '" class="rounded-lg p-2 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon(m.status === "ACTIVE" ? "ban" : "rotate-ccw", "h-4 w-4") + "</button>" +
-        "</div></td>" : "") +
+        "</div></td>" +
       "</tr>"
     );
   }).join("");
@@ -835,14 +538,17 @@ function renderMembers(monthKey) {
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">All Members</h1><p class="mt-1 text-sm text-muted">Balances shown for ' + monthLabel(monthKey) + ".</p></div>" +
-        '<div class="flex items-center gap-3">' + monthSwitcherHtml(monthKey, "members") + (isAdmin ? '<button data-action="add-member" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("user-plus", "h-4 w-4") + "Add Member</button>" : "") + "</div>" +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Members</h1><p class="mt-1 text-sm text-muted">Only active members are available when recording meals or expenses.</p></div>' +
+        '<button data-action="add-member" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("user-plus", "h-4 w-4") + "Add Member</button>" +
+      "</div>" +
+      '<div class="grid grid-cols-2 gap-4 sm:max-w-xs">' +
+        statCard({ label: "Active Members", value: activeMembers().length, icon: "users", tone: "success" }) +
+        statCard({ label: "Total Members", value: DB.members.length, icon: "users", tone: "gray" }) +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         (rows === "" ? '<div class="p-6">' + emptyState("users", "No members yet", "Add your first member to get started.") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted">' +
-          '<th class="px-5 py-3">Member</th><th class="px-5 py-3 text-right">Meals</th><th class="px-5 py-3 text-right">Money Added</th><th class="px-5 py-3 text-right">Meal Cost</th><th class="px-5 py-3 text-right">Balance</th><th class="px-5 py-3">Status</th>' +
-          (isAdmin ? '<th class="px-5 py-3 text-right">Actions</th>' : "") +
+          '<th class="px-5 py-3">Name</th><th class="px-5 py-3">Status</th><th class="px-5 py-3 text-right">Actions</th>' +
           "</tr></thead><tbody>" + rows + "</tbody></table></div>") +
       "</div>" +
     "</div>" +
@@ -858,11 +564,11 @@ function memberFormModal(mode) {
     '<form data-form="member" data-mode="' + (isEdit ? "edit" : "add") + '" class="space-y-4">' +
       (isEdit ? '<input type="hidden" name="id" />' : "") +
       "<div>" + fieldLabel("Name") + '<input name="name" required placeholder="Full name" class="' + FIELD_CLASS + '" /></div>' +
-      "<div>" + fieldLabel("Phone (optional)") + '<input name="phone" placeholder="01XXXXXXXXX" class="' + FIELD_CLASS + '" /></div>' +
-      "<div>" + fieldLabel("Color Tag") + '<div class="flex gap-2" data-color-picker>' +
-        AVATAR_COLORS.map(function (c) { return '<button type="button" data-action="pick-color" data-color="' + c + '" class="h-7 w-7 rounded-full" style="background:' + c + '"></button>'; }).join("") +
-        '<input type="hidden" name="avatarColor" value="' + AVATAR_COLORS[0] + '" />' +
-      "</div></div>" +
+      (isEdit ? (
+        "<div>" + fieldLabel("Status") +
+          '<select name="status" class="' + FIELD_CLASS + ' cursor-pointer"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select>' +
+        "</div>"
+      ) : "") +
       '<div class="flex justify-end gap-2 pt-2">' +
         '<button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
         '<button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Member") + "</button>" +
@@ -872,78 +578,13 @@ function memberFormModal(mode) {
   return modalWrapper(id, title, body);
 }
 
-function renderMemberProfile(id, monthKey) {
-  var member = memberById(id);
-  if (!member) return '<div class="space-y-4"><a href="#/members" class="text-sm font-medium text-muted hover:text-foreground">← Back to Members</a>' + emptyState("users", "Member not found") + "</div>";
-  var s = computeMonthSummary(monthKey);
-  var mMeals = s.meals.filter(function (x) { return x.memberId === id; });
-  var mDeposits = s.deposits.filter(function (x) { return x.memberId === id; });
-  var totalM = totalMealCount(mMeals);
-  var added = mDeposits.reduce(function (a, d) { return a + d.amount; }, 0);
-  var cost = calcMealCost(totalM, s.mealRate);
-  var balance = calcBalance(added, cost);
-  var status = balanceStatus(balance);
-
-  var allMeals = DB.meals.filter(function (m) { return m.memberId === id; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-  var allDeposits = DB.deposits.filter(function (d) { return d.memberId === id; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-  var allPurchases = DB.expenses.filter(function (e) { return e.buyerId === id; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-  var allTimeMeals = totalMealCount(allMeals);
-  var allTimeAdded = allDeposits.reduce(function (a, d) { return a + d.amount; }, 0);
-
-  var depositsHtml = allDeposits.length === 0 ? emptyState("wallet", "No deposits yet") :
-    '<div class="max-h-80 overflow-y-auto"><table class="w-full text-sm"><tbody>' + allDeposits.map(function (d) {
-      return '<tr class="border-t border-border first:border-0"><td class="px-5 py-2.5 text-muted">' + dateLabelMed(d.date) + '</td><td class="px-5 py-2.5 text-right font-medium tabular-nums text-success-700">+' + formatCurrency(d.amount) + "</td></tr>";
-    }).join("") + "</tbody></table></div>";
-
-  var mealsHtml = allMeals.length === 0 ? emptyState("utensils-crossed", "No meals recorded") :
-    '<div class="max-h-80 overflow-y-auto"><table class="w-full text-sm"><thead><tr class="text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-2">Date</th><th class="px-3 py-2 text-right">B</th><th class="px-3 py-2 text-right">L</th><th class="px-3 py-2 text-right">D</th><th class="px-5 py-2 text-right">Total</th></tr></thead><tbody>' +
-      allMeals.map(function (m) {
-        return '<tr class="border-t border-border"><td class="px-5 py-2.5 text-muted">' + dateLabelMed(m.date) + '</td><td class="px-3 py-2.5 text-right tabular-nums">' + m.breakfast + '</td><td class="px-3 py-2.5 text-right tabular-nums">' + m.lunch + '</td><td class="px-3 py-2.5 text-right tabular-nums">' + m.dinner + '</td><td class="px-5 py-2.5 text-right font-medium tabular-nums">' + (m.breakfast + m.lunch + m.dinner) + "</td></tr>";
-      }).join("") + "</tbody></table></div>";
-
-  var purchasesHtml = allPurchases.length === 0 ? emptyState("shopping-basket", "No purchases yet") :
-    '<div class="max-h-80 overflow-y-auto"><table class="w-full text-sm"><tbody>' + allPurchases.map(function (p) {
-      return '<tr class="border-t border-border first:border-0"><td class="px-5 py-2.5"><p class="font-medium text-foreground">' + esc(p.item) + '</p><p class="text-xs text-muted">' + dateLabelMed(p.date) + '</p></td><td class="px-5 py-2.5 text-right font-medium tabular-nums text-danger-600">−' + formatCurrency(p.amount) + "</td></tr>";
-    }).join("") + "</tbody></table></div>";
-
-  return (
-    '<div class="space-y-6">' +
-      '<a href="#/members" class="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-foreground">' + icon("arrow-left", "h-4 w-4") + "Back to Members</a>" +
-      '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div class="flex items-center gap-4">' +
-          '<span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white" style="background:' + member.avatarColor + '">' + esc(initials(member.name)) + "</span>" +
-          "<div><div class=\"flex items-center gap-2\"><h1 class=\"text-2xl font-semibold tracking-tight text-foreground\">" + esc(member.name) + "</h1>" + badge(member.status === "ACTIVE" ? "Active" : "Inactive", member.status === "ACTIVE" ? "success" : "gray") + "</div>" +
-          '<p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">' + (member.phone ? "<span>" + esc(member.phone) + "</span>" : "") + '<span class="inline-flex items-center gap-1">' + icon("calendar-days", "h-3.5 w-3.5") + "Joined " + dateLabelMed(member.joinedAt) + "</span></p></div>" +
-        "</div>" +
-        monthSwitcherHtml(monthKey, "members/" + id) +
-      "</div>" +
-      '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
-        statCard({ label: "Money Added", value: added, prefix: "৳", icon: "wallet", tone: "success", helperText: monthLabel(monthKey) }) +
-        statCard({ label: "Meal Cost", value: cost, prefix: "৳", icon: "receipt", tone: "danger", helperText: monthLabel(monthKey) }) +
-        statCard({ label: "Total Meals", value: totalM, icon: "utensils-crossed", tone: "navy", helperText: monthLabel(monthKey) }) +
-        statCard({ label: "Balance", value: Math.abs(balance), prefix: "৳", icon: "banknote", tone: status === "credit" ? "success" : status === "due" ? "danger" : "gray", helperText: status === "credit" ? "In credit" : status === "due" ? "Due" : "Settled" }) +
-      "</div>" +
-      '<div class="rounded-2xl border border-border bg-surface p-5 text-sm shadow-[var(--shadow-card)]">' +
-        '<span class="text-muted">All-time money added: <span class="font-semibold text-foreground">' + formatCurrency(allTimeAdded) + '</span></span>' +
-        '<span class="ml-8 text-muted">All-time meals: <span class="font-semibold text-foreground">' + formatNumber(allTimeMeals, allTimeMeals % 1 ? 1 : 0) + "</span></span>" +
-      "</div>" +
-      '<div class="grid gap-6 lg:grid-cols-3">' +
-        '<div class="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]"><div class="border-b border-border p-5"><h3 class="flex items-center gap-2 text-sm font-semibold text-foreground">' + icon("circle-arrow-up", "h-4 w-4 text-success-600") + "Deposit History</h3></div>" + depositsHtml + "</div>" +
-        '<div class="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]"><div class="border-b border-border p-5"><h3 class="flex items-center gap-2 text-sm font-semibold text-foreground">' + icon("utensils-crossed", "h-4 w-4 text-navy-900") + "Meal History</h3></div>" + mealsHtml + "</div>" +
-        '<div class="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]"><div class="border-b border-border p-5"><h3 class="flex items-center gap-2 text-sm font-semibold text-foreground">' + icon("shopping-basket", "h-4 w-4 text-danger-600") + "Market Purchases</h3></div>" + purchasesHtml + "</div>" +
-      "</div>" +
-    "</div>"
-  );
-}
-
 /* ============================== APP SHELL (sidebar + topbar) ============================== */
 var NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "layout-dashboard" },
-  { key: "members", label: "All Members", icon: "users" },
-  { key: "meals", label: "Daily Meals", icon: "utensils-crossed" },
-  { key: "money", label: "Money Added", icon: "wallet" },
-  { key: "market", label: "Meal Market", icon: "shopping-cart" },
-  { key: "stock", label: "Stock", icon: "shopping-basket" },
+  { key: "money", label: "Money", icon: "wallet" },
+  { key: "meals", label: "Meals", icon: "utensils-crossed" },
+  { key: "expenses", label: "Expenses", icon: "shopping-cart" },
+  { key: "members", label: "Members", icon: "users" },
 ];
 
 function sidebarHtml(activeKey, mobile) {
@@ -963,8 +604,8 @@ function sidebarHtml(activeKey, mobile) {
         '<span class="text-base font-bold text-white">MealMate</span>' +
       "</div>" +
       '<nav class="flex-1 space-y-1">' + items + "</nav>" +
-      '<div class="border-t border-white/10 pt-3 text-xs text-white/40">MealMate v1.0 · Demo' +
-        '<button data-action="reset-demo" class="mt-1.5 block text-white/40 underline decoration-dotted hover:text-white/70">Reset demo data</button>' +
+      '<div class="border-t border-white/10 pt-3 text-xs text-white/40">MealMate v2.0' +
+        '<button data-action="reset-all" class="mt-1.5 block text-white/40 underline decoration-dotted hover:text-white/70">Reset all data</button>' +
       "</div>" +
     "</div>"
   );
@@ -972,7 +613,6 @@ function sidebarHtml(activeKey, mobile) {
 
 function topbarHtml() {
   var name = SESSION.name || "User";
-  var role = SESSION.role === "ADMIN" ? "Admin" : "Member";
   return (
     '<header class="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur sm:px-6">' +
       '<button data-action="toggle-drawer" class="rounded-lg p-2 text-muted hover:bg-gray-100 lg:hidden">' + icon("menu", "h-5 w-5") + "</button>" +
@@ -984,7 +624,6 @@ function topbarHtml() {
             '<span class="flex h-8 w-8 items-center justify-center rounded-full bg-navy-900 text-xs font-semibold text-white">' + esc(initials(name)) + "</span>" +
             '<span class="hidden text-left sm:block">' +
               '<span class="block text-sm font-medium leading-tight text-foreground">' + esc(name) + "</span>" +
-              '<span class="block text-xs leading-tight text-muted">' + role + "</span>" +
             "</span>" +
             icon("chevron-down", "h-3.5 w-3.5 text-muted") +
           "</button>" +
@@ -1021,14 +660,10 @@ function mealFor(memberId, dateKey) {
 }
 
 function renderMeals(dateKey) {
-  var isAdmin = SESSION.role === "ADMIN";
   var rows = activeMembers().map(function (m) { return { member: m, meal: mealFor(m.id, dateKey) }; });
   var totals = rows.reduce(function (acc, r) { acc.b += r.meal.breakfast; acc.l += r.meal.lunch; acc.d += r.meal.dinner; return acc; }, { b: 0, l: 0, d: 0 });
 
   function quickPicker(memberId, type, value) {
-    if (!isAdmin) {
-      return '<span class="mx-auto flex h-8 w-12 items-center justify-center rounded-lg bg-gray-100 text-sm font-medium tabular-nums">' + value + "</span>";
-    }
     return (
       '<div class="mx-auto flex w-fit items-center gap-1 rounded-lg bg-gray-100 p-1">' +
         QUICK_VALUES.map(function (v) {
@@ -1061,10 +696,31 @@ function renderMeals(dateKey) {
   }).join("");
 
   var totalAll = totals.b + totals.l + totals.d;
+
+  var monthKey = monthKeyOf(dateKey);
+  var members = activeMembers();
+  var monthDates = eachDateInMonth(monthKey);
+  var monthRows = monthDates.map(function (d) {
+    var dayTotal = 0;
+    var cells = members.map(function (m) {
+      var meal = mealFor(m.id, d);
+      var t = meal.breakfast + meal.lunch + meal.dinner;
+      dayTotal += t;
+      return '<td class="px-3 py-2.5 text-right tabular-nums">' + formatNumber(t, t % 1 ? 1 : 0) + "</td>";
+    }).join("");
+    return (
+      '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50' + (d === dateKey ? " bg-navy-50/50" : "") + '">' +
+        '<td class="px-5 py-2.5 text-muted">' + dateLabelMed(d) + "</td>" +
+        cells +
+        '<td class="px-5 py-2.5 text-right font-semibold tabular-nums">' + formatNumber(dayTotal, dayTotal % 1 ? 1 : 0) + "</td>" +
+      "</tr>"
+    );
+  }).join("");
+
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Daily Meals</h1><p class="mt-1 text-sm text-muted">' + (isAdmin ? "Tap a value to record each member's meals." : "Meal counts recorded for this day.") + "</p></div>" +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Meals</h1><p class="mt-1 text-sm text-muted">Tap a value to record each member\'s meals.</p></div>' +
         dateSwitcherHtml(dateKey) +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
@@ -1076,18 +732,23 @@ function renderMeals(dateKey) {
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         (rows.length === 0 ? '<div class="p-6">' + emptyState("users", "No active members", "Add members from the Members page to start recording meals.") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full min-w-[640px] text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Member</th><th class="px-3 py-3 text-center">Breakfast</th><th class="px-3 py-3 text-center">Lunch</th><th class="px-3 py-3 text-center">Dinner</th><th class="px-5 py-3 text-right">Total</th></tr></thead><tbody>' +
-          (isAdmin ? '<tr class="border-b border-border bg-navy-50/50"><td class="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-navy-900">Set all</td><td class="px-3 py-3">' + setAllPicker("breakfast") + '</td><td class="px-3 py-3">' + setAllPicker("lunch") + '</td><td class="px-3 py-3">' + setAllPicker("dinner") + '</td><td></td></tr>' : "") +
+          '<tr class="border-b border-border bg-navy-50/50"><td class="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-navy-900">Set all</td><td class="px-3 py-3">' + setAllPicker("breakfast") + '</td><td class="px-3 py-3">' + setAllPicker("lunch") + '</td><td class="px-3 py-3">' + setAllPicker("dinner") + '</td><td></td></tr>' +
           tableRows + "</tbody></table></div>") +
+      "</div>" +
+      '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
+        '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Monthly Meal Summary — ' + monthLabel(monthKey) + "</h2></div>" +
+        (members.length === 0 ? '<div class="p-6">' + emptyState("utensils-crossed", "No active members") + "</div>" :
+        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-2">Date</th>' +
+          members.map(function (m) { return '<th class="px-3 py-2 text-right">' + esc(m.name) + "</th>"; }).join("") +
+          '<th class="px-5 py-2 text-right">Total</th></tr></thead><tbody>' + monthRows + "</tbody></table></div>") +
       "</div>" +
     "</div>"
   );
 }
 
 /* ============================== MONEY ADDED ============================== */
-function renderMoney(monthKey, search) {
-  var s = computeMonthSummary(monthKey);
-  var isAdmin = SESSION.role === "ADMIN";
-  var deposits = s.deposits.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+function renderMoney(search) {
+  var deposits = DB.deposits.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
   if (search) {
     var q = search.toLowerCase();
     deposits = deposits.filter(function (d) { var m = memberById(d.memberId); return m && m.name.toLowerCase().indexOf(q) >= 0; });
@@ -1104,10 +765,10 @@ function renderMoney(monthKey, search) {
         '<td class="px-5 py-3"><div class="flex items-center gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style="background:' + (m ? m.avatarColor : "#888") + '">' + esc(initials(m ? m.name : "?")) + '</span><span class="font-medium text-foreground">' + esc(m ? m.name : "Unknown") + "</span></div></td>" +
         '<td class="px-5 py-3 text-muted">' + esc(d.note || "—") + "</td>" +
         '<td class="px-5 py-3 text-right font-semibold tabular-nums text-success-700">+' + formatCurrency(d.amount) + "</td>" +
-        (isAdmin ? '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
+        '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
           '<button data-action="edit-deposit" data-id="' + d.id + '" class="rounded-lg p-2 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("pencil", "h-4 w-4") + "</button>" +
           '<button data-action="delete-deposit" data-id="' + d.id + '" class="rounded-lg p-2 text-muted transition-colors hover:bg-danger-100 hover:text-danger-600">' + icon("trash", "h-4 w-4") + "</button>" +
-        "</div></td>" : "") +
+        "</div></td>" +
       "</tr>"
     );
   }).join("");
@@ -1115,23 +776,23 @@ function renderMoney(monthKey, search) {
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Money Added</h1><p class="mt-1 text-sm text-muted">Deposits recorded for ' + monthLabel(monthKey) + ".</p></div>" +
-        '<div class="flex items-center gap-3">' + monthSwitcherHtml(monthKey, "money") + (isAdmin ? '<button data-action="add-deposit" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("wallet", "h-4 w-4") + "Add Deposit</button>" : "") + "</div>" +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Money Added</h1><p class="mt-1 text-sm text-muted">All deposits recorded so far.</p></div>' +
+        '<button data-action="add-deposit" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("wallet", "h-4 w-4") + "Add Deposit</button>" +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
-        statCard({ label: "Total Added", value: total, prefix: "৳", icon: "wallet", tone: "success", helperText: monthLabel(monthKey) }) +
+        statCard({ label: "Total Money Added", value: total, prefix: "৳", icon: "wallet", tone: "success" }) +
         statCard({ label: "Deposits", value: deposits.length, icon: "coins", tone: "navy" }) +
         statCard({ label: "Average Deposit", value: deposits.length ? total / deposits.length : 0, prefix: "৳", icon: "trending-up", tone: "gray" }) +
         statCard({ label: "Depositors", value: Object.keys(uniqueDepositors).length, icon: "users", tone: "warning" }) +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Deposit History</h2>' + searchBoxHtml("Search by member...", search) + "</div>" +
-        (deposits.length === 0 ? '<div class="p-6">' + emptyState("wallet", search ? "No matching deposits" : "No deposits yet", search ? "Try a different search term." : "Add the first deposit for this month.") + "</div>" :
-        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Date</th><th class="px-5 py-3">Member</th><th class="px-5 py-3">Note</th><th class="px-5 py-3 text-right">Amount</th>' + (isAdmin ? '<th class="px-5 py-3 text-right">Actions</th>' : "") + "</tr></thead><tbody>" + rows + "</tbody></table></div>") +
+        (deposits.length === 0 ? '<div class="p-6">' + emptyState("wallet", search ? "No matching deposits" : "No deposits yet", search ? "Try a different search term." : "Add the first deposit.") + "</div>" :
+        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Date</th><th class="px-5 py-3">Member</th><th class="px-5 py-3">Note</th><th class="px-5 py-3 text-right">Amount</th><th class="px-5 py-3 text-right">Actions</th></tr></thead><tbody>' + rows + "</tbody></table></div>") +
       "</div>" +
     "</div>" +
     depositFormModal(null) + depositFormModal("__EDIT__") +
-    deleteConfirmModal("delete-deposit-modal", "Delete this deposit?", "This will remove the deposit and update all related balances.")
+    deleteConfirmModal("delete-deposit-modal", "Delete this deposit?", "This will remove the deposit and update the available balance.")
   );
 }
 
@@ -1160,43 +821,45 @@ function deleteConfirmModal(id, title, description) {
     "</div>");
 }
 
-/* ============================== MEAL MARKET ============================== */
-function renderMarket(monthKey, search) {
-  var s = computeMonthSummary(monthKey);
-  var isAdmin = SESSION.role === "ADMIN";
-  var expenses = s.expenses.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+/* ============================== EXPENSES ============================== */
+function renderExpenses(search) {
+  var expenses = DB.expenses.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
   if (search) {
     var q = search.toLowerCase();
     expenses = expenses.filter(function (e) {
-      var m = memberById(e.buyerId);
-      return e.item.toLowerCase().indexOf(q) >= 0 || (m && m.name.toLowerCase().indexOf(q) >= 0);
+      var buyerNames = (e.buyerIds || []).map(function (id) { var m = memberById(id); return m ? m.name.toLowerCase() : ""; }).join(" ");
+      return e.item.toLowerCase().indexOf(q) >= 0 || buyerNames.indexOf(q) >= 0;
     });
   }
   var total = expenses.reduce(function (a, e) { return a + e.amount; }, 0);
   var uniqueBuyers = {};
-  expenses.forEach(function (e) { uniqueBuyers[e.buyerId] = true; });
+  expenses.forEach(function (e) { (e.buyerIds || []).forEach(function (id) { uniqueBuyers[id] = true; }); });
 
   var itemTotals = {};
-  s.expenses.forEach(function (e) {
+  DB.expenses.forEach(function (e) {
     if (!itemTotals[e.item]) itemTotals[e.item] = { item: e.item, count: 0, amount: 0 };
     itemTotals[e.item].count += 1;
     itemTotals[e.item].amount += e.amount;
   });
   var itemBreakdown = Object.keys(itemTotals).map(function (k) { return itemTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
 
+  function buyerNamesHtml(e) {
+    var names = (e.buyerIds || []).map(function (id) { var m = memberById(id); return m ? esc(m.name) : null; }).filter(Boolean);
+    return names.length ? names.join(", ") : "Unknown";
+  }
+
   var rows = expenses.map(function (e) {
-    var m = memberById(e.buyerId);
     return (
       '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
         '<td class="px-5 py-3 text-muted">' + dateLabelMed(e.date) + "</td>" +
         '<td class="px-5 py-3 font-medium text-foreground">' + esc(e.item) + "</td>" +
-        '<td class="px-5 py-3"><div class="flex items-center gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style="background:' + (m ? m.avatarColor : "#888") + '">' + esc(initials(m ? m.name : "?")) + '</span><span class="text-foreground">' + esc(m ? m.name : "Unknown") + "</span></div></td>" +
+        '<td class="px-5 py-3 text-foreground">' + buyerNamesHtml(e) + "</td>" +
         '<td class="px-5 py-3 text-muted">' + esc(e.note || "—") + "</td>" +
         '<td class="px-5 py-3 text-right font-semibold tabular-nums text-danger-600">−' + formatCurrency(e.amount) + "</td>" +
-        (isAdmin ? '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
+        '<td class="px-5 py-3"><div class="flex items-center justify-end gap-1">' +
           '<button data-action="edit-expense" data-id="' + e.id + '" class="rounded-lg p-2 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("pencil", "h-4 w-4") + "</button>" +
           '<button data-action="delete-expense" data-id="' + e.id + '" class="rounded-lg p-2 text-muted transition-colors hover:bg-danger-100 hover:text-danger-600">' + icon("trash", "h-4 w-4") + "</button>" +
-        "</div></td>" : "") +
+        "</div></td>" +
       "</tr>"
     );
   }).join("");
@@ -1204,29 +867,29 @@ function renderMarket(monthKey, search) {
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Meal Market</h1><p class="mt-1 text-sm text-muted">Market purchases recorded for ' + monthLabel(monthKey) + ".</p></div>" +
-        '<div class="flex items-center gap-3">' + monthSwitcherHtml(monthKey, "market") + (isAdmin ? '<button data-action="add-expense" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("shopping-cart", "h-4 w-4") + "Add Purchase</button>" : "") + "</div>" +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Expenses</h1><p class="mt-1 text-sm text-muted">All meal/bazaar expenses recorded so far.</p></div>' +
+        '<button data-action="add-expense" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("shopping-cart", "h-4 w-4") + "Add Expense</button>" +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
-        statCard({ label: "Total Spent", value: total, prefix: "৳", icon: "shopping-cart", tone: "danger", helperText: monthLabel(monthKey) }) +
-        '<button data-action="open-modal" data-modal="purchases-breakdown-modal" class="text-left">' + statCard({ label: "Purchases", value: expenses.length, icon: "receipt", tone: "navy", helperText: "Click for what was bought" }) + "</button>" +
-        statCard({ label: "Average Purchase", value: expenses.length ? total / expenses.length : 0, prefix: "৳", icon: "trending-down", tone: "gray" }) +
-        statCard({ label: "Buyers", value: Object.keys(uniqueBuyers).length, icon: "users", tone: "warning" }) +
+        statCard({ label: "Meal Expense", value: total, prefix: "৳", icon: "shopping-cart", tone: "danger" }) +
+        '<button data-action="open-modal" data-modal="purchases-breakdown-modal" class="text-left">' + statCard({ label: "Expenses", value: expenses.length, icon: "receipt", tone: "navy", helperText: "Click for what was bought" }) + "</button>" +
+        statCard({ label: "Average Expense", value: expenses.length ? total / expenses.length : 0, prefix: "৳", icon: "trending-down", tone: "gray" }) +
+        statCard({ label: "People Involved", value: Object.keys(uniqueBuyers).length, icon: "users", tone: "warning" }) +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
-        '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Purchase History</h2>' + searchBoxHtml("Search item or member...", search) + "</div>" +
-        (expenses.length === 0 ? '<div class="p-6">' + emptyState("shopping-cart", search ? "No matching purchases" : "No purchases yet", search ? "Try a different search term." : "Add the first market purchase for this month.") + "</div>" :
-        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Date</th><th class="px-5 py-3">Item</th><th class="px-5 py-3">Bought By</th><th class="px-5 py-3">Note</th><th class="px-5 py-3 text-right">Amount</th>' + (isAdmin ? '<th class="px-5 py-3 text-right">Actions</th>' : "") + "</tr></thead><tbody>" + rows + "</tbody></table></div>") +
+        '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Expense History</h2>' + searchBoxHtml("Search item or member...", search) + "</div>" +
+        (expenses.length === 0 ? '<div class="p-6">' + emptyState("shopping-cart", search ? "No matching expenses" : "No expenses yet", search ? "Try a different search term." : "Add the first expense.") + "</div>" :
+        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Date</th><th class="px-5 py-3">Item</th><th class="px-5 py-3">Done By</th><th class="px-5 py-3">Note</th><th class="px-5 py-3 text-right">Amount</th><th class="px-5 py-3 text-right">Actions</th></tr></thead><tbody>' + rows + "</tbody></table></div>") +
       "</div>" +
     "</div>" +
     expenseFormModal(null) + expenseFormModal("__EDIT__") +
-    deleteConfirmModal("delete-expense-modal", "Delete this purchase?", "This will remove the purchase and update all related balances.") +
-    modalWrapper("purchases-breakdown-modal", "What Was Bought — " + monthLabel(monthKey),
-      itemBreakdown.length === 0 ? emptyState("shopping-cart", "No purchases yet this month") :
+    deleteConfirmModal("delete-expense-modal", "Delete this expense?", "This will remove the expense and update the available balance.") +
+    modalWrapper("purchases-breakdown-modal", "What Was Bought — All Time",
+      itemBreakdown.length === 0 ? emptyState("shopping-cart", "No expenses yet") :
       '<div class="max-h-96 space-y-2 overflow-y-auto">' + itemBreakdown.map(function (row) {
         return (
           '<div class="flex items-center justify-between rounded-xl border border-border px-4 py-3">' +
-            '<div><p class="text-sm font-medium text-foreground">' + esc(row.item) + '</p><p class="text-xs text-muted">' + row.count + " purchase" + (row.count === 1 ? "" : "s") + "</p></div>" +
+            '<div><p class="text-sm font-medium text-foreground">' + esc(row.item) + '</p><p class="text-xs text-muted">' + row.count + " expense" + (row.count === 1 ? "" : "s") + "</p></div>" +
             '<span class="text-sm font-semibold tabular-nums text-danger-600">' + formatCurrency(row.amount) + "</span>" +
           "</div>"
         );
@@ -1239,103 +902,69 @@ function renderMarket(monthKey, search) {
 function expenseFormModal(mode) {
   var isEdit = mode === "__EDIT__";
   var id = isEdit ? "expense-edit-modal" : "expense-add-modal";
-  var memberOptions = activeMembers().map(function (m) { return '<option value="' + m.id + '">' + esc(m.name) + "</option>"; }).join("");
+  var memberCheckboxes = activeMembers().map(function (m) {
+    return (
+      '<label class="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium text-foreground has-[:checked]:border-navy-600 has-[:checked]:bg-navy-50 has-[:checked]:text-navy-900">' +
+        '<input type="checkbox" name="buyerIds" value="' + m.id + '" class="hidden" />' +
+        '<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white" style="background:' + m.avatarColor + '">' + esc(initials(m.name)) + "</span>" +
+        esc(m.name) +
+      "</label>"
+    );
+  }).join("");
   var body = (
     '<form data-form="expense" data-mode="' + (isEdit ? "edit" : "add") + '" class="space-y-4">' +
       (isEdit ? '<input type="hidden" name="id" />' : "") +
       "<div>" + fieldLabel("Item") + '<input name="item" required placeholder="e.g. Rice, Fish, Vegetables" class="' + FIELD_CLASS + '" /></div>' +
-      "<div>" + fieldLabel("Bought By") + '<select name="buyerId" required class="' + FIELD_CLASS + ' cursor-pointer"><option value="" disabled selected>Select a member</option>' + memberOptions + "</select></div>" +
+      "<div>" + fieldLabel("Done By (select one or more)") + '<div class="grid grid-cols-2 gap-2" data-buyer-picker>' + memberCheckboxes + "</div></div>" +
       '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Date") + '<input name="date" type="date" required class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Amount (৳)") + '<input name="amount" type="number" min="0" step="1" required placeholder="500" class="' + FIELD_CLASS + '" /></div></div>' +
       "<div>" + fieldLabel("Note (optional)") + '<textarea name="note" rows="2" placeholder="e.g. Price increased this week" class="' + FIELD_CLASS + '"></textarea></div>' +
-      '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button><button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Purchase") + "</button></div>" +
+      '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button><button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Expense") + "</button></div>" +
     "</form>"
   );
-  return modalWrapper(id, isEdit ? "Edit Purchase" : "Add Market Purchase", body);
+  return modalWrapper(id, isEdit ? "Edit Expense" : "Add Expense", body);
 }
 
-/* ============================== STOCK ============================== */
-var STOCK_STATUS_LABEL = { BOUGHT: "In Stock", RUNNING_LOW: "Running Low", FINISHED: "Finished", NEEDED: "Needed" };
-var STOCK_STATUS_TONE = { BOUGHT: "success", RUNNING_LOW: "warning", FINISHED: "gray", NEEDED: "danger" };
+/* ============================== AVAILABLE BALANCE ============================== */
+function renderBalance() {
+  var all = computeAllTimeSummary();
+  var moneyIn = DB.deposits.map(function (d) { return { type: "in", date: d.date, label: (memberById(d.memberId) || {}).name || "Unknown", amount: d.amount }; });
+  var moneyOut = DB.expenses.map(function (e) { return { type: "out", date: e.date, label: e.item, amount: e.amount }; });
+  var recent = moneyIn.concat(moneyOut).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 20);
 
-function stockActionsHtml(item, isAdmin) {
-  if (!isAdmin) return "";
-  var buttons = "";
-  if (item.status === "BOUGHT") {
-    buttons += '<button data-action="stock-set-status" data-id="' + item.id + '" data-status="RUNNING_LOW" class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-warning-700 transition-colors hover:bg-warning-100">Running Low</button>';
-    buttons += '<button data-action="stock-set-status" data-id="' + item.id + '" data-status="FINISHED" class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-gray-100">Mark Finished</button>';
-  } else if (item.status === "RUNNING_LOW") {
-    buttons += '<button data-action="stock-set-status" data-id="' + item.id + '" data-status="FINISHED" class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-gray-100">Mark Finished</button>';
-    buttons += '<button data-action="stock-set-status" data-id="' + item.id + '" data-status="BOUGHT" class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-success-700 transition-colors hover:bg-success-100">Restocked</button>';
-  } else if (item.status === "FINISHED") {
-    buttons += '<button data-action="stock-set-status" data-id="' + item.id + '" data-status="NEEDED" class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-danger-600 transition-colors hover:bg-danger-100">' + icon("triangle-alert", "mr-1 inline h-3.5 w-3.5") + "Flag as Needed</button>";
-    buttons += '<button data-action="stock-set-status" data-id="' + item.id + '" data-status="BOUGHT" class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-success-700 transition-colors hover:bg-success-100">Restocked</button>';
-  } else if (item.status === "NEEDED") {
-    buttons += '<span class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-danger-600">On Today\'s Market note</span>';
-    buttons += '<button data-action="stock-set-status" data-id="' + item.id + '" data-status="BOUGHT" class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-success-700 transition-colors hover:bg-success-100">Mark as Bought</button>';
-  }
-  buttons += '<button data-action="delete-stock-item" data-id="' + item.id + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-danger-100 hover:text-danger-600">' + icon("trash", "h-4 w-4") + "</button>";
-  return '<div class="flex flex-wrap items-center justify-end gap-1">' + buttons + "</div>";
-}
-
-function renderStock() {
-  var isAdmin = SESSION.role === "ADMIN";
-  var items = DB.shoppingItems.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-  var counts = { BOUGHT: 0, NEEDED: 0, RUNNING_LOW: 0, FINISHED: 0 };
-  DB.shoppingItems.forEach(function (i) { counts[i.status] = (counts[i.status] || 0) + 1; });
-  var needed = DB.shoppingItems.filter(function (i) { return i.status === "NEEDED"; });
-
-  var rows = items.map(function (item) {
+  var recentHtml = recent.length === 0 ? emptyState("banknote", "No transactions yet") : recent.map(function (t) {
+    var isIn = t.type === "in";
     return (
-      '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
-        '<td class="px-5 py-3 text-muted">' + dateLabelMed(item.date) + "</td>" +
-        '<td class="px-5 py-3 font-medium text-foreground">' + esc(item.name) + "</td>" +
-        '<td class="px-5 py-3 text-muted">' + (item.quantity ? formatNumber(item.quantity, item.quantity % 1 ? 1 : 0) + (item.unit ? " " + esc(item.unit) : "") : "—") + "</td>" +
-        '<td class="px-5 py-3">' + badge(STOCK_STATUS_LABEL[item.status] || item.status, STOCK_STATUS_TONE[item.status] || "gray") + "</td>" +
-        '<td class="px-5 py-3 text-muted">' + esc(item.note || "—") + "</td>" +
-        '<td class="px-5 py-3">' + stockActionsHtml(item, isAdmin) + "</td>" +
-      "</tr>"
+      '<div class="flex items-center gap-3 rounded-xl px-2 py-2 text-sm">' +
+        '<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full ' + (isIn ? "text-success-600 bg-success-100" : "text-danger-600 bg-danger-100") + '">' + icon(isIn ? "circle-arrow-up" : "circle-arrow-down", "h-4 w-4") + "</span>" +
+        '<span class="flex-1 text-foreground">' + esc(t.label) + "</span>" +
+        '<span class="shrink-0 font-semibold tabular-nums ' + (isIn ? "text-success-700" : "text-danger-600") + '">' + (isIn ? "+" : "−") + formatCurrency(t.amount) + "</span>" +
+        '<span class="shrink-0 text-xs text-muted">' + dateLabelMed(t.date) + "</span>" +
+      "</div>"
     );
   }).join("");
 
   return (
     '<div class="space-y-6">' +
-      '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Stock</h1><p class="mt-1 text-sm text-muted">Track what\'s in the pantry — flag finished items as needed to note them on the mess\'s market list.</p></div>' +
-        (isAdmin ? '<button data-action="add-stock-item" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("plus", "h-4 w-4") + "Add Stock Item</button>" : "") +
+      '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Available Balance</h1><p class="mt-1 text-sm text-muted">Total money added minus total meal expense, updated automatically.</p></div>' +
+      '<div class="grid grid-cols-2 gap-4 lg:grid-cols-3">' +
+        statCard({ label: "Total Money Added", value: all.totalMoneyAdded, prefix: "৳", icon: "trending-up", tone: "success", href: "#/money" }) +
+        statCard({ label: "Total Meal Expense", value: all.totalMealExpense, prefix: "৳", icon: "trending-down", tone: "danger", href: "#/expenses" }) +
+        statCard({ label: "Available Balance", value: all.availableBalance, prefix: "৳", icon: "banknote", tone: "navy" }) +
       "</div>" +
-      '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
-        statCard({ label: "In Stock", value: counts.BOUGHT, icon: "shopping-basket", tone: "success" }) +
-        statCard({ label: "Running Low", value: counts.RUNNING_LOW, icon: "triangle-alert", tone: "warning" }) +
-        statCard({ label: "Finished", value: counts.FINISHED, icon: "ban", tone: "gray" }) +
-        statCard({ label: "Needed", value: counts.NEEDED, icon: "info", tone: "danger" }) +
+      '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
+        '<h3 class="mb-4 text-sm font-semibold text-foreground">Balance Breakdown</h3>' +
+        '<div class="space-y-3">' +
+          cashRow("Money Added (Money In)", all.totalMoneyAdded, "success", "+") +
+          cashRow("Meal Expense (Money Out)", all.totalMealExpense, "danger", "−") +
+          cashRow("Available Balance", all.availableBalance, "navy", null, true) +
+        "</div>" +
       "</div>" +
-      (needed.length ? (
-      '<div class="rounded-2xl border border-danger-100 bg-danger-100/30 p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
-        '<h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-danger-700">' + icon("triangle-alert", "h-4 w-4") + "Today's Market Note — visible to all members</h3>" +
-        '<div class="flex flex-wrap gap-2">' + needed.map(function (item) {
-          return '<span class="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-xs font-medium text-foreground shadow-[var(--shadow-card)]">' + icon("shopping-basket", "h-3.5 w-3.5 text-danger-600") + esc(item.name) + "</span>";
-        }).join("") + "</div>" +
-      "</div>") : "") +
-      '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
-        (items.length === 0 ? '<div class="p-6">' + emptyState("shopping-basket", "No stock items yet", isAdmin ? "Add pantry items to start tracking what's in stock." : "Nothing has been added to stock yet.") + "</div>" :
-        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Date</th><th class="px-5 py-3">Item</th><th class="px-5 py-3">Quantity</th><th class="px-5 py-3">Status</th><th class="px-5 py-3">Note</th><th class="px-5 py-3 text-right">Actions</th></tr></thead><tbody>' + rows + "</tbody></table></div>") +
+      '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up">' +
+        '<h3 class="mb-3 text-sm font-semibold text-foreground">Recent Transactions</h3>' +
+        '<div class="space-y-1">' + recentHtml + "</div>" +
       "</div>" +
-    "</div>" +
-    stockFormModal() +
-    deleteConfirmModal("delete-stock-modal", "Delete this stock item?", "This will remove it from the stock list.")
+    "</div>"
   );
-}
-
-function stockFormModal() {
-  var body = (
-    '<form data-form="stock" class="space-y-4">' +
-      "<div>" + fieldLabel("Item Name") + '<input name="name" required placeholder="e.g. Rice, Oil, Onions" class="' + FIELD_CLASS + '" /></div>' +
-      '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Quantity (optional)") + '<input name="quantity" type="number" min="0" step="0.1" placeholder="10" class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Unit (optional)") + '<input name="unit" placeholder="kg / L / pcs" class="' + FIELD_CLASS + '" /></div></div>' +
-      "<div>" + fieldLabel("Note (optional)") + '<textarea name="note" rows="2" placeholder="e.g. Bought from the wholesale market" class="' + FIELD_CLASS + '"></textarea></div>' +
-      '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="stock-add-modal" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button><button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">Add Stock Item</button></div>' +
-    "</form>"
-  );
-  return modalWrapper("stock-add-modal", "Add Stock Item", body);
 }
 
 /* ============================== SETTINGS / PASSWORD ============================== */
@@ -1369,8 +998,7 @@ function openMemberEditModal(id) {
   var modal = document.getElementById("member-edit-modal");
   modal.querySelector('[name="id"]').value = m.id;
   modal.querySelector('[name="name"]').value = m.name;
-  modal.querySelector('[name="phone"]').value = m.phone || "";
-  modal.querySelector('[name="avatarColor"]').value = m.avatarColor;
+  modal.querySelector('[name="status"]').value = m.status;
   modal.hidden = false;
 }
 function openDepositEditModal(id) {
@@ -1390,7 +1018,8 @@ function openExpenseEditModal(id) {
   var modal = document.getElementById("expense-edit-modal");
   modal.querySelector('[name="id"]').value = e.id;
   modal.querySelector('[name="item"]').value = e.item;
-  modal.querySelector('[name="buyerId"]').value = e.buyerId;
+  var buyerIds = e.buyerIds || [];
+  modal.querySelectorAll('[name="buyerIds"]').forEach(function (cb) { cb.checked = buyerIds.indexOf(cb.value) >= 0; });
   modal.querySelector('[name="date"]').value = e.date;
   modal.querySelector('[name="amount"]').value = e.amount;
   modal.querySelector('[name="note"]').value = e.note || "";
@@ -1416,14 +1045,12 @@ document.addEventListener("click", function (e) {
   } else if (action === "logout") {
     clearSession();
     navigate("login");
-  } else if (action === "month-nav") {
-    navigate(el.dataset.base, { month: el.dataset.month });
   } else if (action === "date-nav") {
     navigate("meals", { date: el.dataset.date });
   } else if (action === "open-modal") {
     var m1 = document.getElementById(el.dataset.modal);
     if (m1) {
-      if (el.dataset.modal === "deposit-add-modal" || el.dataset.modal === "expense-add-modal" || el.dataset.modal === "stock-add-modal") {
+      if (el.dataset.modal === "deposit-add-modal" || el.dataset.modal === "expense-add-modal") {
         var form = m1.querySelector("form");
         if (form) form.reset();
         var dateInput = m1.querySelector('[name="date"]');
@@ -1438,7 +1065,6 @@ document.addEventListener("click", function (e) {
     var addModal = document.getElementById("member-add-modal");
     var f = addModal.querySelector("form");
     if (f) f.reset();
-    addModal.querySelector('[name="avatarColor"]').value = AVATAR_COLORS[0];
     addModal.hidden = false;
   } else if (action === "edit-member") {
     openMemberEditModal(el.dataset.id);
@@ -1450,9 +1076,6 @@ document.addEventListener("click", function (e) {
       toast(mem.name + " is now " + (mem.status === "ACTIVE" ? "active" : "inactive") + ".", "success");
       render();
     }
-  } else if (action === "pick-color") {
-    var picker = el.closest("[data-color-picker]");
-    if (picker) picker.querySelector('[name="avatarColor"]').value = el.dataset.color;
   } else if (action === "add-deposit") {
     var dModal = document.getElementById("deposit-add-modal");
     var df = dModal.querySelector("form");
@@ -1481,8 +1104,6 @@ document.addEventListener("click", function (e) {
         DB.deposits = DB.deposits.filter(function (d) { return d.id !== PENDING_DELETE.id; });
       } else if (PENDING_DELETE.type === "expense") {
         DB.expenses = DB.expenses.filter(function (x) { return x.id !== PENDING_DELETE.id; });
-      } else if (PENDING_DELETE.type === "stock") {
-        DB.shoppingItems = DB.shoppingItems.filter(function (x) { return x.id !== PENDING_DELETE.id; });
       }
       saveDB();
       toast("Deleted.", "success");
@@ -1501,31 +1122,8 @@ document.addEventListener("click", function (e) {
     saveDB();
     toast("Set all members' " + el.dataset.type + " to " + el.dataset.value + ".", "success");
     render();
-  } else if (action === "reset-demo") {
-    resetDemoData();
-  } else if (action === "add-stock-item") {
-    var sModal = document.getElementById("stock-add-modal");
-    var sf = sModal.querySelector("form");
-    if (sf) sf.reset();
-    sModal.hidden = false;
-  } else if (action === "stock-set-status") {
-    var item = DB.shoppingItems.filter(function (i) { return i.id === el.dataset.id; })[0];
-    if (item) {
-      item.status = el.dataset.status;
-      saveDB();
-      if (item.status === "NEEDED") {
-        toast(esc(item.name) + " flagged as needed — added to Today's Market note.", "success");
-      } else {
-        toast(esc(item.name) + " marked as " + (STOCK_STATUS_LABEL[item.status] || item.status) + ".", "success");
-      }
-      render();
-    }
-  } else if (action === "delete-stock-item") {
-    PENDING_DELETE = { type: "stock", id: el.dataset.id };
-    document.getElementById("delete-stock-modal").hidden = false;
-  } else if (action === "purchases-breakdown") {
-    var modal = document.getElementById("purchases-breakdown-modal");
-    if (modal) modal.hidden = false;
+  } else if (action === "reset-all") {
+    resetAllData();
   }
 });
 
@@ -1554,13 +1152,12 @@ document.addEventListener("submit", function (e) {
       render();
       return;
     }
-    saveSession({ name: user.name, role: user.role, memberId: user.memberId, email: user.email });
+    saveSession({ name: user.name, email: user.email });
     navigate("dashboard");
   } else if (type === "signup") {
     var suName = String(fd.get("name") || "").trim();
     var suEmail = String(fd.get("email") || "").trim().toLowerCase();
     var suPassword = String(fd.get("password") || "");
-    var suRole = String(fd.get("role") || "MEMBER") === "ADMIN" ? "ADMIN" : "MEMBER";
     if (suName.length < 2) { window.__signupError = "Please enter your full name."; render(); return; }
     if (!suEmail) { window.__signupError = "Please enter a valid email."; render(); return; }
     if (suPassword.length < 6) { window.__signupError = "Password must be at least 6 characters."; render(); return; }
@@ -1569,39 +1166,23 @@ document.addEventListener("submit", function (e) {
       render();
       return;
     }
-    var newMemberId = null;
-    if (suRole === "MEMBER") {
-      newMemberId = uid("mem");
-      DB.members.push({ id: newMemberId, name: suName, phone: null, avatarColor: AVATAR_COLORS[DB.members.length % AVATAR_COLORS.length], status: "ACTIVE", joinedAt: latestDateAcross() });
-    }
-    var newUser = { email: suEmail, password: suPassword, name: suName, role: suRole, memberId: newMemberId };
+    var newUser = { email: suEmail, password: suPassword, name: suName };
     DB.users.push(newUser);
     saveDB();
-    saveSession({ name: newUser.name, role: newUser.role, memberId: newUser.memberId, email: newUser.email });
+    saveSession({ name: newUser.name, email: newUser.email });
     navigate("dashboard");
-  } else if (type === "stock") {
-    var stName = String(fd.get("name") || "").trim();
-    var stQuantity = fd.get("quantity") ? parseFloat(fd.get("quantity")) : null;
-    var stUnit = String(fd.get("unit") || "").trim();
-    var stNote = String(fd.get("note") || "").trim();
-    if (stName.length < 2) { toast("Please enter an item name.", "error"); return; }
-    DB.shoppingItems.push({ id: uid("stk"), name: stName, status: "BOUGHT", quantity: stQuantity, unit: stUnit || null, date: latestDateAcross(), note: stNote || null });
-    saveDB();
-    document.getElementById("stock-add-modal").hidden = true;
-    toast("Stock item added.", "success");
-    render();
   } else if (type === "member") {
     var mode = form.dataset.mode;
     var name = String(fd.get("name") || "").trim();
-    var phone = String(fd.get("phone") || "").trim();
-    var color = String(fd.get("avatarColor") || AVATAR_COLORS[0]);
     if (name.length < 2) { toast("Name must be at least 2 characters.", "error"); return; }
     if (mode === "edit") {
       var id = String(fd.get("id") || "");
+      var status = String(fd.get("status") || "ACTIVE") === "INACTIVE" ? "INACTIVE" : "ACTIVE";
       var m = memberById(id);
-      if (m) { m.name = name; m.phone = phone || null; m.avatarColor = color; }
+      if (m) { m.name = name; m.status = status; }
     } else {
-      DB.members.push({ id: uid("mem"), name: name, phone: phone || null, avatarColor: color, status: "ACTIVE", joinedAt: latestDateAcross() });
+      var color = AVATAR_COLORS[DB.members.length % AVATAR_COLORS.length];
+      DB.members.push({ id: uid("mem"), name: name, avatarColor: color, status: "ACTIVE", joinedAt: latestDateAcross() });
     }
     saveDB();
     document.getElementById(mode === "edit" ? "member-edit-modal" : "member-add-modal").hidden = true;
@@ -1627,22 +1208,22 @@ document.addEventListener("submit", function (e) {
     render();
   } else if (type === "expense") {
     var emode = form.dataset.mode;
-    var buyerId = String(fd.get("buyerId") || "");
+    var buyerIds = fd.getAll("buyerIds").map(String);
     var item = String(fd.get("item") || "").trim();
     var edate = String(fd.get("date") || "");
     var eamount = parseFloat(fd.get("amount"));
     var enote = String(fd.get("note") || "").trim();
-    if (!buyerId || item.length < 2 || !edate || !(eamount > 0)) { toast("Please fill in all required fields.", "error"); return; }
+    if (!buyerIds.length || item.length < 2 || !edate || !(eamount > 0)) { toast("Please fill in all required fields, including who did it.", "error"); return; }
     if (emode === "edit") {
       var eid = String(fd.get("id") || "");
       var ex = DB.expenses.filter(function (x) { return x.id === eid; })[0];
-      if (ex) { ex.buyerId = buyerId; ex.item = item; ex.date = edate; ex.amount = eamount; ex.note = enote || null; }
+      if (ex) { ex.buyerIds = buyerIds; ex.item = item; ex.date = edate; ex.amount = eamount; ex.note = enote || null; }
     } else {
-      DB.expenses.push({ id: uid("exp"), buyerId: buyerId, item: item, date: edate, amount: eamount, note: enote || null });
+      DB.expenses.push({ id: uid("exp"), buyerIds: buyerIds, item: item, date: edate, amount: eamount, note: enote || null });
     }
     saveDB();
     document.getElementById(emode === "edit" ? "expense-edit-modal" : "expense-add-modal").hidden = true;
-    toast(emode === "edit" ? "Purchase updated." : "Purchase added.", "success");
+    toast(emode === "edit" ? "Expense updated." : "Expense added.", "success");
     render();
   } else if (type === "change-password") {
     var current = String(fd.get("current") || "");
