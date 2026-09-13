@@ -681,7 +681,7 @@ var NAV_ITEMS = [
   { key: "expenses", label: "Expenses", icon: "shopping-cart" },
   { key: "members", label: "Members", icon: "users" },
   { key: "store", label: "Store", icon: "shopping-basket" },
-  { key: "hisab", label: "Hisab", icon: "scale" },
+  { key: "hisab", label: "Settlement", icon: "scale" },
 ];
 
 function sidebarHtml(activeKey, mobile) {
@@ -1244,7 +1244,7 @@ function renderHisab(monthKeyParam) {
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground">Hisab' + (finalized ? " " + badge("Finalized", "navy") : "") + '</h1><p class="mt-1 text-sm text-muted">Who paid what, who ate how much, and who owes whom — for ' + esc(monthLabel(monthKey)) + ".</p></div>" +
+        '<div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground">Settlement' + (finalized ? " " + badge("Finalized", "navy") : "") + '</h1><p class="mt-1 text-sm text-muted">Who paid what, who ate how much, and who owes whom — for ' + esc(monthLabel(monthKey)) + ".</p></div>" +
         monthSwitcherHtml(monthKey, "hisab-month-nav") +
       "</div>" +
 
@@ -1297,7 +1297,7 @@ function closeMonthConfirmModal(monthKey, finalized) {
         '<button type="button" data-action="close-modal" data-modal="close-month-modal" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
         '<button type="button" data-action="confirm-close-month" data-month="' + monthKey + '" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">Close Month</button>' +
       "</div>");
-  return modalWrapper("close-month-modal", finalized ? "Re-finalize Hisab" : "Close Month / Finalize Hisab", body);
+  return modalWrapper("close-month-modal", finalized ? "Re-finalize Settlement" : "Close Month / Finalize Settlement", body);
 }
 
 /* ============================== AVAILABLE BALANCE ============================== */
@@ -1506,7 +1506,7 @@ document.addEventListener("click", function (e) {
   } else if (action === "confirm-close-month") {
     closeMonth(el.dataset.month);
     document.getElementById("close-month-modal").hidden = true;
-    toast("Hisab for " + monthLabel(el.dataset.month) + " finalized.", "success");
+    toast("Settlement for " + monthLabel(el.dataset.month) + " finalized.", "success");
     render();
   } else if (action === "open-modal") {
     var m1 = document.getElementById(el.dataset.modal);
