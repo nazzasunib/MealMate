@@ -852,6 +852,20 @@ function renderExpenses(search) {
   });
   var itemBreakdown = Object.keys(itemTotals).map(function (k) { return itemTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
 
+  var thisMonthKey = latestMonthKey();
+  var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, thisMonthKey); });
+  var storeTotals = {};
+  monthExpenses.forEach(function (e) {
+    if (!storeTotals[e.item]) storeTotals[e.item] = { item: e.item, amount: 0, qty: 0, unit: e.unit || "" };
+    storeTotals[e.item].amount += e.amount;
+    if (e.quantity && (!storeTotals[e.item].unit || storeTotals[e.item].unit === e.unit)) {
+      storeTotals[e.item].qty += Number(e.quantity);
+      storeTotals[e.item].unit = e.unit || storeTotals[e.item].unit;
+    }
+  });
+  var storeRows = Object.keys(storeTotals).map(function (k) { return storeTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
+  var storeMonthTotal = monthExpenses.reduce(function (s, e) { return s + e.amount; }, 0);
+
   function buyerNamesHtml(e) {
     var names = (e.buyerIds || []).map(function (id) { var m = memberById(id); return m ? esc(m.name) : null; }).filter(Boolean);
     return names.length ? names.join(", ") : "Unknown";
@@ -884,6 +898,22 @@ function renderExpenses(search) {
         '<button data-action="open-modal" data-modal="purchases-breakdown-modal" class="text-left">' + statCard({ label: "Expenses", value: expenses.length, icon: "receipt", tone: "navy", helperText: "Click for what was bought" }) + "</button>" +
         statCard({ label: "Average Expense", value: expenses.length ? total / expenses.length : 0, prefix: "৳", icon: "trending-down", tone: "gray" }) +
         statCard({ label: "People Involved", value: Object.keys(uniqueBuyers).length, icon: "users", tone: "warning" }) +
+      "</div>" +
+      '<div class="animate-slide-up rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)]">' +
+        '<div class="mb-4 flex items-center justify-between gap-3"><div><h2 class="text-sm font-semibold text-foreground">This Month\'s Store</h2><p class="mt-0.5 text-xs text-muted">' + esc(monthLabel(thisMonthKey)) + " — what's been bought so far</p></div>" +
+          '<span class="shrink-0 text-sm font-semibold tabular-nums text-danger-600">' + formatCurrency(storeMonthTotal) + "</span>" +
+        "</div>" +
+        (storeRows.length === 0 ? emptyState("shopping-cart", "Nothing bought yet this month", "Add an expense to start tracking this month's store.") :
+        '<div class="space-y-2">' + storeRows.map(function (row) {
+          return (
+            '<div class="flex items-center justify-between rounded-xl border border-border px-4 py-3">' +
+              '<div><p class="text-sm font-medium text-foreground">' + esc(row.item) + "</p>" +
+              (row.qty ? '<p class="text-xs text-muted">' + formatNumber(row.qty, row.qty % 1 ? 1 : 0) + (row.unit ? " " + esc(row.unit) : "") + "</p>" : "") +
+              "</div>" +
+              '<span class="text-sm font-semibold tabular-nums text-danger-600">' + formatCurrency(row.amount) + "</span>" +
+            "</div>"
+          );
+        }).join("") + "</div>") +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Expense History</h2>' + searchBoxHtml("Search item or member...", search) + "</div>" +
