@@ -79,6 +79,109 @@
 .pl-12{padding-left:calc(var(--spacing) * 12)}
 
 @keyframes float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,-20px); } }
+
+/* ===== manual patch 4: premium visual redesign — card lift/shadow system,
+   pill buttons, status pills and a couple of base utility classes that were
+   referenced in markup (statCard's stat-card hover, TONE_CLASSES/BADGE_TONE_CLASSES'
+   plain "bg-gray-100"/"hover:bg-gray-100", cashRow/expense-total's "bg-navy-50")
+   but never happened to get compiled by the extracted Tailwind build — same
+   rationale as the patch blocks above. Colors/spacing/radii all reuse the
+   existing --navy-N / --success-N / --danger-N / --warning-N / --gray-N
+   custom properties and --shadow-card(-hover) / --radius-N tokens defined
+   in :root; no new colors are introduced. ===== */
+
+/* -- previously-missing base utility classes actually used in markup -- */
+.bg-gray-100{background-color:var(--gray-100)}
+.hover\:bg-gray-100:hover{background-color:var(--gray-100)}
+.bg-navy-50{background-color:var(--navy-50)}
+.border-navy-900{border-color:var(--navy-900)}
+
+/* -- card hover-lift (statCard, quickActionLink already reference these) -- */
+.hover\:-translate-y-0\.5:hover{transform:translateY(-0.125rem)}
+.hover\:-translate-y-1:hover{transform:translateY(-0.25rem)}
+
+/* -- generic premium card surface: soft ambient shadow + gentle hover lift.
+   Applied alongside the existing rounded-2xl/border/bg-surface utilities so
+   it layers on top rather than replacing them. -- */
+.card-premium{
+  transition: transform .22s var(--ease-out, cubic-bezier(0,0,.2,1)), box-shadow .22s var(--ease-out, cubic-bezier(0,0,.2,1));
+}
+.card-premium.card-premium--interactive{ cursor:pointer; }
+.card-premium.card-premium--interactive:hover{
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* -- stat card icon badge: lift slightly + deepen tint on card hover -- */
+.stat-card-icon{ transition: transform .22s var(--ease-out, cubic-bezier(0,0,.2,1)); }
+.card-premium.card-premium--interactive:hover .stat-card-icon{ transform: translateY(-1px) scale(1.04); }
+
+/* -- primary pill button: solid navy fill, soft navy-tinted shadow, gentle
+   scale-down on press. Reuses --navy-900/--navy-800/--navy-600 only. -- */
+.btn-primary{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  border-radius:3.40282e38px; /* pill */
+  background-image: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+  color:#fff; font-weight:500; font-size:.875rem; line-height:1.25rem;
+  padding:0 1.125rem; height:2.5rem;
+  box-shadow: 0 8px 16px -8px rgba(11,31,75,.45), 0 2px 4px -1px rgba(11,31,75,.3);
+  transition: transform .15s var(--ease-out, cubic-bezier(0,0,.2,1)), box-shadow .2s var(--ease-out, cubic-bezier(0,0,.2,1)), background-image .2s ease-out;
+  border:none; cursor:pointer; user-select:none;
+}
+.btn-primary:hover{
+  background-image: linear-gradient(180deg, var(--navy-700), var(--navy-800));
+  box-shadow: 0 10px 20px -8px rgba(11,31,75,.5), 0 3px 6px -1px rgba(11,31,75,.35);
+}
+.btn-primary:active{ transform: scale(.97); }
+.btn-primary.btn-sm{ height:2.25rem; padding:0 .875rem; font-size:.8125rem; }
+.btn-primary.btn-block{ width:100%; }
+.btn-primary:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+/* -- danger pill button (delete-confirm actions): same shape/motion system,
+   tinted with the existing --danger-* scale instead of navy. -- */
+.btn-danger{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  border-radius:3.40282e38px;
+  background-image: linear-gradient(180deg, var(--danger-600), var(--danger-700));
+  color:#fff; font-weight:500; font-size:.875rem; line-height:1.25rem;
+  padding:0 1.125rem; height:2.5rem;
+  box-shadow: 0 8px 16px -8px rgba(220,38,38,.4), 0 2px 4px -1px rgba(220,38,38,.28);
+  transition: transform .15s var(--ease-out, cubic-bezier(0,0,.2,1)), box-shadow .2s var(--ease-out, cubic-bezier(0,0,.2,1)), background-image .2s ease-out;
+  border:none; cursor:pointer; user-select:none;
+}
+.btn-danger:hover{ background-image: linear-gradient(180deg, var(--danger-700), var(--danger-700)); }
+.btn-danger:active{ transform: scale(.97); }
+
+/* -- secondary / pill button: soft bordered surface, subtle hover shift. -- */
+.btn-secondary{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  border-radius:3.40282e38px;
+  background-color: var(--surface); color: var(--foreground);
+  border:1px solid var(--border); font-weight:500; font-size:.875rem; line-height:1.25rem;
+  padding:0 1.125rem; height:2.5rem;
+  transition: background-color .18s ease-out, border-color .18s ease-out, transform .15s var(--ease-out, cubic-bezier(0,0,.2,1));
+  cursor:pointer; user-select:none;
+}
+.btn-secondary:hover{ background-color: var(--gray-100); }
+.btn-secondary:active{ transform: scale(.97); }
+.btn-secondary.btn-sm{ height:2.25rem; padding:0 .875rem; font-size:.8125rem; }
+
+/* -- status pill: small dot + label, soft tinted background. Layers on top
+   of the existing badge()/BADGE_TONE_CLASSES color classes (bg-*-100 /
+   text-*-700), adding just the dot + pill spacing. -- */
+.status-pill{ display:inline-flex; align-items:center; gap:.375rem; border-radius:3.40282e38px; padding:.3125rem .75rem .3125rem .625rem; font-size:.75rem; font-weight:600; line-height:1; }
+.status-pill-dot{ width:.4375rem; height:.4375rem; border-radius:3.40282e38px; background-color: currentColor; flex-shrink:0; }
+
+/* -- progress track/fill for the settlement donut legend: rounded track,
+   rounded fill, animated width transition. -- */
+.progress-track{ width:100%; height:.375rem; border-radius:3.40282e38px; background-color: var(--gray-100); overflow:hidden; }
+.progress-fill{ height:100%; border-radius:3.40282e38px; transition: width .6s var(--ease-out, cubic-bezier(0,0,.2,1)); }
+
+/* -- donut ring: the SVG circle's stroke-dasharray/offset is set inline per
+   render (values are data-dependent), this just gives the ring a smooth
+   draw-in animation and the center label a consistent layout. -- */
+.donut-ring circle.donut-ring-fill{ transition: stroke-dashoffset .8s var(--ease-out, cubic-bezier(0,0,.2,1)); }
+.donut-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
 </style>
 </head>
 <body class="h-full bg-background">
@@ -434,15 +537,16 @@ var BADGE_TONE_CLASSES = {
   gray: "bg-gray-100 text-gray-500",
 };
 function badge(text, tone) {
-  return '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ' + (BADGE_TONE_CLASSES[tone] || BADGE_TONE_CLASSES.gray) + '">' + esc(text) + "</span>";
+  return '<span class="status-pill ' + (BADGE_TONE_CLASSES[tone] || BADGE_TONE_CLASSES.gray) + '"><span class="status-pill-dot"></span>' + esc(text) + "</span>";
 }
 function statCard(opts) {
   var value = opts.decimals ? formatNumber(opts.value, opts.decimals) : formatNumber(Math.round(opts.value * 100) / 100);
+  var isInteractive = opts.href || opts.interactive;
   var body =
-    '<div class="group relative flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] transition-all duration-200 ease-out animate-slide-up ' +
-    (opts.href ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]" : "") + '">' +
+    '<div class="card-premium group relative flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] animate-slide-up ' +
+    (isInteractive ? "card-premium--interactive" : "") + '">' +
       '<div class="flex items-start justify-between">' +
-        '<span class="flex h-10 w-10 items-center justify-center rounded-xl ' + (TONE_CLASSES[opts.tone] || TONE_CLASSES.navy) + '">' + icon(opts.icon, "h-5 w-5") + "</span>" +
+        '<span class="stat-card-icon flex h-10 w-10 items-center justify-center rounded-xl ' + (TONE_CLASSES[opts.tone] || TONE_CLASSES.navy) + '">' + icon(opts.icon, "h-5 w-5") + "</span>" +
       "</div>" +
       "<div>" +
         '<p class="text-2xl font-semibold tracking-tight text-foreground tabular-nums">' + (opts.prefix || "") + value + (opts.suffix || "") + "</p>" +
@@ -562,7 +666,7 @@ function renderDashboard() {
 }
 
 function quickActionLink(iconName, label, path) {
-  return '<a href="#/' + path + '" class="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]">' + icon(iconName, "h-4 w-4") + esc(label) + "</a>";
+  return '<a href="#/' + path + '" class="card-premium card-premium--interactive flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground shadow-[var(--shadow-card)]">' + icon(iconName, "h-4 w-4") + esc(label) + "</a>";
 }
 
 function cashRow(label, value, tone, sign, bold) {
@@ -571,6 +675,72 @@ function cashRow(label, value, tone, sign, bold) {
     '<div class="flex items-center justify-between rounded-xl ' + (bold ? "bg-navy-50" : "border border-border") + ' px-4 py-3">' +
       '<span class="text-sm ' + (bold ? "font-semibold text-navy-900" : "text-muted") + '">' + esc(label) + "</span>" +
       '<span class="' + (bold ? "text-lg font-bold" : "font-semibold") + " tabular-nums " + (tone === "success" ? "text-success-700" : tone === "danger" ? "text-danger-600" : "text-navy-900") + '">' + s + formatCurrency(Math.abs(value)) + "</span>" +
+    "</div>"
+  );
+}
+
+/* Soft, on-brand palette for donut slices / legend dots — reuses the app's
+   existing --navy-N / --success-N / --warning-N / --danger-N tokens plus a
+   couple of muted grays, cycled through when there are more slices than
+   colors. */
+var DONUT_PALETTE = ["var(--navy-700)", "var(--success-600)", "var(--warning-600)", "var(--danger-600)", "var(--navy-400, #3a5a9c)", "var(--gray-500)"];
+
+/* Renders a clean SVG donut ring (stroke-dasharray arcs, rounded caps) with a
+   center label, plus a legend of colored dots + rounded progress bars. Takes
+   {title, centerLabel, centerValue, slices:[{label, value, color}]}. Purely
+   presentational over already-computed numbers — no new data/calculations. */
+function donutChartHtml(opts) {
+  var slices = (opts.slices || []).filter(function (s) { return s.value > 0; });
+  var total = slices.reduce(function (a, s) { return a + s.value; }, 0);
+  var size = 160, stroke = 18, r = (size - stroke) / 2, c = size / 2, circumference = 2 * Math.PI * r;
+
+  var arcs = "";
+  var offsetAcc = 0;
+  if (total > 0) {
+    slices.forEach(function (s, i) {
+      var frac = s.value / total;
+      var dash = Math.max(frac * circumference - 2, 0); /* small gap between slices */
+      var gap = circumference - dash;
+      var rotation = (offsetAcc / total) * 360 - 90;
+      var color = s.color || DONUT_PALETTE[i % DONUT_PALETTE.length];
+      arcs += '<circle class="donut-ring-fill" cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + dash + " " + gap + '" stroke-dashoffset="0" transform="rotate(' + rotation + " " + c + " " + c + ')"></circle>';
+      offsetAcc += s.value;
+    });
+  }
+
+  var ring = total > 0 ?
+    ('<svg class="donut-ring" width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+      '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="var(--gray-100)" stroke-width="' + stroke + '"></circle>' +
+      arcs +
+    "</svg>") :
+    ('<svg class="donut-ring" width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+      '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="var(--gray-100)" stroke-width="' + stroke + '"></circle>' +
+    "</svg>");
+
+  var legend = slices.map(function (s, i) {
+    var pct = total > 0 ? Math.round((s.value / total) * 1000) / 10 : 0;
+    var color = s.color || DONUT_PALETTE[i % DONUT_PALETTE.length];
+    return (
+      '<div class="space-y-1.5">' +
+        '<div class="flex items-center justify-between gap-2 text-sm">' +
+          '<span class="flex min-w-0 items-center gap-2 font-medium text-foreground"><span class="shrink-0 rounded-full" style="width:10px;height:10px;background:' + color + '"></span><span class="truncate">' + esc(s.label) + "</span></span>" +
+          '<span class="shrink-0 tabular-nums text-muted">' + pct + "%</span>" +
+        "</div>" +
+        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + "%;background:" + color + '"></div></div>' +
+      "</div>"
+    );
+  }).join("");
+
+  return (
+    '<div class="flex flex-col items-center gap-6 sm:flex-row sm:items-center">' +
+      '<div class="relative shrink-0" style="width:' + size + "px;height:" + size + 'px">' +
+        ring +
+        '<div class="donut-center">' +
+          '<span class="text-xl font-bold tabular-nums text-foreground">' + esc(opts.centerValue || "") + "</span>" +
+          '<span class="text-xs text-muted">' + esc(opts.centerLabel || "") + "</span>" +
+        "</div>" +
+      "</div>" +
+      '<div class="w-full min-w-0 flex-1 space-y-3">' + (legend || '<p class="text-sm text-muted">' + esc(opts.emptyText || "No data yet") + "</p>") + "</div>" +
     "</div>"
   );
 }
@@ -632,7 +802,7 @@ function renderMembers() {
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
         '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Members</h1><p class="mt-1 text-sm text-muted">Only active members are available when recording meals or expenses.</p></div>' +
-        '<button data-action="add-member" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("user-plus", "h-4 w-4") + "Add Member</button>" +
+        '<button data-action="add-member" class="btn-primary">' + icon("user-plus", "h-4 w-4") + "Add Member</button>" +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 sm:max-w-xs">' +
         statCard({ label: "Active Members", value: activeMembers().length, icon: "users", tone: "success" }) +
@@ -654,7 +824,7 @@ function pictureUploadFieldHtml(inputName, previewId, previewPictureUrl, preview
     '<div>' + fieldLabel("Picture (optional)") +
       '<div class="flex items-center gap-3">' +
         '<span id="' + previewId + '">' + avatarHtml(previewPictureUrl, previewName || "?", "h-14 w-14", previewColor, "text-base") + "</span>" +
-        '<label class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">' +
+        '<label class="btn-secondary cursor-pointer">' +
           icon("camera", "h-4 w-4") + "Upload Photo" +
           '<input type="file" accept="image/*" data-action="picture-input" data-preview="' + previewId + '" data-target="' + inputName + '" class="hidden" />' +
         "</label>" +
@@ -685,8 +855,8 @@ function memberFormModal(mode) {
         "</div>"
       ) : "") +
       '<div class="flex justify-end gap-2 pt-2">' +
-        '<button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
-        '<button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Member") + "</button>" +
+        '<button type="button" data-action="close-modal" data-modal="' + id + '" class="btn-secondary">Cancel</button>' +
+        '<button type="submit" class="btn-primary">' + (isEdit ? "Save Changes" : "Add Member") + "</button>" +
       "</div>" +
     "</form>"
   );
@@ -896,7 +1066,7 @@ function renderMoney(search) {
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
         '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Money Added</h1><p class="mt-1 text-sm text-muted">All deposits recorded so far.</p></div>' +
-        '<button data-action="add-deposit" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("wallet", "h-4 w-4") + "Add Deposit</button>" +
+        '<button data-action="add-deposit" class="btn-primary">' + icon("wallet", "h-4 w-4") + "Add Deposit</button>" +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
         statCard({ label: "Total Money Added", value: total, prefix: "৳", icon: "wallet", tone: "success" }) +
@@ -925,7 +1095,7 @@ function depositFormModal(mode) {
       "<div>" + fieldLabel("Member") + '<select name="memberId" required class="' + FIELD_CLASS + ' cursor-pointer"><option value="" disabled selected>Select a member</option>' + memberOptions + "</select></div>" +
       '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Date") + '<input name="date" type="date" required class="' + FIELD_CLASS + '" /></div><div>' + fieldLabel("Amount (৳)") + '<input name="amount" type="number" min="0" step="1" required placeholder="1000" class="' + FIELD_CLASS + '" /></div></div>' +
       "<div>" + fieldLabel("Note (optional)") + '<textarea name="note" rows="2" placeholder="e.g. Monthly deposit" class="' + FIELD_CLASS + '"></textarea></div>' +
-      '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button><button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Deposit") + "</button></div>" +
+      '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="btn-secondary">Cancel</button><button type="submit" class="btn-primary">' + (isEdit ? "Save Changes" : "Add Deposit") + "</button></div>" +
     "</form>"
   );
   return modalWrapper(id, isEdit ? "Edit Deposit" : "Add Deposit", body);
@@ -935,8 +1105,8 @@ function deleteConfirmModal(id, title, description) {
   return modalWrapper(id, title,
     '<p class="text-sm text-muted">' + esc(description) + '</p>' +
     '<div class="mt-5 flex justify-end gap-2">' +
-      '<button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
-      '<button type="button" data-action="confirm-delete" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl bg-danger-600 px-4 text-sm font-medium text-white hover:bg-danger-700">Delete</button>' +
+      '<button type="button" data-action="close-modal" data-modal="' + id + '" class="btn-secondary">Cancel</button>' +
+      '<button type="button" data-action="confirm-delete" data-modal="' + id + '" class="btn-danger">Delete</button>' +
     "</div>");
 }
 
@@ -998,11 +1168,11 @@ function renderExpenses(search) {
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
         '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Expenses</h1><p class="mt-1 text-sm text-muted">All meal/bazaar expenses recorded so far.</p></div>' +
-        '<button data-action="add-expense" class="inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("shopping-cart", "h-4 w-4") + "Add Expense</button>" +
+        '<button data-action="add-expense" class="btn-primary">' + icon("shopping-cart", "h-4 w-4") + "Add Expense</button>" +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
         statCard({ label: "Meal Expense", value: total, prefix: "৳", icon: "shopping-cart", tone: "danger" }) +
-        '<button data-action="open-modal" data-modal="purchases-breakdown-modal" class="text-left">' + statCard({ label: "Expenses", value: expenses.length, icon: "receipt", tone: "navy", helperText: "Click for what was bought" }) + "</button>" +
+        '<button data-action="open-modal" data-modal="purchases-breakdown-modal" class="text-left">' + statCard({ label: "Expenses", value: expenses.length, icon: "receipt", tone: "navy", helperText: "Click for what was bought", interactive: true }) + "</button>" +
         statCard({ label: "Average Expense", value: expenses.length ? total / expenses.length : 0, prefix: "৳", icon: "trending-down", tone: "gray" }) +
         statCard({ label: "People Involved", value: Object.keys(uniqueBuyers).length, icon: "users", tone: "warning" }) +
       "</div>" +
@@ -1082,7 +1252,7 @@ function expenseFormModal(mode) {
       '<div class="grid grid-cols-2 gap-4"><div>' + fieldLabel("Date") + '<input name="date" type="date" required class="' + FIELD_CLASS + '" /></div><div></div></div>' +
       "<div>" + fieldLabel("Note (optional)") + '<textarea name="note" rows="2" placeholder="e.g. Price increased this week" class="' + FIELD_CLASS + '"></textarea></div>' +
       '<div class="flex items-center justify-between rounded-xl bg-navy-50 px-4 py-3"><span class="text-sm font-semibold text-navy-900">Total</span><span data-item-total class="text-base font-bold tabular-nums text-navy-900">৳0</span></div>' +
-      '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button><button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">' + (isEdit ? "Save Changes" : "Add Expense") + "</button></div>" +
+      '<div class="flex justify-end gap-2 pt-2"><button type="button" data-action="close-modal" data-modal="' + id + '" class="btn-secondary">Cancel</button><button type="submit" class="btn-primary">' + (isEdit ? "Save Changes" : "Add Expense") + "</button></div>" +
     "</form>"
   );
   return modalWrapper(id, isEdit ? "Edit Expense" : "Add Expense", body);
@@ -1426,12 +1596,23 @@ function renderHisab(monthKeyParam) {
         "</tr></thead><tbody>" + memberRowsHtml + "</tbody></table></div>") +
       "</div>" +
 
+      (s.totalBazarCost > 0 ?
+      '<div class="animate-slide-up rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)]">' +
+        '<h2 class="mb-4 text-sm font-semibold text-foreground">Meal Cost Share by Member</h2>' +
+        donutChartHtml({
+          centerValue: formatCurrency(s.totalBazarCost),
+          centerLabel: "Total Bazar Cost",
+          emptyText: "No meal cost recorded yet.",
+          slices: s.members.map(function (r) { return { label: r.name, value: r.mealCost }; }),
+        }) +
+      "</div>" : "") +
+
       '<div class="animate-slide-up rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)]">' +
         '<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">' +
           '<h2 class="text-sm font-semibold text-foreground">Final Settlement Summary</h2>' +
           (finalized ?
             '<span class="text-xs text-muted">Finalized ' + dateLabelMed(finalized.finalizedAt.slice(0, 10)) + "</span>" :
-            '<button data-action="open-close-month" data-month="' + monthKey + '" class="inline-flex h-9 select-none items-center justify-center gap-2 rounded-xl bg-navy-900 px-3.5 text-sm font-medium text-white transition-all hover:bg-navy-800">' + icon("shield-check", "h-3.5 w-3.5") + "Close Month</button>"
+            '<button data-action="open-close-month" data-month="' + monthKey + '" class="btn-primary btn-sm">' + icon("shield-check", "h-3.5 w-3.5") + "Close Month</button>"
           ) +
         "</div>" +
         '<div class="mb-5 grid grid-cols-3 gap-3">' +
@@ -1451,13 +1632,13 @@ function closeMonthConfirmModal(monthKey, finalized) {
   var body = finalized ?
     ('<p class="text-sm text-muted">' + esc(monthLabel(monthKey)) + " was already finalized on " + dateLabelMed(finalized.finalizedAt.slice(0, 10)) + '. Finalizing again will overwrite the preserved snapshot with the current numbers.</p>' +
       '<div class="mt-5 flex justify-end gap-2">' +
-        '<button type="button" data-action="close-modal" data-modal="close-month-modal" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
-        '<button type="button" data-action="confirm-close-month" data-month="' + monthKey + '" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">Re-finalize</button>' +
+        '<button type="button" data-action="close-modal" data-modal="close-month-modal" class="btn-secondary">Cancel</button>' +
+        '<button type="button" data-action="confirm-close-month" data-month="' + monthKey + '" class="btn-primary">Re-finalize</button>' +
       "</div>") :
     ('<p class="text-sm text-muted">This will snapshot the ' + esc(monthLabel(monthKey)) + " settlement — bazar cost, meals, meal rate, per-member balances and suggested transfers — so the numbers stay preserved even if data changes later.</p>" +
       '<div class="mt-5 flex justify-end gap-2">' +
-        '<button type="button" data-action="close-modal" data-modal="close-month-modal" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground hover:bg-gray-100">Cancel</button>' +
-        '<button type="button" data-action="confirm-close-month" data-month="' + monthKey + '" class="inline-flex h-10 items-center justify-center rounded-xl bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">Close Month</button>' +
+        '<button type="button" data-action="close-modal" data-modal="close-month-modal" class="btn-secondary">Cancel</button>' +
+        '<button type="button" data-action="confirm-close-month" data-month="' + monthKey + '" class="btn-primary">Close Month</button>' +
       "</div>");
   return modalWrapper("close-month-modal", finalized ? "Re-finalize Settlement" : "Close Month / Finalize Settlement", body);
 }
@@ -1517,7 +1698,7 @@ function renderSettingsPage() {
         pictureUploadFieldHtml("avatarUrl", "profile-picture-preview", SESSION.avatarUrl || null, name, "var(--navy-900)") +
         "<div>" + fieldLabel("Display Name") + '<input name="name" required value="' + esc(name) + '" placeholder="Your name" class="' + FIELD_CLASS + '" /></div>' +
         "<div>" + fieldLabel("Email") + '<input value="' + esc(SESSION.email || "") + '" disabled class="' + FIELD_CLASS + ' cursor-not-allowed opacity-60" /></div>' +
-        '<button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-navy-900 text-sm font-medium text-white hover:bg-navy-800">Save Profile</button>' +
+        '<button type="submit" class="btn-primary btn-block">Save Profile</button>' +
       "</form>" +
 
       '<form data-form="change-password" class="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-card)]">' +
@@ -1525,7 +1706,7 @@ function renderSettingsPage() {
         "<div>" + fieldLabel("Current Password") + '<input name="current" type="password" required class="' + FIELD_CLASS + '" /></div>' +
         "<div>" + fieldLabel("New Password") + '<input name="next" type="password" required class="' + FIELD_CLASS + '" /></div>' +
         "<div>" + fieldLabel("Confirm New Password") + '<input name="confirm" type="password" required class="' + FIELD_CLASS + '" /></div>' +
-        '<button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-navy-900 text-sm font-medium text-white hover:bg-navy-800">Update Password</button>' +
+        '<button type="submit" class="btn-primary btn-block">Update Password</button>' +
       "</form>" +
     "</div>"
   );
