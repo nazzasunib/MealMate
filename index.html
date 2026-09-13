@@ -269,6 +269,8 @@ function render() {
     app.innerHTML = renderShell(renderMoney(query.q || ""), "money", mobileDrawerWasOpen);
   } else if (path === "expenses") {
     app.innerHTML = renderShell(renderExpenses(query.q || ""), "expenses", mobileDrawerWasOpen);
+  } else if (path === "store") {
+    app.innerHTML = renderShell(renderStore(query.month || ""), "store", mobileDrawerWasOpen);
   } else if (path === "balance") {
     app.innerHTML = renderShell(renderBalance(), "", mobileDrawerWasOpen);
   } else if (path === "settings/password") {
@@ -593,6 +595,7 @@ var NAV_ITEMS = [
   { key: "meals", label: "Meals", icon: "utensils-crossed" },
   { key: "expenses", label: "Expenses", icon: "shopping-cart" },
   { key: "members", label: "Members", icon: "users" },
+  { key: "store", label: "Store", icon: "shopping-basket" },
 ];
 
 function sidebarHtml(activeKey, mobile) {
@@ -852,20 +855,6 @@ function renderExpenses(search) {
   });
   var itemBreakdown = Object.keys(itemTotals).map(function (k) { return itemTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
 
-  var thisMonthKey = latestMonthKey();
-  var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, thisMonthKey); });
-  var storeTotals = {};
-  monthExpenses.forEach(function (e) {
-    if (!storeTotals[e.item]) storeTotals[e.item] = { item: e.item, amount: 0, qty: 0, unit: e.unit || "" };
-    storeTotals[e.item].amount += e.amount;
-    if (e.quantity && (!storeTotals[e.item].unit || storeTotals[e.item].unit === e.unit)) {
-      storeTotals[e.item].qty += Number(e.quantity);
-      storeTotals[e.item].unit = e.unit || storeTotals[e.item].unit;
-    }
-  });
-  var storeRows = Object.keys(storeTotals).map(function (k) { return storeTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
-  var storeMonthTotal = monthExpenses.reduce(function (s, e) { return s + e.amount; }, 0);
-
   function buyerNamesHtml(e) {
     var names = (e.buyerIds || []).map(function (id) { var m = memberById(id); return m ? esc(m.name) : null; }).filter(Boolean);
     return names.length ? names.join(", ") : "Unknown";
@@ -898,22 +887,6 @@ function renderExpenses(search) {
         '<button data-action="open-modal" data-modal="purchases-breakdown-modal" class="text-left">' + statCard({ label: "Expenses", value: expenses.length, icon: "receipt", tone: "navy", helperText: "Click for what was bought" }) + "</button>" +
         statCard({ label: "Average Expense", value: expenses.length ? total / expenses.length : 0, prefix: "৳", icon: "trending-down", tone: "gray" }) +
         statCard({ label: "People Involved", value: Object.keys(uniqueBuyers).length, icon: "users", tone: "warning" }) +
-      "</div>" +
-      '<div class="animate-slide-up rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)]">' +
-        '<div class="mb-4 flex items-center justify-between gap-3"><div><h2 class="text-sm font-semibold text-foreground">This Month\'s Store</h2><p class="mt-0.5 text-xs text-muted">' + esc(monthLabel(thisMonthKey)) + " — what's been bought so far</p></div>" +
-          '<span class="shrink-0 text-sm font-semibold tabular-nums text-danger-600">' + formatCurrency(storeMonthTotal) + "</span>" +
-        "</div>" +
-        (storeRows.length === 0 ? emptyState("shopping-cart", "Nothing bought yet this month", "Add an expense to start tracking this month's store.") :
-        '<div class="space-y-2">' + storeRows.map(function (row) {
-          return (
-            '<div class="flex items-center justify-between rounded-xl border border-border px-4 py-3">' +
-              '<div><p class="text-sm font-medium text-foreground">' + esc(row.item) + "</p>" +
-              (row.qty ? '<p class="text-xs text-muted">' + formatNumber(row.qty, row.qty % 1 ? 1 : 0) + (row.unit ? " " + esc(row.unit) : "") + "</p>" : "") +
-              "</div>" +
-              '<span class="text-sm font-semibold tabular-nums text-danger-600">' + formatCurrency(row.amount) + "</span>" +
-            "</div>"
-          );
-        }).join("") + "</div>") +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Expense History</h2>' + searchBoxHtml("Search item or member...", search) + "</div>" +
@@ -963,6 +936,71 @@ function expenseFormModal(mode) {
     "</form>"
   );
   return modalWrapper(id, isEdit ? "Edit Expense" : "Add Expense", body);
+}
+
+/* ============================== STORE (monthly bazaar summary) ============================== */
+function shiftMonthKey(monthKey, delta) {
+  var parts = monthKey.split("-");
+  var d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1 + delta, 1));
+  return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0");
+}
+function monthSwitcherHtml(monthKey) {
+  var latest = latestMonthKey();
+  var isLatest = monthKey === latest;
+  return (
+    '<div class="flex items-center gap-2">' +
+      '<div class="flex items-center gap-1 rounded-xl border border-border bg-surface p-1 shadow-[var(--shadow-card)]">' +
+        '<button data-action="store-month-nav" data-month="' + shiftMonthKey(monthKey, -1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-left", "h-4 w-4") + "</button>" +
+        '<span class="min-w-[9rem] text-center text-sm font-semibold text-foreground">' + esc(monthLabel(monthKey)) + "</span>" +
+        '<button data-action="store-month-nav" data-month="' + shiftMonthKey(monthKey, 1) + '" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("chevron-right", "h-4 w-4") + "</button>" +
+      "</div>" +
+      (isLatest ? "" : '<button data-action="store-month-nav" data-month="' + latest + '" class="rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-navy-900 shadow-[var(--shadow-card)] transition-colors hover:bg-navy-50">Latest</button>') +
+    "</div>"
+  );
+}
+function renderStore(monthKey) {
+  monthKey = monthKey && /^\d{4}-\d{2}$/.test(monthKey) ? monthKey : latestMonthKey();
+  var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, monthKey); });
+  var storeTotals = {};
+  monthExpenses.forEach(function (e) {
+    if (!storeTotals[e.item]) storeTotals[e.item] = { item: e.item, amount: 0, qty: 0, unit: e.unit || "" };
+    storeTotals[e.item].amount += e.amount;
+    if (e.quantity && (!storeTotals[e.item].unit || storeTotals[e.item].unit === e.unit)) {
+      storeTotals[e.item].qty += Number(e.quantity);
+      storeTotals[e.item].unit = e.unit || storeTotals[e.item].unit;
+    }
+  });
+  var storeRows = Object.keys(storeTotals).map(function (k) { return storeTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
+  var storeMonthTotal = monthExpenses.reduce(function (s, e) { return s + e.amount; }, 0);
+
+  return (
+    '<div class="space-y-6">' +
+      '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Store</h1><p class="mt-1 text-sm text-muted">What was bought this month, and how much it cost.</p></div>' +
+        monthSwitcherHtml(monthKey) +
+      "</div>" +
+      '<div class="grid grid-cols-2 gap-4 lg:grid-cols-3">' +
+        statCard({ label: "Total Spent", value: storeMonthTotal, prefix: "৳", icon: "shopping-basket", tone: "danger" }) +
+        statCard({ label: "Items Bought", value: storeRows.length, icon: "receipt", tone: "navy" }) +
+        statCard({ label: "Purchases", value: monthExpenses.length, icon: "shopping-cart", tone: "gray" }) +
+      "</div>" +
+      '<div class="animate-slide-up rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)]">' +
+        '<h2 class="mb-4 text-sm font-semibold text-foreground">' + esc(monthLabel(monthKey)) + " — What Was Bought</h2>" +
+        (storeRows.length === 0 ? emptyState("shopping-basket", "Nothing bought this month", "Add an expense to start tracking the store for this month.") :
+        '<div class="space-y-2">' + storeRows.map(function (row) {
+          return (
+            '<div class="flex items-center justify-between rounded-xl border border-border px-4 py-3">' +
+              '<div><p class="text-sm font-medium text-foreground">' + esc(row.item) + "</p>" +
+              (row.qty ? '<p class="text-xs text-muted">' + formatNumber(row.qty, row.qty % 1 ? 1 : 0) + (row.unit ? " " + esc(row.unit) : "") + "</p>" : "") +
+              "</div>" +
+              '<span class="text-sm font-semibold tabular-nums text-danger-600">' + formatCurrency(row.amount) + "</span>" +
+            "</div>"
+          );
+        }).join("") + "</div>") +
+        (storeRows.length === 0 ? "" : '<div class="mt-3 flex items-center justify-between rounded-xl bg-navy-50 px-4 py-3"><span class="text-sm font-semibold text-navy-900">Total</span><span class="text-base font-bold tabular-nums text-navy-900">' + formatCurrency(storeMonthTotal) + "</span></div>") +
+      "</div>" +
+    "</div>"
+  );
 }
 
 /* ============================== AVAILABLE BALANCE ============================== */
@@ -1091,6 +1129,8 @@ document.addEventListener("click", function (e) {
     navigate("login");
   } else if (action === "date-nav") {
     navigate("meals", { date: el.dataset.date });
+  } else if (action === "store-month-nav") {
+    navigate("store", { month: el.dataset.month });
   } else if (action === "open-modal") {
     var m1 = document.getElementById(el.dataset.modal);
     if (m1) {
