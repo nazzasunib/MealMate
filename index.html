@@ -75,6 +75,7 @@
    (repeatable item rows) feature that the extracted Tailwind build did not
    happen to compile. Same rationale as the patch blocks above. ===== */
 .mt-3{margin-top:calc(var(--spacing) * 3)}
+.pl-12{padding-left:calc(var(--spacing) * 12)}
 
 @keyframes float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,-20px); } }
 
@@ -96,7 +97,7 @@
 #food-bg .food-bg-icon {
   position: absolute;
   color: var(--navy-900);
-  opacity: .06;
+  opacity: .6;
   pointer-events: none;
   will-change: transform;
 }
@@ -629,8 +630,8 @@ function dateSwitcherHtml(dateKey) {
 function searchBoxHtml(placeholder, value) {
   return (
     '<div class="relative">' +
-      '<span class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted">' + icon("search", "h-4 w-4") + "</span>" +
-      '<input data-action="search-input" value="' + esc(value || "") + '" placeholder="' + esc(placeholder) + '" class="w-full rounded-xl border border-border bg-surface py-2.5 pl-9 pr-3.5 text-sm text-foreground placeholder:text-muted transition-all focus:border-navy-600 focus:outline-none focus:ring-2 focus:ring-navy-600/20 sm:w-56" />' +
+      '<span class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted">' + icon("search", "h-4 w-4") + "</span>" +
+      '<input data-action="search-input" value="' + esc(value || "") + '" placeholder="' + esc(placeholder) + '" class="w-full rounded-xl border border-border bg-surface py-2.5 pl-12 pr-3.5 text-sm text-foreground placeholder:text-muted transition-all focus:border-navy-600 focus:outline-none focus:ring-2 focus:ring-navy-600/20 sm:w-56" />' +
     "</div>"
   );
 }
@@ -909,7 +910,7 @@ function renderShell(contentHtml, activeKey, drawerOpen) {
       '<aside class="hidden w-64 shrink-0 lg:block">' + sidebarHtml(activeKey) + "</aside>" +
       '<div id="mobile-drawer-backdrop" class="' + (drawerOpen ? "" : "hidden") + ' fixed inset-0 z-30 bg-navy-950/40 lg:hidden" data-action="toggle-drawer"></div>' +
       '<aside class="' + (drawerOpen ? "" : "mm-drawer-closed") + ' fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-200 lg:hidden">' + sidebarHtml(activeKey, true) + "</aside>" +
-      '<div class="flex min-w-0 flex-1 flex-col bg-background">' +
+      '<div class="flex min-w-0 flex-1 flex-col">' +
         topbarHtml() +
         '<main class="flex-1 p-4 sm:p-6">' + contentHtml + "</main>" +
       "</div>" +
