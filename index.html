@@ -308,7 +308,6 @@
 <body class="h-full bg-background">
 <div id="app" class="h-full"></div>
 <div id="toast-host" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 window.SEED = {"members": [], "meals": [], "deposits": [], "expenses": [], "users": [], "settlements": []};
@@ -1809,108 +1808,591 @@ function summaryAccentCard(opts) {
   );
 }
 
-/* Renders the on-screen Summary report to an actual downloadable .pdf file
-   using html2canvas (DOM -> image) + jsPDF (image -> multi-page PDF), rather
-   than relying on the browser's print dialog (which can never be forced to
-   pick "Save as PDF" for the user — that step is a browser-security decision,
-   not something a page can control). Temporarily un-collapses every member's
-   detail row and swaps in the print-only header so the exported PDF matches
-   what the printed version looks like, then restores the DOM exactly as it
-   was so the on-screen page is unaffected once the download finishes. */
+/* ============================== NATIVE PDF EXPORT (SUMMARY REPORT) ============================== */
+/* Builds the Summary report PDF natively with jsPDF's own vector primitives
+   (pdf.text / pdf.rect / pdf.line / pdf.link) instead of rasterizing the
+   on-screen HTML through html2canvas. This keeps text sharp at any zoom
+   level and — the main reason for the rewrite — lets every "View Details" /
+   "Details" / "< Back to Summary" link be a REAL clickable in-PDF link
+   (pdf.link() targeting a page number), which is impossible on a screenshot
+   image. Reuses the exact same computed data as the on-screen renderSummary()
+   (computeHisabSummary / computeMonthAvailableBalance / computeMemberDailyMeals
+   / expenseItemsSummary / statusBadgeForBalance's status logic) — no new
+   calculation logic lives here, only layout + drawing.
+
+   Two passes, because pdf.link() needs a target page NUMBER and page 1's
+   cards are drawn before later sections exist:
+     1) buildPdfLayoutPlan() — pure JS, no jsPDF calls. Walks the same data
+        renderSummary() uses and, using fixed row heights + the page's usable
+        height, figures out how many rows fit per page for the member table,
+        each member's daily-meal table, the expense table and the deposit
+        table — and therefore which physical page number every section (and
+        every member's detail block) starts on.
+     2) drawPdfFromLayoutPlan() — walks the plan and actually calls
+        pdf.addPage()/text()/rect()/line()/link() to render every page, using
+        the page numbers computed in pass 1 for every link target. */
+
+var PDF_MARGIN = 40;
+var PDF_ROW_H = 18;
+var PDF_HEADER_H = 22;
+/* First-data-row Y offsets (from PDF_MARGIN) for each page shape the
+   drawing pass produces below — shared by the layout pass so the two never
+   drift apart. Traced exactly from the drawing pass's own sequence of
+   backLink() (+36) -> sectionHeading(+4 gap, +18 own height = +58 total)
+   -> [+24 month-label line + gap, member-detail pages only] -> table header
+   row (+PDF_HEADER_H). Continuation pages (mid-table, after pdf.addPage())
+   skip the back-link/heading and start at PDF_MARGIN+40 before the repeated
+   table header row. */
+var PDF_SECTION_HEADING_BOTTOM = 36 + 4 + 18; // = 58: y right after backLink()+sectionHeading()
+var PDF_FIRST_ROW_Y_STANDARD = PDF_SECTION_HEADING_BOTTOM + PDF_HEADER_H; // member table / expense / deposit first pages
+var PDF_FIRST_ROW_Y_MEMBER_DETAIL = PDF_SECTION_HEADING_BOTTOM + 24 + PDF_HEADER_H; // member detail pages (extra month-label line)
+var PDF_CONT_HEADER_TOP = 40; // continuation pages start right after pageHeader(), no section heading
+var PDF_CONT_FIRST_ROW_Y = PDF_CONT_HEADER_TOP + PDF_HEADER_H;
+
+/* jsPDF's built-in "helvetica" font only has WinAnsi/Latin-1 glyphs, so the
+   on-screen ৳ (Bengali/Bangla U+09F3 Taka sign) formatCurrency() uses would
+   render as a broken "missing glyph" box in the PDF (embedding a whole
+   custom font just for one currency symbol would be a lot of complexity/
+   file size for a "keep it simple" report). PDF text uses this plain-ASCII
+   "Tk " prefix instead — same numeric formatting as formatCurrency(), just
+   a renderable prefix — everywhere a currency amount is drawn into the PDF.
+   The on-screen report is completely unaffected; only PDF drawing calls use
+   this. */
+function pdfCurrency(n) {
+  return formatCurrency(n).replace("৳", "Tk ");
+}
+function pdfStatusLabel(balance) {
+  if (balance > 0.01) return "Will Receive " + pdfCurrency(balance);
+  if (balance < -0.01) return "Needs to Pay " + pdfCurrency(Math.abs(balance));
+  return "Settled";
+}
+
+/* Pass 1: pure layout math, no PDF calls. Returns everything the drawing
+   pass needs, including the page number each section/member-detail block
+   starts on. Page numbers are 1-based and assume the drawing pass emits
+   pages in exactly the same order this function walks sections. */
+function buildPdfLayoutPlan(monthKey, pageHeight) {
+  var usableBottom = pageHeight - PDF_MARGIN;
+  var s = computeHisabSummary(monthKey);
+  var availableBalance = computeMonthAvailableBalance(monthKey);
+  var monthExpenses = DB.expenses.filter(function (e) { return inMonth(e.date, monthKey); }).slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  var monthDeposits = DB.deposits.filter(function (d) { return inMonth(d.date, monthKey); }).slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+
+  /* Running page counter — page 1 is the executive summary and is always
+     emitted first by the drawing pass. */
+  var page = 1;
+
+  /* --- Member Breakdown table (starts on page 2) --- */
+  page += 1;
+  var memberSectionPage = page;
+  var memberTableStartY = PDF_MARGIN + PDF_FIRST_ROW_Y_STANDARD;
+  var rowsLeftOnPage = Math.floor((usableBottom - memberTableStartY) / PDF_ROW_H);
+  if (rowsLeftOnPage < 1) rowsLeftOnPage = 1;
+  var memberRowsRemaining = s.members.length;
+  var pagesForMemberTable = memberRowsRemaining === 0 ? 1 : Math.max(1, Math.ceil(memberRowsRemaining / rowsLeftOnPage));
+  /* Continuation pages (after the first) start right below the repeated
+     header, no section heading above it. */
+  var contRowsPerPage = Math.floor((usableBottom - (PDF_MARGIN + PDF_CONT_FIRST_ROW_Y)) / PDF_ROW_H);
+  if (contRowsPerPage < 1) contRowsPerPage = 1;
+  if (memberRowsRemaining > rowsLeftOnPage) {
+    pagesForMemberTable = 1 + Math.ceil((memberRowsRemaining - rowsLeftOnPage) / contRowsPerPage);
+  }
+  page = memberSectionPage + pagesForMemberTable - 1;
+
+  /* --- Per-member daily-meal detail blocks, one after another, each may
+     span multiple pages of its own. Each block starts on a fresh page for
+     simplicity/robustness (keeps the link-target math trivial and avoids a
+     detail table awkwardly sharing a page with the tail of another). --- */
+  var memberDetailPages = {}; // memberId -> first page number of its detail block
+  var memberDetailRowInfo = {}; // memberId -> { rowsPerFirstPage, rowsPerContPage, totalRows }
+  s.members.forEach(function (r) {
+    page += 1;
+    memberDetailPages[r.memberId] = page;
+    var daily = computeMemberDailyMeals(r.memberId, monthKey);
+    var firstPageStartY = PDF_MARGIN + PDF_FIRST_ROW_Y_MEMBER_DETAIL;
+    var rowsPerFirstPage = Math.max(1, Math.floor((usableBottom - firstPageStartY) / PDF_ROW_H));
+    var contStartY = PDF_MARGIN + PDF_CONT_FIRST_ROW_Y;
+    var rowsPerContPage = Math.max(1, Math.floor((usableBottom - contStartY) / PDF_ROW_H));
+    var totalRows = daily.length;
+    var extraPages = 0;
+    if (totalRows > rowsPerFirstPage) {
+      extraPages = Math.ceil((totalRows - rowsPerFirstPage) / rowsPerContPage);
+    }
+    memberDetailRowInfo[r.memberId] = { rowsPerFirstPage: rowsPerFirstPage, rowsPerContPage: rowsPerContPage, totalRows: totalRows, extraPages: extraPages };
+    page += extraPages;
+  });
+
+  /* --- Full Expense List --- */
+  page += 1;
+  var expenseSectionPage = page;
+  var expenseFirstPageStartY = PDF_MARGIN + PDF_FIRST_ROW_Y_STANDARD;
+  var expenseRowsPerFirstPage = Math.max(1, Math.floor((usableBottom - expenseFirstPageStartY) / PDF_ROW_H));
+  var expenseContStartY = PDF_MARGIN + PDF_CONT_FIRST_ROW_Y;
+  var expenseRowsPerContPage = Math.max(1, Math.floor((usableBottom - expenseContStartY) / PDF_ROW_H));
+  var expenseTotalRows = monthExpenses.length + 1; // +1 for the Total row
+  var expenseExtraPages = 0;
+  if (monthExpenses.length > 0 && expenseTotalRows > expenseRowsPerFirstPage) {
+    expenseExtraPages = Math.ceil((expenseTotalRows - expenseRowsPerFirstPage) / expenseRowsPerContPage);
+  }
+  page = expenseSectionPage + expenseExtraPages;
+
+  /* --- Full Deposit List --- */
+  page += 1;
+  var depositSectionPage = page;
+  var depositFirstPageStartY = PDF_MARGIN + PDF_FIRST_ROW_Y_STANDARD;
+  var depositRowsPerFirstPage = Math.max(1, Math.floor((usableBottom - depositFirstPageStartY) / PDF_ROW_H));
+  var depositContStartY = PDF_MARGIN + PDF_CONT_FIRST_ROW_Y;
+  var depositRowsPerContPage = Math.max(1, Math.floor((usableBottom - depositContStartY) / PDF_ROW_H));
+  var depositTotalRows = monthDeposits.length + 1;
+  var depositExtraPages = 0;
+  if (monthDeposits.length > 0 && depositTotalRows > depositRowsPerFirstPage) {
+    depositExtraPages = Math.ceil((depositTotalRows - depositRowsPerFirstPage) / depositRowsPerContPage);
+  }
+  page = depositSectionPage + depositExtraPages;
+
+  return {
+    monthKey: monthKey,
+    summary: s,
+    availableBalance: availableBalance,
+    monthExpenses: monthExpenses,
+    monthDeposits: monthDeposits,
+    totalPages: page,
+    memberSectionPage: memberSectionPage,
+    rowsLeftOnFirstMemberPage: rowsLeftOnPage,
+    rowsPerMemberContPage: contRowsPerPage,
+    memberDetailPages: memberDetailPages,
+    memberDetailRowInfo: memberDetailRowInfo,
+    expenseSectionPage: expenseSectionPage,
+    expenseRowsPerFirstPage: expenseRowsPerFirstPage,
+    expenseRowsPerContPage: expenseRowsPerContPage,
+    depositSectionPage: depositSectionPage,
+    depositRowsPerFirstPage: depositRowsPerFirstPage,
+    depositRowsPerContPage: depositRowsPerContPage,
+  };
+}
+
+/* Pass 2: walks the layout plan and actually draws every page. Kept as a
+   handful of small helpers (closed over `pdf`, `pageWidth`, `pageHeight`)
+   rather than one giant function, mirroring how the rest of this file
+   factors big renders into small composable pieces. */
+function drawPdfFromLayoutPlan(pdf, plan) {
+  var pageWidth = pdf.internal.pageSize.getWidth();
+  var pageHeight = pdf.internal.pageSize.getHeight();
+  var contentWidth = pageWidth - PDF_MARGIN * 2;
+  var usableBottom = pageHeight - PDF_MARGIN;
+
+  var TONE_COLORS = {
+    danger: [220, 38, 38],
+    success: [22, 163, 74],
+    gray: [107, 114, 128],
+    warning: [217, 119, 6],
+    navy: [11, 31, 75],
+  };
+
+  function setGray(shade) { pdf.setDrawColor(shade, shade, shade); }
+
+  function pageHeader(title) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text(title, PDF_MARGIN, 24);
+    pdf.text("Page " + pdf.internal.getNumberOfPages(), pageWidth - PDF_MARGIN, 24, { align: "right" });
+    setGray(210);
+    pdf.setLineWidth(0.75);
+    pdf.line(PDF_MARGIN, 30, pageWidth - PDF_MARGIN, 30);
+    pdf.setTextColor(0, 0, 0);
+  }
+
+  function backLink(targetPage) {
+    var y = PDF_MARGIN + 6;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(11, 31, 75);
+    var label = "< Back to Summary";
+    pdf.text(label, PDF_MARGIN, y + 20);
+    var w = pdf.getTextWidth(label);
+    pdf.link(PDF_MARGIN, y + 20 - 9, w, 12, { pageNumber: targetPage });
+    pdf.setTextColor(0, 0, 0);
+    return y + 30; // next available y
+  }
+
+  function sectionHeading(text, y) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.setTextColor(11, 31, 75);
+    pdf.text(text, PDF_MARGIN, y);
+    pdf.setTextColor(0, 0, 0);
+    return y + 18;
+  }
+
+  /* Generic paginated table drawer. columns: [{label, width, align}].
+     rows: array of arrays of string cell values, already formatted.
+     startY: y of the first header row on the CURRENT page (already added).
+     Handles overflow onto new pages, repeating the header each time.
+     totalRowRenderer (optional) draws a bold "Total" row after all data
+     rows on whichever page the last data row landed on. */
+  function drawTable(opts) {
+    var columns = opts.columns;
+    var rows = opts.rows;
+    var y = opts.startY;
+    var pageTitle = opts.pageTitle;
+    var totalRow = opts.totalRow || null;
+    var emptyText = opts.emptyText;
+
+    function drawHeaderRow(yy) {
+      pdf.setFillColor(243, 244, 246);
+      pdf.rect(PDF_MARGIN, yy - 13, contentWidth, PDF_HEADER_H, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(90, 90, 90);
+      var x = PDF_MARGIN + 6;
+      columns.forEach(function (col) {
+        var tx = col.align === "right" ? x + col.width - 6 : x;
+        pdf.text(col.label, tx, yy, { align: col.align === "right" ? "right" : "left" });
+        x += col.width;
+      });
+      pdf.setTextColor(0, 0, 0);
+      setGray(220);
+      pdf.setLineWidth(0.5);
+      pdf.line(PDF_MARGIN, yy + 5, PDF_MARGIN + contentWidth, yy + 5);
+      return yy + PDF_HEADER_H;
+    }
+
+    y = drawHeaderRow(y);
+
+    if (rows.length === 0) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.setTextColor(140, 140, 140);
+      pdf.text(emptyText || "No data", PDF_MARGIN + contentWidth / 2, y + 20, { align: "center" });
+      pdf.setTextColor(0, 0, 0);
+      return y + 36;
+    }
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    rows.forEach(function (row) {
+      if (y + PDF_ROW_H > usableBottom) {
+        pdf.addPage();
+        pageHeader(pageTitle);
+        y = PDF_MARGIN + PDF_CONT_HEADER_TOP;
+        y = drawHeaderRow(y);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9.5);
+      }
+      var x = PDF_MARGIN + 6;
+      row.forEach(function (cell, i) {
+        var col = columns[i];
+        var tx = col.align === "right" ? x + col.width - 6 : x;
+        pdf.text(String(cell), tx, y, { align: col.align === "right" ? "right" : "left" });
+        x += col.width;
+      });
+      setGray(235);
+      pdf.setLineWidth(0.4);
+      pdf.line(PDF_MARGIN, y + 6, PDF_MARGIN + contentWidth, y + 6);
+      y += PDF_ROW_H;
+    });
+
+    if (totalRow) {
+      if (y + PDF_ROW_H > usableBottom) {
+        pdf.addPage();
+        pageHeader(pageTitle);
+        y = PDF_MARGIN + PDF_CONT_HEADER_TOP;
+        y = drawHeaderRow(y);
+      }
+      pdf.setFillColor(238, 241, 250);
+      pdf.rect(PDF_MARGIN, y - 12, contentWidth, PDF_ROW_H + 2, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9.5);
+      pdf.setTextColor(11, 31, 75);
+      var x2 = PDF_MARGIN + 6;
+      totalRow.forEach(function (cell, i) {
+        var col = columns[i];
+        var tx = col.align === "right" ? x2 + col.width - 6 : x2;
+        if (cell !== null) pdf.text(String(cell), tx, y, { align: col.align === "right" ? "right" : "left" });
+        x2 += col.width;
+      });
+      pdf.setTextColor(0, 0, 0);
+      y += PDF_ROW_H;
+    }
+
+    return y;
+  }
+
+  var s = plan.summary;
+  var monthKey = plan.monthKey;
+
+  /* ---------- PAGE 1: Executive Summary ---------- */
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(20);
+  pdf.setTextColor(11, 31, 75);
+  pdf.text("Monthly Summary Report", PDF_MARGIN, 60);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(12);
+  pdf.setTextColor(60, 60, 60);
+  pdf.text(monthLabel(monthKey), PDF_MARGIN, 80);
+  pdf.setFontSize(9);
+  pdf.setTextColor(130, 130, 130);
+  var generatedAt = new Date();
+  var generatedAtLabel = generatedAt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) +
+    " at " + generatedAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  pdf.text("Report generated on: " + generatedAtLabel, PDF_MARGIN, 96);
+  pdf.setTextColor(0, 0, 0);
+  setGray(220);
+  pdf.setLineWidth(0.75);
+  pdf.line(PDF_MARGIN, 108, pageWidth - PDF_MARGIN, 108);
+
+  var cards = [
+    { label: "Total Bazar/Meal Cost", value: pdfCurrency(s.totalBazarCost), tone: "danger", targetPage: plan.expenseSectionPage },
+    { label: "Total Money Deposited", value: pdfCurrency(s.totalPaid), tone: "success", targetPage: plan.depositSectionPage },
+    { label: "Total Meals", value: formatNumber(s.totalMeals), tone: "gray", targetPage: plan.memberSectionPage },
+    { label: "Meal Rate", value: pdfCurrency(s.mealRate) + " / meal", tone: "warning", targetPage: plan.memberSectionPage },
+    { label: "Available Balance", value: (plan.availableBalance < 0 ? "-" : "") + pdfCurrency(Math.abs(plan.availableBalance)), tone: plan.availableBalance < 0 ? "danger" : "navy", targetPage: plan.memberSectionPage },
+  ];
+
+  var cardGap = 14;
+  var cardW = (contentWidth - cardGap * 2) / 3;
+  var cardH = 62;
+  var cardTop = 130;
+  cards.forEach(function (card, i) {
+    var col = i % 3;
+    var rowIdx = Math.floor(i / 3);
+    var cx = PDF_MARGIN + col * (cardW + cardGap);
+    var cy = cardTop + rowIdx * (cardH + cardGap);
+    var color = TONE_COLORS[card.tone] || TONE_COLORS.gray;
+
+    // card border
+    setGray(225);
+    pdf.setLineWidth(0.75);
+    pdf.rect(cx, cy, cardW, cardH);
+    // left accent strip
+    pdf.setFillColor(color[0], color[1], color[2]);
+    pdf.rect(cx, cy, 3, cardH, "F");
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(120, 120, 120);
+    pdf.text(card.label.toUpperCase(), cx + 12, cy + 16, { maxWidth: cardW - 20 });
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(14.5);
+    pdf.setTextColor(20, 20, 20);
+    pdf.text(card.value, cx + 12, cy + 36, { maxWidth: cardW - 20 });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(11, 31, 75);
+    pdf.text("View Details >", cx + 12, cy + 50);
+    pdf.setTextColor(0, 0, 0);
+
+    // whole card is clickable, not just the label
+    pdf.link(cx, cy, cardW, cardH, { pageNumber: card.targetPage });
+  });
+
+  /* ---------- Member Breakdown ---------- */
+  pdf.addPage();
+  pageHeader("MealMate — Monthly Summary Report");
+  var my = backLink(1);
+  my = sectionHeading("2. Member Breakdown — " + monthLabel(monthKey), my + 4);
+
+  var memberColumns = [
+    { label: "NAME", width: contentWidth * 0.18, align: "left" },
+    { label: "TOTAL PAID", width: contentWidth * 0.12, align: "right" },
+    { label: "MEALS", width: contentWidth * 0.08, align: "right" },
+    { label: "MEAL COST", width: contentWidth * 0.12, align: "right" },
+    { label: "BALANCE", width: contentWidth * 0.13, align: "right" },
+    { label: "STATUS", width: contentWidth * 0.30, align: "left" },
+    { label: "DETAILS", width: contentWidth * 0.07, align: "left" },
+  ];
+  var memberRowsData = s.members.map(function (r) {
+    return [r.name, pdfCurrency(r.paid), formatNumber(r.meals), pdfCurrency(r.mealCost),
+      (r.balance > 0 ? "+" : r.balance < 0 ? "-" : "") + pdfCurrency(Math.abs(r.balance)),
+      pdfStatusLabel(r.balance), "View >"];
+  });
+
+  /* Draw manually (not via drawTable's generic loop) so each row's "Details"
+     cell can carry its own pdf.link() to that member's detail block — the
+     generic drawTable helper only draws text, it doesn't know about links. */
+  var pageTitle = "MealMate — Monthly Summary Report";
+  function drawMemberHeaderRow(yy) {
+    pdf.setFillColor(243, 244, 246);
+    pdf.rect(PDF_MARGIN, yy - 13, contentWidth, PDF_HEADER_H, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(90, 90, 90);
+    var x = PDF_MARGIN + 6;
+    memberColumns.forEach(function (col) {
+      var tx = col.align === "right" ? x + col.width - 6 : x;
+      pdf.text(col.label, tx, yy, { align: col.align === "right" ? "right" : "left" });
+      x += col.width;
+    });
+    pdf.setTextColor(0, 0, 0);
+    setGray(220);
+    pdf.setLineWidth(0.5);
+    pdf.line(PDF_MARGIN, yy + 5, PDF_MARGIN + contentWidth, yy + 5);
+    return yy + PDF_HEADER_H;
+  }
+
+  my = drawMemberHeaderRow(my);
+
+  if (s.members.length === 0) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(140, 140, 140);
+    pdf.text("No active members", PDF_MARGIN + contentWidth / 2, my + 20, { align: "center" });
+    pdf.setTextColor(0, 0, 0);
+  } else {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    s.members.forEach(function (r, idx) {
+      if (my + PDF_ROW_H > usableBottom) {
+        pdf.addPage();
+        pageHeader(pageTitle);
+        my = PDF_MARGIN + PDF_CONT_HEADER_TOP;
+        my = drawMemberHeaderRow(my);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9.5);
+      }
+      var row = memberRowsData[idx];
+      var x = PDF_MARGIN + 6;
+      row.forEach(function (cell, i) {
+        var col = memberColumns[i];
+        var tx = col.align === "right" ? x + col.width - 6 : x;
+        var isDetailsCell = i === row.length - 1;
+        var isStatusCell = i === row.length - 2;
+        if (isDetailsCell) pdf.setTextColor(11, 31, 75); else pdf.setTextColor(0, 0, 0);
+        /* Status text ("Will Receive Tk 12,345.67") is the longest value
+           in this table by far, so it gets a slightly smaller size to fit
+           its column comfortably rather than risk colliding with the
+           Details column next to it (jsPDF does not clip/ellipsize
+           overflowing text on its own, and a maxWidth option would instead
+           silently word-wrap to a second line, which would then collide
+           with the row below — smaller text + a generously-sized column
+           is the simpler, safer fix here). */
+        if (isStatusCell) pdf.setFontSize(8.5);
+        pdf.text(String(cell), tx, my, { align: col.align === "right" ? "right" : "left" });
+        if (isStatusCell) pdf.setFontSize(9.5);
+        if (isDetailsCell) {
+          pdf.link(x - 6, my - 10, col.width, 14, { pageNumber: plan.memberDetailPages[r.memberId] });
+        }
+        x += col.width;
+      });
+      pdf.setTextColor(0, 0, 0);
+      setGray(235);
+      pdf.setLineWidth(0.4);
+      pdf.line(PDF_MARGIN, my + 6, PDF_MARGIN + contentWidth, my + 6);
+      my += PDF_ROW_H;
+    });
+  }
+
+  /* ---------- Per-member daily meal detail blocks ---------- */
+  s.members.forEach(function (r) {
+    pdf.addPage();
+    pageHeader(pageTitle);
+    var dy = backLink(1);
+    dy = sectionHeading(r.name + " — Day-by-Day Meal Breakdown", dy + 4);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(90, 90, 90);
+    pdf.text(monthLabel(monthKey), PDF_MARGIN, dy + 2);
+    pdf.setTextColor(0, 0, 0);
+    dy += 24;
+
+    var daily = computeMemberDailyMeals(r.memberId, monthKey);
+    var dailyColumns = [
+      { label: "DATE", width: contentWidth * 0.30, align: "left" },
+      { label: "BREAKFAST", width: contentWidth * 0.20, align: "left" },
+      { label: "LUNCH", width: contentWidth * 0.18, align: "left" },
+      { label: "DINNER", width: contentWidth * 0.17, align: "left" },
+      { label: "TOTAL", width: contentWidth * 0.15, align: "right" },
+    ];
+    var dailyRows = daily.map(function (d) {
+      return [dateLabelMed(d.date), d.breakfast ? "Yes" : "—", d.lunch ? "Yes" : "—", d.dinner ? "Yes" : "—", String(d.total)];
+    });
+    drawTable({ columns: dailyColumns, rows: dailyRows, startY: dy, pageTitle: pageTitle, emptyText: "No days recorded yet" });
+  });
+
+  /* ---------- Full Expense List ---------- */
+  pdf.addPage();
+  pageHeader(pageTitle);
+  var ey = backLink(1);
+  ey = sectionHeading("3. Full Expense List — " + monthLabel(monthKey), ey + 4);
+  var expenseColumns = [
+    { label: "DATE", width: contentWidth * 0.16, align: "left" },
+    { label: "ITEMS", width: contentWidth * 0.42, align: "left" },
+    { label: "BOUGHT BY", width: contentWidth * 0.22, align: "left" },
+    { label: "AMOUNT", width: contentWidth * 0.20, align: "right" },
+  ];
+  var expenseRows = plan.monthExpenses.map(function (e) {
+    var names = (e.buyerIds || []).map(function (id) { var m = memberById(id); return m ? m.name : null; }).filter(Boolean);
+    var itemsText = expenseItemsSummary(e);
+    if (itemsText.length > 60) itemsText = itemsText.slice(0, 57) + "...";
+    return [dateLabelMed(e.date), itemsText, names.length ? names.join(", ") : "Unknown", "-" + pdfCurrency(e.amount)];
+  });
+  drawTable({
+    columns: expenseColumns,
+    rows: expenseRows,
+    startY: ey,
+    pageTitle: pageTitle,
+    emptyText: "No expenses this month",
+    totalRow: plan.monthExpenses.length ? ["Total", null, null, pdfCurrency(s.totalBazarCost)] : null,
+  });
+
+  /* ---------- Full Deposit List ---------- */
+  pdf.addPage();
+  pageHeader(pageTitle);
+  var py = backLink(1);
+  py = sectionHeading("4. Full Deposit List — " + monthLabel(monthKey), py + 4);
+  var depositColumns = [
+    { label: "DATE", width: contentWidth * 0.18, align: "left" },
+    { label: "MEMBER", width: contentWidth * 0.25, align: "left" },
+    { label: "AMOUNT", width: contentWidth * 0.20, align: "right" },
+    { label: "NOTE", width: contentWidth * 0.37, align: "left" },
+  ];
+  var depositRows = plan.monthDeposits.map(function (d) {
+    var m = memberById(d.memberId);
+    var note = d.note || "-";
+    if (note.length > 45) note = note.slice(0, 42) + "...";
+    return [dateLabelMed(d.date), m ? m.name : "Unknown", "+" + pdfCurrency(d.amount), note];
+  });
+  drawTable({
+    columns: depositColumns,
+    rows: depositRows,
+    startY: py,
+    pageTitle: pageTitle,
+    emptyText: "No deposits this month",
+    totalRow: plan.monthDeposits.length ? ["Total", null, pdfCurrency(s.totalPaid), null] : null,
+  });
+}
+
+/* Builds the Summary report as a natively-drawn multi-page PDF (real vector
+   text + real clickable internal links — see the big comment above) and
+   triggers the browser download. Synchronous end-to-end: no DOM cloning, no
+   html2canvas, no screenshotting — just reading DB state and calling jsPDF's
+   own drawing API, so this no longer needs a promise chain or a setTimeout. */
 function downloadSummaryPdf(monthKey) {
-  var container = document.querySelector(".summary-report");
-  if (!container || !window.html2canvas || !window.jspdf) {
+  if (!window.jspdf) {
     toast("PDF export isn't available right now — please try again.", "error");
     return;
   }
 
-  var toolbar = container.querySelector(".no-print");
-  /* .summary-print-header is hidden by its own CSS class rule
-     (display:none), only overridden inside @media print — toggling the
-     unrelated .hidden class here has no effect, so an inline style is used
-     instead to force it visible for the PDF capture specifically. */
-  var printHeader = container.querySelector(".summary-print-header");
-  var collapsedRows = Array.prototype.slice.call(container.querySelectorAll(".details-collapsed"));
-
-  var toolbarWasHidden = toolbar ? toolbar.classList.contains("hidden") : false;
-
-  if (toolbar) toolbar.classList.add("hidden");
-  if (printHeader) printHeader.style.display = "block";
-  collapsedRows.forEach(function (row) { row.classList.remove("details-collapsed"); });
-
   toast("Preparing PDF...", "default");
 
-  /* html2canvas (even with foreignObjectRendering) captures an offset
-     element — one not positioned at the page's own (0,0), such as this
-     container which sits to the right of the fixed sidebar — into a canvas
-     that silently crops off however many pixels of offset there were. The
-     reliable fix is to clone the report into an isolated, fixed, fully
-     off-screen wrapper positioned at (0,0) with its own explicit pixel
-     width, capture THAT, then remove it — so there is never any offset for
-     html2canvas to get wrong. foreignObjectRendering is still required
-     because this file's modern color-mix(in oklab, ...) CSS (used by
-     several Tailwind opacity-variant utilities) throws in html2canvas's
-     default DOM-walking color parser ("Attempting to parse an unsupported
-     color function oklab"). A brief setTimeout before capturing is also
-     required: foreignObjectRendering serializes the live DOM synchronously,
-     and capturing in the same tick the freshly-inserted clone was appended
-     (before the browser has run a layout/paint pass on it) produces a
-     blank canvas. */
-  var captureWidth = container.getBoundingClientRect().width;
-  var clone = container.cloneNode(true);
-  var wrapper = document.createElement("div");
-  wrapper.style.position = "fixed";
-  wrapper.style.top = "0";
-  wrapper.style.left = "0";
-  wrapper.style.zIndex = "-1";
-  wrapper.style.width = captureWidth + "px";
-  wrapper.style.background = "#ffffff";
-  wrapper.appendChild(clone);
-  document.body.appendChild(wrapper);
-
-  setTimeout(function () {
-  window.html2canvas(clone, {
-    scale: 1.5,
-    backgroundColor: "#ffffff",
-    useCORS: true,
-    foreignObjectRendering: true,
-    width: captureWidth,
-    windowWidth: captureWidth
-  }).then(function (canvas) {
+  try {
     var jsPDF = window.jspdf.jsPDF;
     var pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-    var pageWidth = pdf.internal.pageSize.getWidth();
     var pageHeight = pdf.internal.pageSize.getHeight();
-    var imgWidth = pageWidth;
-    var imgHeight = (canvas.height * imgWidth) / canvas.width;
-    /* JPEG at high quality compresses this flat-color report far smaller
-       than PNG (tens of MB -> a few hundred KB) with no visible quality
-       loss on text/table content. */
-    var imgData = canvas.toDataURL("image/jpeg", 0.92);
+    var effectiveMonthKey = (monthKey && /^\d{4}-\d{2}$/.test(monthKey)) ? monthKey : latestMonthKey();
 
-    var heightLeft = imgHeight;
-    var position = 0;
-    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
+    var plan = buildPdfLayoutPlan(effectiveMonthKey, pageHeight);
+    drawPdfFromLayoutPlan(pdf, plan);
 
-    var fileMonth = (monthKey || latestMonthKey()).replace(/[^0-9a-zA-Z-]/g, "");
+    var fileMonth = effectiveMonthKey.replace(/[^0-9a-zA-Z-]/g, "");
     pdf.save("MealMate-Summary-" + fileMonth + ".pdf");
     toast("PDF downloaded.", "success");
-  }).catch(function () {
+  } catch (err) {
     toast("Couldn't generate the PDF. Please try again.", "error");
-  }).then(function () {
-    document.body.removeChild(wrapper);
-    if (toolbar && !toolbarWasHidden) toolbar.classList.remove("hidden");
-    if (printHeader) printHeader.style.display = "";
-    collapsedRows.forEach(function (row) { row.classList.add("details-collapsed"); });
-  });
-  }, 50);
+  }
 }
 
 function renderSummary(monthKeyParam) {
