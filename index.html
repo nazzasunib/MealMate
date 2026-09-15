@@ -303,6 +303,35 @@
   font-weight:700;
   letter-spacing:-0.01em;
 }
+
+/* ===== manual patch 7: animated grid-box app background + royal-navy card
+   outline. The moving grid mirrors the login page's diagonal-box pattern
+   (same style language, applied behind the authenticated app shell instead
+   of just the login screen). The card outline layers a royal navy ring with
+   a small offset "margin" around every .card-premium (all statCard() tiles)
+   without touching the border-radius/shadow/hover-lift rules already set on
+   that class above. ===== */
+main.app-grid-bg{
+  position:relative;
+  background-color:var(--background);
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size:36px 36px;
+  background-position:0 0, 0 0;
+  animation:app-grid-drift 18s linear infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  main.app-grid-bg{ animation:none; }
+}
+@keyframes app-grid-drift{
+  0%{ background-position:0 0, 0 0; }
+  100%{ background-position:36px 36px, 36px -36px; }
+}
+.card-premium{
+  outline:1px solid var(--navy-700);
+  outline-offset:4px;
+}
 </style>
 </head>
 <body class="h-full bg-background">
@@ -1057,7 +1086,7 @@ function renderShell(contentHtml, activeKey, drawerOpen) {
       '<aside class="' + (drawerOpen ? "" : "mm-drawer-closed") + ' fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-200 lg:hidden">' + sidebarHtml(activeKey, true) + "</aside>" +
       '<div class="flex min-w-0 flex-1 flex-col">' +
         topbarHtml() +
-        '<main class="flex-1 p-4 sm:p-6">' + contentHtml + "</main>" +
+        '<main class="app-grid-bg flex-1 p-4 sm:p-6">' + contentHtml + "</main>" +
       "</div>" +
     "</div>"
   );
