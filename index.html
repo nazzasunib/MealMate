@@ -335,49 +335,161 @@ main.app-grid-bg{
 
 /* ===== manual patch 8: gentle idle sway on every card outline (small,
    continuous, low-amplitude — a subtle "alive" feel rather than a distracting
-   motion) plus a "MealMate" watermark that flips into view from behind the
-   card content on hover, mirroring the login page's branding without adding
-   any new markup — the whole effect is one ::after pseudo-element per
-   .card-premium tile. overflow:hidden is added so the flipped-in text never
-   pokes out past the card's own rounded corners; z-index keeps it behind the
-   real card content (icon/value/label), which all already render above the
-   card's own background since they're normal flow children painted after
-   the ::after in stacking order only when ::after has a lower z-index. ===== */
+   motion). ===== */
 .card-premium{
-  overflow:hidden;
   animation:card-sway 7s ease-in-out infinite;
 }
-.card-premium > *{ position:relative; z-index:1; }
 @keyframes card-sway{
   0%, 100%{ outline-offset:4px; }
   50%{ outline-offset:6px; }
 }
-.card-premium::after{
-  content:"MealMate";
+@media (prefers-reduced-motion:reduce){
+  .card-premium{ animation:none; }
+}
+
+/* ===== manual patch 9: futuristic background upgrade — slower/subtler grid
+   drift (kept from patch 7, values unchanged) plus a decorative layer that
+   periodically lights up individual background-grid cells so their pattern
+   spells out "MealMate" in a pixel/block font, holds for ~2s, fades out,
+   waits ~1s, then re-forms (same word, a different preset position on the
+   grid) and repeats. Pure background decoration: absolute positioning +
+   pointer-events:none, zero effect on the dashboard's real layout/content/
+   cards/sidebar. Each lit cell is a small square in the same color family
+   as the grid lines (see .app-grid-pixel below) so the word reads as the
+   grid itself lighting up rather than text placed over it. Only opacity is
+   animated (GPU-compositable, no layout/paint cost), and the whole layer
+   is disabled under prefers-reduced-motion. ===== */
+main.app-grid-bg{ overflow:hidden; }
+.app-grid-text-layer{
   position:absolute;
   inset:0;
   z-index:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:1.1rem;
-  font-weight:800;
-  letter-spacing:0.02em;
-  color:var(--navy-700);
-  opacity:0;
-  background:var(--navy-50);
-  transform:rotateY(-90deg);
-  transform-origin:center;
-  transition:transform .5s cubic-bezier(.34,1.56,.64,1), opacity .35s ease;
+  overflow:hidden;
   pointer-events:none;
 }
-.card-premium:hover::after{
-  opacity:1;
-  transform:rotateY(0deg);
+main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer){
+  position:relative;
+  z-index:1;
+}
+/* One lit "pixel" of the "MealMate" glyph matrix — a small square in the
+   same color family as the background grid lines (see main.app-grid-bg),
+   so a cluster of them lighting up reads as "the grid getting denser",
+   not an unrelated shape dropped on top. Sized/positioned in JS (see
+   APP_GRID_CELL below); kept small so the whole word stays compact enough
+   to tuck into open background area instead of spanning most of the page. */
+.app-grid-pixel{
+  position:absolute;
+  width:10px;
+  height:10px;
+  box-sizing:border-box;
+  background:var(--navy-700);
+  border-radius:2px;
+  opacity:0;
+  will-change:opacity;
+  animation-name:app-grid-pixel-cycle;
+  animation-timing-function:ease-in-out;
+  animation-iteration-count:infinite;
+}
+/* Below this width, or below this height (a short/zoomed-in viewport where
+   the dashboard's card grid can reach close to the bottom margin), there's
+   no reliably open patch of background left to place the word without it
+   sitting under real content, so the whole effect is simply not shown
+   rather than risk overlapping the UI. */
+@media (max-width:820px), (max-height:760px){
+  .app-grid-text-layer{ display:none; }
+}
+/* Every pixel shares this one keyframe, but each PRESET POSITION runs it at
+   its own animation-duration/animation-delay (set inline per pixel in JS —
+   see APP_GRID_POSITION_TIMING) rather than all positions sharing one long
+   turn-by-turn timeline. Because of that, these percentages are expressed
+   as FRACTIONS of "whatever duration this pixel's position is using" —
+   fade in over the first ~5%, hold until ~55%, fade out by ~60%, then stay
+   off for the remaining ~40% of that position's own loop before repeating.
+   Since positions use different durations/delays, several can be mid-pulse
+   at once — that's what lets the word show up in multiple places on screen
+   at the same time, each independently timed, instead of only ever one spot
+   being lit. Within one position, pixels only differ by a small extra
+   delay confined inside the fade-in window (also set in JS), which is what
+   creates the "boxes activate one after another" build-up look. */
+@keyframes app-grid-pixel-cycle{
+  0%{ opacity:0; }
+  5%{ opacity:0.18; }
+  55%{ opacity:0.18; }
+  60%{ opacity:0; }
+  100%{ opacity:0; }
 }
 @media (prefers-reduced-motion:reduce){
-  .card-premium{ animation:none; }
-  .card-premium::after{ transition:opacity .2s ease; transform:none; }
+  .app-grid-pixel{ animation:none; opacity:0; }
+}
+
+/* ===== manual patch 10: subtle "running grid" flow. A handful of soft,
+   blurred glow patches drift slowly across the background, each on its own
+   independent timing/path, so small clusters of the grid lines underneath
+   them read as gently brighter as the glow passes over — a quiet "digital
+   flow" feel rather than the whole grid moving or flashing. Fully separate
+   layer/animation from the app-grid-drift (patch 7) and the "MealMate"
+   pixel layer (patch 9) above: all three run independently and never reset
+   or interfere with each other. Only opacity and transform are animated
+   (both GPU-compositable, no layout/paint cost); the layer sits behind all
+   real content (z-index:0, same stacking context patch 9 already set up)
+   and is fully disabled under prefers-reduced-motion. ===== */
+.app-grid-flow-layer{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+  /* Brightens the grid lines under a passing glow via a soft-light blend
+     against main.app-grid-bg's own background-color/background-image,
+     instead of painting a visible colored blob on top of the grid. */
+  mix-blend-mode:soft-light;
+}
+/* One drifting glow patch: a large, heavily-blurred radial gradient using
+   the same navy family as the grid lines/card outline, kept fully
+   transparent at the edges so it never reads as a hard-edged shape. Sized
+   well beyond the viewport-relative distance it travels so it can never
+   visibly "run out" mid-drift. */
+.app-grid-flow-spot{
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:46vmax;
+  height:46vmax;
+  margin:-23vmax 0 0 -23vmax;
+  border-radius:50%;
+  background:radial-gradient(circle, var(--navy-600) 0%, var(--navy-600) 18%, transparent 68%);
+  opacity:0;
+  filter:blur(18px);
+  will-change:transform, opacity;
+  animation-name:app-grid-flow-drift, app-grid-flow-pulse;
+  animation-timing-function:linear, ease-in-out;
+  animation-iteration-count:infinite, infinite;
+}
+/* A slow, gently looping wander rather than a straight left-to-right pass —
+   reads as "flowing through" the grid instead of a single obvious sweep.
+   Percentages stay well inside the layer bounds since the spot itself is
+   already oversized (see .app-grid-flow-spot's width/height above). */
+@keyframes app-grid-flow-drift{
+  0%{ transform:translate(-32vw, -18vh); }
+  25%{ transform:translate(20vw, -10vh); }
+  50%{ transform:translate(30vw, 16vh); }
+  75%{ transform:translate(-14vw, 22vh); }
+  100%{ transform:translate(-32vw, -18vh); }
+}
+/* Breathes in and out slowly on top of the drift so brightness never snaps
+   on/off — stays under ~0.12 opacity at its brightest so it reads as a
+   faint pass rather than a spotlight. */
+@keyframes app-grid-flow-pulse{
+  0%, 100%{ opacity:0.03; }
+  50%{ opacity:0.11; }
+}
+@media (max-width:820px){
+  /* Same reasoning as the "MealMate" layer: keep small screens completely
+     calm rather than risk the effect reading as distracting at close range. */
+  .app-grid-flow-layer{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){
+  .app-grid-flow-spot{ animation:none; opacity:0; }
 }
 </style>
 </head>
@@ -1144,6 +1256,163 @@ function topbarHtml() {
   );
 }
 
+/* ===== "MealMate" spelled out by the background grid itself =====
+   A tiny 5-row pixel font used to build the word "MealMate" out of small
+   grid-style blocks, rather than drawing normal text over the background.
+   Only the letters actually needed are defined ("mealt" is all "MealMate"
+   requires); each entry is 5 row-strings (top to bottom), read left to
+   right, where "#" is a lit cell and "." is blank — verified by rendering
+   as ASCII art before use, since hand-authoring bitmaps as raw numbers is
+   very easy to get subtly mirrored or transposed. */
+var APP_GRID_FONT = {
+  M: ["#...#", "##.##", "#.#.#", "#...#", "#...#"],
+  e: [".###.", "#...#", "#####", "#....", ".###."],
+  a: [".###.", "....#", ".####", "#...#", ".####"],
+  l: ["##...", ".#...", ".#...", ".#...", "###.."],
+  t: [".#...", "####.", ".#...", ".#...", "..##."],
+};
+var APP_GRID_WORD = "MealMate";
+var APP_GRID_LETTER_GAP = 1; /* blank columns between letters, in grid cells */
+/* Kept small and independent of main.app-grid-bg's 36px grid spacing so the
+   whole word stays compact (roughly 470x50px) rather than spanning most of
+   the page — still rendered as small squares in the same color family as
+   the grid lines (see .app-grid-pixel) so it reads as "part of the grid",
+   just not literally one-box-per-grid-line. */
+var APP_GRID_CELL = 10;
+
+/* A handful of preset anchors for where the word can appear, expressed as
+   distance from the right/bottom edge of the page rather than fixed
+   top-left coordinates — every dashboard/list page in this app fills top
+   to bottom starting from the left, so the right and bottom margins are
+   the one area that reliably stays free of real content across pages and
+   viewport sizes. Cycled through round-robin, one per lap, via the
+   animation's own iteration count rather than JS timers. Still purely
+   decorative/behind content (z-index:0) even if something ever overlaps
+   it, and hidden below 820px width (see the CSS media query) where there
+   is no safe margin left at all. */
+var APP_GRID_WORD_POSITIONS = [
+  { right: 24, bottom: 24 },
+  { right: 160, bottom: 84 },
+  { right: 40, bottom: 144 },
+  { right: 110, bottom: 204 },
+];
+
+/* Builds the pixel layout for the whole word: an array of {col, row} grid-
+   cell coordinates, one per lit pixel, relative to the word's own top-left
+   corner (col 0 / row 0), read directly off the APP_GRID_FONT row-strings. */
+function buildAppGridWordCells() {
+  var cells = [];
+  var col = 0;
+  for (var i = 0; i < APP_GRID_WORD.length; i++) {
+    var glyph = APP_GRID_FONT[APP_GRID_WORD[i]];
+    if (!glyph) continue;
+    var glyphWidth = glyph[0].length;
+    for (var gc = 0; gc < glyphWidth; gc++) {
+      for (var row = 0; row < glyph.length; row++) {
+        if (glyph[row][gc] === "#") cells.push({ col: col, row: row });
+      }
+      col += 1;
+    }
+    col += APP_GRID_LETTER_GAP;
+  }
+  return cells;
+}
+var APP_GRID_WORD_CELLS = buildAppGridWordCells();
+var APP_GRID_WORD_COLS = Math.max.apply(null, APP_GRID_WORD_CELLS.map(function (c) { return c.col; })) + 1;
+var APP_GRID_WORD_ROWS = 5;
+
+/* Purely decorative background layer: lights up individual background-grid
+   cells (see .app-grid-pixel) so they spell "MealMate" in a pixel/block
+   font, cycling through a few preset positions near the page's edges.
+   Absolutely positioned, zero size impact, pointer-events:none — never
+   affects layout or content.
+
+   Timing model: the app-grid-pixel-cycle keyframe (see CSS) describes a
+   SINGLE fade-in/hold/fade-out pulse living in roughly the first quarter of
+   its animation-duration, then staying off for the rest of that duration
+   before looping. Each PRESET POSITION runs its OWN independent animation
+   loop (own duration, own delay/phase-offset) rather than sharing one long
+   turn-by-turn timeline — so several positions can be mid-pulse at the same
+   time and the word visibly appears in 3-4 places at once, each on its own
+   clock, rather than only ever one spot lighting up at a time. Every pixel
+   within a given position shares that position's duration/base delay and
+   only gets a small extra stagger (confined to the fade-in portion of the
+   pulse) so its own letters still visibly build up left-to-right rather
+   than popping in all together (the brief's "sequential build-up" ask).
+   If the pulse's fade-in/hold/fade-out percentage split in the
+   app-grid-pixel-cycle keyframe ever changes, it applies identically to
+   every position since they all share that one keyframe — only the
+   duration/delay (i.e. how fast each position loops and when it starts)
+   varies per position, set inline per pixel below. */
+var APP_GRID_FADE_IN_SECONDS = 0.4;
+/* Each preset position loops on its own independent timeline: duration is
+   how long one full "fade in -> hold ~2s -> fade out -> pause" lap takes
+   for that position, and delay shifts its starting phase so the four
+   positions don't all pulse in lockstep — with these numbers, at almost
+   any moment two or three positions are simultaneously mid-hold while
+   others are fading/paused, so the word is visibly readable in several
+   places on screen at once, each independently timed. */
+var APP_GRID_POSITION_TIMING = [
+  { duration: 7.2, delay: 0 },
+  { duration: 8.6, delay: -2.4 },
+  { duration: 6.5, delay: -4.1 },
+  { duration: 9.4, delay: -6.8 },
+];
+
+function appGridTextLayerHtml() {
+  var positions = APP_GRID_WORD_POSITIONS;
+  var wordWidth = APP_GRID_WORD_COLS * APP_GRID_CELL;
+  var wordHeight = APP_GRID_WORD_ROWS * APP_GRID_CELL;
+
+  var spans = positions.map(function (pos, posIndex) {
+    var timing = APP_GRID_POSITION_TIMING[posIndex % APP_GRID_POSITION_TIMING.length];
+    var duration = timing.duration;
+    /* Leave a small safety margin so the very last staggered pixel still
+       finishes fading in comfortably before the hold's midpoint. */
+    var staggerWindow = APP_GRID_FADE_IN_SECONDS * 0.6;
+    return APP_GRID_WORD_CELLS.map(function (cell, cellIndex) {
+      var stagger = (cellIndex / APP_GRID_WORD_CELLS.length) * staggerWindow;
+      var delay = timing.delay - stagger;
+      /* Anchored from the right/bottom edge; within the word, columns grow
+         left-to-right and rows top-to-bottom as usual, so convert to a
+         right/bottom offset by subtracting from the word's own box. */
+      var right = pos.right + (wordWidth - (cell.col + 1) * APP_GRID_CELL);
+      var bottom = pos.bottom + (wordHeight - (cell.row + 1) * APP_GRID_CELL);
+      return (
+        '<span class="app-grid-pixel" aria-hidden="true" style="right:' + right + "px;bottom:" + bottom + "px;" +
+        "animation-duration:" + duration + "s;animation-delay:" + delay.toFixed(2) + 's"></span>'
+      );
+    }).join("");
+  }).join("");
+
+  return '<div class="app-grid-text-layer" aria-hidden="true">' + spans + "</div>";
+}
+
+/* Preset per-spot timing for the "running grid" flow (see .app-grid-flow-spot
+   in the CSS): each spot drifts along the same wander path but at its own
+   speed/phase/starting-corner offset, so the glow patches never move in
+   lockstep and small clusters of the grid light up and fade independently
+   across different areas — the "organic, not all boxes moving together"
+   requirement. Kept as a short, fixed list (not random) so the effect is
+   stable and reviewable rather than reshuffling on every render. */
+var APP_GRID_FLOW_SPOTS = [
+  { duration: 46, delay: 0, pulseDuration: 9, pulseDelay: 0, originX: -18, originY: -12 },
+  { duration: 58, delay: -21, pulseDuration: 11, pulseDelay: -3, originX: 22, originY: 14 },
+  { duration: 39, delay: -9, pulseDuration: 8, pulseDelay: -5, originX: -8, originY: 20 },
+];
+
+function appGridFlowLayerHtml() {
+  var spots = APP_GRID_FLOW_SPOTS.map(function (spot) {
+    var style =
+      "animation-duration:" + spot.duration + "s," + spot.pulseDuration + "s;" +
+      "animation-delay:" + spot.delay + "s," + spot.pulseDelay + "s;" +
+      "margin-left:calc(-23vmax + " + spot.originX + "vw);" +
+      "margin-top:calc(-23vmax + " + spot.originY + "vh);";
+    return '<span class="app-grid-flow-spot" aria-hidden="true" style="' + style + '"></span>';
+  }).join("");
+  return '<div class="app-grid-flow-layer" aria-hidden="true">' + spots + "</div>";
+}
+
 function renderShell(contentHtml, activeKey, drawerOpen) {
   return (
     '<div class="flex min-h-screen">' +
@@ -1152,7 +1421,7 @@ function renderShell(contentHtml, activeKey, drawerOpen) {
       '<aside class="' + (drawerOpen ? "" : "mm-drawer-closed") + ' fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-200 lg:hidden">' + sidebarHtml(activeKey, true) + "</aside>" +
       '<div class="flex min-w-0 flex-1 flex-col">' +
         topbarHtml() +
-        '<main class="app-grid-bg flex-1 p-4 sm:p-6">' + contentHtml + "</main>" +
+        '<main class="app-grid-bg flex-1 p-4 sm:p-6">' + appGridFlowLayerHtml() + appGridTextLayerHtml() + contentHtml + "</main>" +
       "</div>" +
     "</div>"
   );
