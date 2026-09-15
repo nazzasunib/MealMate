@@ -351,14 +351,14 @@ main.app-grid-bg{
    drift (kept from patch 7, values unchanged) plus a decorative layer whose
    individual cells are driven by JS (see the "MEALMATE pixel-grid sequence"
    block further down) to light up in the shape of the full word, then each
-   letter one at a time, then a small logo mark, before returning to a plain
-   grid and repeating. Pure background decoration: absolute positioning +
-   pointer-events:none, zero effect on the dashboard's real layout/content/
-   cards/sidebar. Each lit cell is a small square in the same color family
-   as the grid lines (see .app-grid-pixel below) so every shape reads as the
-   grid itself lighting up rather than text/a logo placed over it. Only
-   opacity/background-color are transitioned (GPU/paint-cheap), and the
-   whole layer is disabled under prefers-reduced-motion. ===== */
+   letter one at a time, before returning to a plain grid and repeating.
+   Pure background decoration: absolute positioning + pointer-events:none,
+   zero effect on the dashboard's real layout/content/cards/sidebar. Each
+   lit cell is a small square in the same color family as the grid lines
+   (see .app-grid-pixel below) so every shape reads as the grid itself
+   lighting up rather than text placed over it. Only opacity/background-
+   color are transitioned (GPU/paint-cheap), and the whole layer is
+   disabled under prefers-reduced-motion. ===== */
 main.app-grid-bg{ overflow:hidden; }
 .app-grid-text-layer{
   position:absolute;
@@ -368,8 +368,8 @@ main.app-grid-bg{ overflow:hidden; }
   pointer-events:none;
   display:flex;
   align-items:flex-end;
-  justify-content:flex-end;
-  padding:0 24px 24px 0;
+  justify-content:center;
+  padding:0 24px 32px;
 }
 main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer){
   position:relative;
@@ -1252,16 +1252,16 @@ function topbarHtml() {
 }
 
 /* ===== MEALMATE pixel-grid sequence (background grid "generates" the word,
-   its letters, then a logo) =====
+   then its letters one at a time) =====
    Replaces the earlier "word fading in/out at a few fixed positions" effect
    entirely. Instead of pre-building separate HTML per shape, this renders
    ONE fixed matrix of pixel <span> elements once (see appGridTextLayerHtml
    below) and a small state machine (see startAppGridSequence) repeatedly
    recomputes which cells should be lit for the current step and toggles
    each cell's "is-lit" class — so every step (the full word, each single
-   letter, the logo, and the blank/idle gap) is just a different pattern
-   drawn onto the SAME set of DOM nodes, and CSS transitions (see
-   .app-grid-pixel in the CSS above) smooth every change between patterns.
+   letter, and the blank/idle gap) is just a different pattern drawn onto
+   the SAME set of DOM nodes, and CSS transitions (see .app-grid-pixel in
+   the CSS above) smooth every change between patterns.
 
    Font: a tiny 5-row pixel font, each letter defined as 5 row-strings (top
    to bottom, "#"=lit / "."=blank) — verified as ASCII art before use, since
@@ -1278,20 +1278,6 @@ var APP_GRID_WORD = "MEALMATE";
 var APP_GRID_LETTER_GAP = 1; /* blank columns between letters, in grid cells */
 var APP_GRID_MATRIX_ROWS = 5;
 
-/* A simple block/pixel-art "logo" mark — a rounded pill badge with a small
-   stylized "M" monogram inside it, built from the same block-cell language
-   as the letters so it reads as one continuous system rather than a
-   different kind of graphic suddenly appearing. Pre-padded to the exact
-   same column count as the full word (see APP_GRID_MATRIX_COLS below) so
-   the logo step can reuse the identical matrix with no extra scaling math. */
-var APP_GRID_LOGO_PATTERN = [
-  ".............#####################.............",
-  "............##...................##............",
-  "...........##..#...#.....#...#....##...........",
-  "............##.##.##.....##.##....##............",
-  ".............#####################.............",
-];
-
 /* Converts one letter's font glyph into an array of {col, row} lit-cell
    coordinates at the given starting column, top to bottom / left to right. */
 function appGridGlyphCells(glyph, startCol) {
@@ -1307,8 +1293,8 @@ function appGridGlyphCells(glyph, startCol) {
 
 /* Builds the {cells, cols} pattern for the full word (every letter side by
    side, one gap column apart) — this defines the matrix's fixed overall
-   width, which every other step (single letters, the logo) is centered
-   within so the canvas itself never resizes mid-sequence. */
+   width, which every single-letter step is then centered within so the
+   canvas itself never resizes mid-sequence. */
 function appGridBuildWordPattern() {
   var cells = [];
   var col = 0;
@@ -1333,19 +1319,6 @@ function appGridBuildLetterPattern(letter) {
   return built.cells.map(function (c) { return { col: c.col + startCol, row: c.row }; });
 }
 
-/* Converts the pre-padded logo ASCII pattern (already sized to
-   APP_GRID_MATRIX_COLS) into {col, row} cells the same way the letters are. */
-function appGridBuildLogoPattern() {
-  var cells = [];
-  APP_GRID_LOGO_PATTERN.forEach(function (rowStr, row) {
-    for (var col = 0; col < rowStr.length; col++) {
-      if (rowStr[col] === "#") cells.push({ col: col, row: row });
-    }
-  });
-  return cells;
-}
-var APP_GRID_LOGO_CELLS = appGridBuildLogoPattern();
-
 /* One place to tune the whole sequence's pacing — every duration here is in
    seconds. "letterHoldSeconds" applies to each of the 8 letters in MEALMATE
    in turn. Change these freely; the state machine below reads them fresh on
@@ -1353,23 +1326,21 @@ var APP_GRID_LOGO_CELLS = appGridBuildLogoPattern();
 var APP_GRID_SEQUENCE_TIMING = {
   wordHoldSeconds: 2,
   letterHoldSeconds: 0.7,
-  logoHoldSeconds: 2,
   idleHoldSeconds: 1,
   transitionSeconds: 0.45, /* must match .app-grid-pixel's CSS transition-duration */
 };
 
 /* The ordered list of steps the sequence cycles through forever: the full
-   word, then each letter of MEALMATE one at a time, then the logo, then a
-   blank idle gap (all cells off, plain grid) before looping back to the
-   word again — exactly the "MEALMATE -> M -> E -> A -> L -> M -> A -> T ->
-   E -> LOGO -> normal grid -> repeat" sequence from the brief. */
+   word, then each letter of MEALMATE one at a time, then a blank idle gap
+   (all cells off, plain grid) before looping back to the word again —
+   "MEALMATE -> M -> E -> A -> L -> M -> A -> T -> E -> normal grid ->
+   repeat" (no logo step). */
 function appGridBuildSequenceSteps() {
   var t = APP_GRID_SEQUENCE_TIMING;
   var steps = [{ cells: APP_GRID_WORD_PATTERN.cells, hold: t.wordHoldSeconds }];
   APP_GRID_WORD.split("").forEach(function (letter) {
     steps.push({ cells: appGridBuildLetterPattern(letter), hold: t.letterHoldSeconds });
   });
-  steps.push({ cells: APP_GRID_LOGO_CELLS, hold: t.logoHoldSeconds });
   steps.push({ cells: [], hold: t.idleHoldSeconds });
   return steps;
 }
@@ -1403,9 +1374,9 @@ function appGridTextLayerHtml() {
    the layer is hidden altogether below 820px width anyway (see the CSS
    media query), so this only needs to cover the desktop-width range. */
 function appGridComputeCellSize() {
-  var available = Math.min(window.innerWidth * 0.4, 560);
+  var available = Math.min(window.innerWidth * 0.55, 760);
   var bySize = available / APP_GRID_MATRIX_COLS;
-  return Math.max(6, Math.min(10, bySize));
+  return Math.max(8, Math.min(14, bySize));
 }
 function applyAppGridResponsiveCellSize() {
   var canvas = document.getElementById("app-grid-pixel-canvas");
