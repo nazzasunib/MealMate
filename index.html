@@ -348,17 +348,17 @@ main.app-grid-bg{
 }
 
 /* ===== manual patch 9: futuristic background upgrade — slower/subtler grid
-   drift (kept from patch 7, values unchanged) plus a decorative layer that
-   periodically lights up individual background-grid cells so their pattern
-   spells out "MealMate" in a pixel/block font, holds for ~2s, fades out,
-   waits ~1s, then re-forms (same word, a different preset position on the
-   grid) and repeats. Pure background decoration: absolute positioning +
+   drift (kept from patch 7, values unchanged) plus a decorative layer whose
+   individual cells are driven by JS (see the "MEALMATE pixel-grid sequence"
+   block further down) to light up in the shape of the full word, then each
+   letter one at a time, then a small logo mark, before returning to a plain
+   grid and repeating. Pure background decoration: absolute positioning +
    pointer-events:none, zero effect on the dashboard's real layout/content/
    cards/sidebar. Each lit cell is a small square in the same color family
-   as the grid lines (see .app-grid-pixel below) so the word reads as the
-   grid itself lighting up rather than text placed over it. Only opacity is
-   animated (GPU-compositable, no layout/paint cost), and the whole layer
-   is disabled under prefers-reduced-motion. ===== */
+   as the grid lines (see .app-grid-pixel below) so every shape reads as the
+   grid itself lighting up rather than text/a logo placed over it. Only
+   opacity/background-color are transitioned (GPU/paint-cheap), and the
+   whole layer is disabled under prefers-reduced-motion. ===== */
 main.app-grid-bg{ overflow:hidden; }
 .app-grid-text-layer{
   position:absolute;
@@ -366,60 +366,54 @@ main.app-grid-bg{ overflow:hidden; }
   z-index:0;
   overflow:hidden;
   pointer-events:none;
+  display:flex;
+  align-items:flex-end;
+  justify-content:flex-end;
+  padding:0 24px 24px 0;
 }
 main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer){
   position:relative;
   z-index:1;
 }
-/* One lit "pixel" of the "MealMate" glyph matrix — a small square in the
-   same color family as the background grid lines (see main.app-grid-bg),
-   so a cluster of them lighting up reads as "the grid getting denser",
-   not an unrelated shape dropped on top. Sized/positioned in JS (see
-   APP_GRID_CELL below); kept small so the whole word stays compact enough
-   to tuck into open background area instead of spanning most of the page. */
+/* The fixed pixel canvas: a CSS grid with one cell per matrix column/row
+   (row/column counts set inline via custom properties from JS — see
+   APP_GRID_MATRIX_COLS/ROWS), sized responsively off the available width
+   rather than a fixed pixel size, so it scales down cleanly on narrower
+   screens instead of overflowing or breaking layout. */
+.app-grid-pixel-canvas{
+  display:grid;
+  grid-template-columns:repeat(var(--app-grid-cols), var(--app-grid-cell));
+  grid-template-rows:repeat(var(--app-grid-rows), var(--app-grid-cell));
+  gap:calc(var(--app-grid-cell) * 0.18);
+}
+/* One cell of the pixel canvas — always present in the DOM (so nothing is
+   ever added/removed while the sequence runs, only its lit state toggled),
+   matching the same small-square language as the base grid lines. Both
+   opacity and background-color are transitioned so a lit cell can read as
+   "the grid line itself brightening" rather than a hard on/off flash. */
 .app-grid-pixel{
-  position:absolute;
-  width:10px;
-  height:10px;
+  width:var(--app-grid-cell);
+  height:var(--app-grid-cell);
   box-sizing:border-box;
-  background:var(--navy-700);
   border-radius:2px;
-  opacity:0;
-  will-change:opacity;
-  animation-name:app-grid-pixel-cycle;
-  animation-timing-function:ease-in-out;
-  animation-iteration-count:infinite;
+  background:var(--border);
+  opacity:0.35;
+  transition:background-color 0.45s ease, opacity 0.45s ease;
+}
+.app-grid-pixel.is-lit{
+  background:var(--navy-700);
+  opacity:0.85;
 }
 /* Below this width, or below this height (a short/zoomed-in viewport where
    the dashboard's card grid can reach close to the bottom margin), there's
-   no reliably open patch of background left to place the word without it
-   sitting under real content, so the whole effect is simply not shown
+   no reliably open patch of background left to place the sequence without
+   it sitting under real content, so the whole effect is simply not shown
    rather than risk overlapping the UI. */
 @media (max-width:820px), (max-height:760px){
   .app-grid-text-layer{ display:none; }
 }
-/* Every pixel shares this one keyframe, but each PRESET POSITION runs it at
-   its own animation-duration/animation-delay (set inline per pixel in JS —
-   see APP_GRID_POSITION_TIMING) rather than all positions sharing one long
-   turn-by-turn timeline. Because of that, these percentages are expressed
-   as FRACTIONS of "whatever duration this pixel's position is using" —
-   fade in over the first ~5%, hold until ~55%, fade out by ~60%, then stay
-   off for the remaining ~40% of that position's own loop before repeating.
-   Since positions use different durations/delays, several can be mid-pulse
-   at once — that's what lets the word show up in multiple places on screen
-   at the same time, each independently timed, instead of only ever one spot
-   being lit. Within one position, pixels only differ by a small extra
-   delay confined inside the fade-in window (also set in JS), which is what
-   creates the "boxes activate one after another" build-up look. */
-@keyframes app-grid-pixel-cycle{
-  0%{ opacity:0; }
-  5%{ opacity:0.18; }
-  55%{ opacity:0.18; }
-  60%{ opacity:0; }
-  100%{ opacity:0; }
-}
 @media (prefers-reduced-motion:reduce){
-  .app-grid-pixel{ animation:none; opacity:0; }
+  .app-grid-text-layer{ display:none; }
 }
 
 /* ===== manual patch 10: subtle "running grid" flow. A handful of soft,
@@ -767,6 +761,7 @@ function render() {
     return;
   }
   renderToasts();
+  startAppGridSequence();
 }
 
 /* ============================== LOGIN PAGE ============================== */
@@ -1256,137 +1251,225 @@ function topbarHtml() {
   );
 }
 
-/* ===== "MealMate" spelled out by the background grid itself =====
-   A tiny 5-row pixel font used to build the word "MealMate" out of small
-   grid-style blocks, rather than drawing normal text over the background.
-   Only the letters actually needed are defined ("mealt" is all "MealMate"
-   requires); each entry is 5 row-strings (top to bottom), read left to
-   right, where "#" is a lit cell and "." is blank — verified by rendering
-   as ASCII art before use, since hand-authoring bitmaps as raw numbers is
-   very easy to get subtly mirrored or transposed. */
+/* ===== MEALMATE pixel-grid sequence (background grid "generates" the word,
+   its letters, then a logo) =====
+   Replaces the earlier "word fading in/out at a few fixed positions" effect
+   entirely. Instead of pre-building separate HTML per shape, this renders
+   ONE fixed matrix of pixel <span> elements once (see appGridTextLayerHtml
+   below) and a small state machine (see startAppGridSequence) repeatedly
+   recomputes which cells should be lit for the current step and toggles
+   each cell's "is-lit" class — so every step (the full word, each single
+   letter, the logo, and the blank/idle gap) is just a different pattern
+   drawn onto the SAME set of DOM nodes, and CSS transitions (see
+   .app-grid-pixel in the CSS above) smooth every change between patterns.
+
+   Font: a tiny 5-row pixel font, each letter defined as 5 row-strings (top
+   to bottom, "#"=lit / "."=blank) — verified as ASCII art before use, since
+   hand-authoring bitmaps as raw numbers is very easy to get subtly mirrored
+   or transposed. Only the letters MEALMATE actually needs are defined. */
 var APP_GRID_FONT = {
   M: ["#...#", "##.##", "#.#.#", "#...#", "#...#"],
-  e: [".###.", "#...#", "#####", "#....", ".###."],
-  a: [".###.", "....#", ".####", "#...#", ".####"],
-  l: ["##...", ".#...", ".#...", ".#...", "###.."],
-  t: [".#...", "####.", ".#...", ".#...", "..##."],
+  E: ["#####", "#....", "###..", "#....", "#####"],
+  A: [".###.", "#...#", "#####", "#...#", "#...#"],
+  L: ["#....", "#....", "#....", "#....", "#####"],
+  T: ["#####", "..#..", "..#..", "..#..", "..#.."],
 };
-var APP_GRID_WORD = "MealMate";
+var APP_GRID_WORD = "MEALMATE";
 var APP_GRID_LETTER_GAP = 1; /* blank columns between letters, in grid cells */
-/* Kept small and independent of main.app-grid-bg's 36px grid spacing so the
-   whole word stays compact (roughly 470x50px) rather than spanning most of
-   the page — still rendered as small squares in the same color family as
-   the grid lines (see .app-grid-pixel) so it reads as "part of the grid",
-   just not literally one-box-per-grid-line. */
-var APP_GRID_CELL = 10;
+var APP_GRID_MATRIX_ROWS = 5;
 
-/* A handful of preset anchors for where the word can appear, expressed as
-   distance from the right/bottom edge of the page rather than fixed
-   top-left coordinates — every dashboard/list page in this app fills top
-   to bottom starting from the left, so the right and bottom margins are
-   the one area that reliably stays free of real content across pages and
-   viewport sizes. Cycled through round-robin, one per lap, via the
-   animation's own iteration count rather than JS timers. Still purely
-   decorative/behind content (z-index:0) even if something ever overlaps
-   it, and hidden below 820px width (see the CSS media query) where there
-   is no safe margin left at all. */
-var APP_GRID_WORD_POSITIONS = [
-  { right: 24, bottom: 24 },
-  { right: 160, bottom: 84 },
-  { right: 40, bottom: 144 },
-  { right: 110, bottom: 204 },
+/* A simple block/pixel-art "logo" mark — a rounded pill badge with a small
+   stylized "M" monogram inside it, built from the same block-cell language
+   as the letters so it reads as one continuous system rather than a
+   different kind of graphic suddenly appearing. Pre-padded to the exact
+   same column count as the full word (see APP_GRID_MATRIX_COLS below) so
+   the logo step can reuse the identical matrix with no extra scaling math. */
+var APP_GRID_LOGO_PATTERN = [
+  ".............#####################.............",
+  "............##...................##............",
+  "...........##..#...#.....#...#....##...........",
+  "............##.##.##.....##.##....##............",
+  ".............#####################.............",
 ];
 
-/* Builds the pixel layout for the whole word: an array of {col, row} grid-
-   cell coordinates, one per lit pixel, relative to the word's own top-left
-   corner (col 0 / row 0), read directly off the APP_GRID_FONT row-strings. */
-function buildAppGridWordCells() {
+/* Converts one letter's font glyph into an array of {col, row} lit-cell
+   coordinates at the given starting column, top to bottom / left to right. */
+function appGridGlyphCells(glyph, startCol) {
+  var cells = [];
+  var width = glyph[0].length;
+  for (var gc = 0; gc < width; gc++) {
+    for (var row = 0; row < glyph.length; row++) {
+      if (glyph[row][gc] === "#") cells.push({ col: startCol + gc, row: row });
+    }
+  }
+  return { cells: cells, width: width };
+}
+
+/* Builds the {cells, cols} pattern for the full word (every letter side by
+   side, one gap column apart) — this defines the matrix's fixed overall
+   width, which every other step (single letters, the logo) is centered
+   within so the canvas itself never resizes mid-sequence. */
+function appGridBuildWordPattern() {
   var cells = [];
   var col = 0;
   for (var i = 0; i < APP_GRID_WORD.length; i++) {
     var glyph = APP_GRID_FONT[APP_GRID_WORD[i]];
     if (!glyph) continue;
-    var glyphWidth = glyph[0].length;
-    for (var gc = 0; gc < glyphWidth; gc++) {
-      for (var row = 0; row < glyph.length; row++) {
-        if (glyph[row][gc] === "#") cells.push({ col: col, row: row });
-      }
-      col += 1;
-    }
-    col += APP_GRID_LETTER_GAP;
+    var built = appGridGlyphCells(glyph, col);
+    cells = cells.concat(built.cells);
+    col += built.width + APP_GRID_LETTER_GAP;
   }
+  return { cells: cells, cols: col - APP_GRID_LETTER_GAP };
+}
+var APP_GRID_WORD_PATTERN = appGridBuildWordPattern();
+var APP_GRID_MATRIX_COLS = APP_GRID_WORD_PATTERN.cols;
+
+/* Builds a single centered letter's pattern, padded within the full matrix
+   width so it lines up in the same canvas as every other step. */
+function appGridBuildLetterPattern(letter) {
+  var glyph = APP_GRID_FONT[letter];
+  var built = appGridGlyphCells(glyph, 0);
+  var startCol = Math.round((APP_GRID_MATRIX_COLS - built.width) / 2);
+  return built.cells.map(function (c) { return { col: c.col + startCol, row: c.row }; });
+}
+
+/* Converts the pre-padded logo ASCII pattern (already sized to
+   APP_GRID_MATRIX_COLS) into {col, row} cells the same way the letters are. */
+function appGridBuildLogoPattern() {
+  var cells = [];
+  APP_GRID_LOGO_PATTERN.forEach(function (rowStr, row) {
+    for (var col = 0; col < rowStr.length; col++) {
+      if (rowStr[col] === "#") cells.push({ col: col, row: row });
+    }
+  });
   return cells;
 }
-var APP_GRID_WORD_CELLS = buildAppGridWordCells();
-var APP_GRID_WORD_COLS = Math.max.apply(null, APP_GRID_WORD_CELLS.map(function (c) { return c.col; })) + 1;
-var APP_GRID_WORD_ROWS = 5;
+var APP_GRID_LOGO_CELLS = appGridBuildLogoPattern();
 
-/* Purely decorative background layer: lights up individual background-grid
-   cells (see .app-grid-pixel) so they spell "MealMate" in a pixel/block
-   font, cycling through a few preset positions near the page's edges.
-   Absolutely positioned, zero size impact, pointer-events:none — never
-   affects layout or content.
+/* One place to tune the whole sequence's pacing — every duration here is in
+   seconds. "letterHoldSeconds" applies to each of the 8 letters in MEALMATE
+   in turn. Change these freely; the state machine below reads them fresh on
+   every step so no other code needs to change to retime the sequence. */
+var APP_GRID_SEQUENCE_TIMING = {
+  wordHoldSeconds: 2,
+  letterHoldSeconds: 0.7,
+  logoHoldSeconds: 2,
+  idleHoldSeconds: 1,
+  transitionSeconds: 0.45, /* must match .app-grid-pixel's CSS transition-duration */
+};
 
-   Timing model: the app-grid-pixel-cycle keyframe (see CSS) describes a
-   SINGLE fade-in/hold/fade-out pulse living in roughly the first quarter of
-   its animation-duration, then staying off for the rest of that duration
-   before looping. Each PRESET POSITION runs its OWN independent animation
-   loop (own duration, own delay/phase-offset) rather than sharing one long
-   turn-by-turn timeline — so several positions can be mid-pulse at the same
-   time and the word visibly appears in 3-4 places at once, each on its own
-   clock, rather than only ever one spot lighting up at a time. Every pixel
-   within a given position shares that position's duration/base delay and
-   only gets a small extra stagger (confined to the fade-in portion of the
-   pulse) so its own letters still visibly build up left-to-right rather
-   than popping in all together (the brief's "sequential build-up" ask).
-   If the pulse's fade-in/hold/fade-out percentage split in the
-   app-grid-pixel-cycle keyframe ever changes, it applies identically to
-   every position since they all share that one keyframe — only the
-   duration/delay (i.e. how fast each position loops and when it starts)
-   varies per position, set inline per pixel below. */
-var APP_GRID_FADE_IN_SECONDS = 0.4;
-/* Each preset position loops on its own independent timeline: duration is
-   how long one full "fade in -> hold ~2s -> fade out -> pause" lap takes
-   for that position, and delay shifts its starting phase so the four
-   positions don't all pulse in lockstep — with these numbers, at almost
-   any moment two or three positions are simultaneously mid-hold while
-   others are fading/paused, so the word is visibly readable in several
-   places on screen at once, each independently timed. */
-var APP_GRID_POSITION_TIMING = [
-  { duration: 7.2, delay: 0 },
-  { duration: 8.6, delay: -2.4 },
-  { duration: 6.5, delay: -4.1 },
-  { duration: 9.4, delay: -6.8 },
-];
-
-function appGridTextLayerHtml() {
-  var positions = APP_GRID_WORD_POSITIONS;
-  var wordWidth = APP_GRID_WORD_COLS * APP_GRID_CELL;
-  var wordHeight = APP_GRID_WORD_ROWS * APP_GRID_CELL;
-
-  var spans = positions.map(function (pos, posIndex) {
-    var timing = APP_GRID_POSITION_TIMING[posIndex % APP_GRID_POSITION_TIMING.length];
-    var duration = timing.duration;
-    /* Leave a small safety margin so the very last staggered pixel still
-       finishes fading in comfortably before the hold's midpoint. */
-    var staggerWindow = APP_GRID_FADE_IN_SECONDS * 0.6;
-    return APP_GRID_WORD_CELLS.map(function (cell, cellIndex) {
-      var stagger = (cellIndex / APP_GRID_WORD_CELLS.length) * staggerWindow;
-      var delay = timing.delay - stagger;
-      /* Anchored from the right/bottom edge; within the word, columns grow
-         left-to-right and rows top-to-bottom as usual, so convert to a
-         right/bottom offset by subtracting from the word's own box. */
-      var right = pos.right + (wordWidth - (cell.col + 1) * APP_GRID_CELL);
-      var bottom = pos.bottom + (wordHeight - (cell.row + 1) * APP_GRID_CELL);
-      return (
-        '<span class="app-grid-pixel" aria-hidden="true" style="right:' + right + "px;bottom:" + bottom + "px;" +
-        "animation-duration:" + duration + "s;animation-delay:" + delay.toFixed(2) + 's"></span>'
-      );
-    }).join("");
-  }).join("");
-
-  return '<div class="app-grid-text-layer" aria-hidden="true">' + spans + "</div>";
+/* The ordered list of steps the sequence cycles through forever: the full
+   word, then each letter of MEALMATE one at a time, then the logo, then a
+   blank idle gap (all cells off, plain grid) before looping back to the
+   word again — exactly the "MEALMATE -> M -> E -> A -> L -> M -> A -> T ->
+   E -> LOGO -> normal grid -> repeat" sequence from the brief. */
+function appGridBuildSequenceSteps() {
+  var t = APP_GRID_SEQUENCE_TIMING;
+  var steps = [{ cells: APP_GRID_WORD_PATTERN.cells, hold: t.wordHoldSeconds }];
+  APP_GRID_WORD.split("").forEach(function (letter) {
+    steps.push({ cells: appGridBuildLetterPattern(letter), hold: t.letterHoldSeconds });
+  });
+  steps.push({ cells: APP_GRID_LOGO_CELLS, hold: t.logoHoldSeconds });
+  steps.push({ cells: [], hold: t.idleHoldSeconds });
+  return steps;
 }
+
+/* Renders the fixed pixel canvas ONCE — every cell of the APP_GRID_MATRIX_
+   COLS x APP_GRID_MATRIX_ROWS grid gets its own <span data-cell="col:row">,
+   present for the lifetime of the page. The state machine (below) never
+   adds/removes nodes; it only toggles "is-lit" on the ones matching the
+   current step's pattern, which is what lets CSS transitions animate every
+   change smoothly instead of the shape "popping" between steps. Cell size
+   is intentionally NOT set here — see applyAppGridResponsiveCellSize, which
+   sizes it responsively once this canvas exists in the DOM. */
+function appGridTextLayerHtml() {
+  var cells = [];
+  for (var row = 0; row < APP_GRID_MATRIX_ROWS; row++) {
+    for (var col = 0; col < APP_GRID_MATRIX_COLS; col++) {
+      cells.push('<span class="app-grid-pixel" data-cell="' + col + ":" + row + '"></span>');
+    }
+  }
+  return (
+    '<div class="app-grid-text-layer" aria-hidden="true">' +
+      '<div class="app-grid-pixel-canvas" id="app-grid-pixel-canvas">' + cells.join("") + "</div>" +
+    "</div>"
+  );
+}
+
+/* Picks a cell size (in px) so the fixed-column matrix comfortably fits
+   within the current viewport width, instead of using one hardcoded size
+   that could overflow on narrow screens or look tiny on very wide ones —
+   the responsive requirement from the brief. Clamped to a sensible range;
+   the layer is hidden altogether below 820px width anyway (see the CSS
+   media query), so this only needs to cover the desktop-width range. */
+function appGridComputeCellSize() {
+  var available = Math.min(window.innerWidth * 0.4, 560);
+  var bySize = available / APP_GRID_MATRIX_COLS;
+  return Math.max(6, Math.min(10, bySize));
+}
+function applyAppGridResponsiveCellSize() {
+  var canvas = document.getElementById("app-grid-pixel-canvas");
+  if (!canvas) return;
+  var size = appGridComputeCellSize();
+  canvas.style.setProperty("--app-grid-cols", APP_GRID_MATRIX_COLS);
+  canvas.style.setProperty("--app-grid-rows", APP_GRID_MATRIX_ROWS);
+  canvas.style.setProperty("--app-grid-cell", size.toFixed(2) + "px");
+}
+
+/* The running sequence state. Guarded by a version counter (rather than
+   just clearing/checking a timer id) so that if renderShell() re-renders
+   the page (a full innerHTML replace on every navigation/state change in
+   this app — see render()) and rebuilds a brand new canvas element, any
+   in-flight setTimeout from the OLD canvas's loop recognizes it's stale
+   and stops instead of writing into a detached DOM node or double-starting
+   a second parallel loop against the new canvas. */
+var APP_GRID_SEQUENCE_VERSION = 0;
+
+function appGridApplyStep(step) {
+  var canvas = document.getElementById("app-grid-pixel-canvas");
+  if (!canvas) return;
+  var litKeys = {};
+  step.cells.forEach(function (c) { litKeys[c.col + ":" + c.row] = true; });
+  var pixels = canvas.querySelectorAll(".app-grid-pixel");
+  pixels.forEach(function (pixel) {
+    var shouldBeLit = !!litKeys[pixel.dataset.cell];
+    pixel.classList.toggle("is-lit", shouldBeLit);
+  });
+}
+
+function appGridRunSequenceStep(version, steps, stepIndex) {
+  if (version !== APP_GRID_SEQUENCE_VERSION) return; /* a newer render() took over */
+  var canvas = document.getElementById("app-grid-pixel-canvas");
+  if (!canvas) return; /* this page render has no grid layer (e.g. hidden) */
+  var step = steps[stepIndex % steps.length];
+  appGridApplyStep(step);
+  setTimeout(function () {
+    appGridRunSequenceStep(version, steps, stepIndex + 1);
+  }, step.hold * 1000);
+}
+
+/* Starts (or restarts) the MEALMATE pixel sequence against whatever canvas
+   currently exists in the DOM. Safe to call on every render(): bumping the
+   version invalidates any previous loop, and the responsive cell size is
+   recomputed immediately so a freshly-mounted canvas is sized correctly
+   before the first step is drawn. */
+function startAppGridSequence() {
+  APP_GRID_SEQUENCE_VERSION += 1;
+  var version = APP_GRID_SEQUENCE_VERSION;
+  applyAppGridResponsiveCellSize();
+  if (!document.getElementById("app-grid-pixel-canvas")) return;
+  var steps = appGridBuildSequenceSteps();
+  appGridRunSequenceStep(version, steps, 0);
+}
+
+/* Keeps the pixel canvas's cell size in step with viewport resizes without
+   restarting the sequence (a resize shouldn't visibly reset the animation,
+   just rescale it) — debounced lightly since resize fires rapidly. */
+var APP_GRID_RESIZE_TIMER = null;
+window.addEventListener("resize", function () {
+  clearTimeout(APP_GRID_RESIZE_TIMER);
+  APP_GRID_RESIZE_TIMER = setTimeout(applyAppGridResponsiveCellSize, 120);
+});
 
 /* Preset per-spot timing for the "running grid" flow (see .app-grid-flow-spot
    in the CSS): each spot drifts along the same wander path but at its own
