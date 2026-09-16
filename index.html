@@ -1015,7 +1015,7 @@ function renderDashboard() {
 }
 
 function quickActionLink(iconName, label, path) {
-  return '<a href="#/' + path + '" class="card-premium card-premium--interactive flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground shadow-[var(--shadow-card)]">' + icon(iconName, "h-4 w-4") + esc(label) + "</a>";
+  return '<a href="#/' + path + '" class="card-premium card-premium--interactive inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)]">' + icon(iconName, "h-4 w-4") + esc(label) + "</a>";
 }
 
 function cashRow(label, value, tone, sign, bold) {
