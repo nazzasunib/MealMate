@@ -513,9 +513,22 @@ var LOGO_FULL_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAA
    All data lives in localStorage, seeded from SEED on first load. */
 
 /* ============================== ICONS ============================== */
+/* Every raw ICONS[name] SVG string already ships with its own baked-in size
+   (e.g. class="... h-4.5 w-4.5 ..."), since that's how the icon looked the
+   one place it was originally used. When a call site passes its own `cls`
+   (almost always to set a DIFFERENT size for this particular usage), it
+   must REPLACE that original h- and w- pair rather than merely being
+   prepended alongside it — otherwise the SVG ends up with two conflicting
+   height/width utility classes at once (e.g. both "h-4 w-4" and "h-4.5
+   w-4.5"), and depending on which one the cascade applies, the icon can
+   render at an unexpected/inconsistent size relative to the gap next to it,
+   which is what caused icons to visually overlap their button labels. */
 function icon(name, cls) {
   var svg = ICONS[name] || "";
-  if (cls) svg = svg.replace('class="lucide', 'class="' + cls + " lucide");
+  if (cls) {
+    svg = svg.replace(/\bh-[\w.-]+\s+w-[\w.-]+\s+/, "");
+    svg = svg.replace('class="', 'class="' + cls + " ");
+  }
   return svg;
 }
 
