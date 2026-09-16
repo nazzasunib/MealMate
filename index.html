@@ -371,7 +371,17 @@ main.app-grid-bg{ overflow:hidden; }
   justify-content:center;
   padding:0 24px 32px;
 }
-main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer){
+/* Excludes modal wrapper divs (every modalWrapper()/deleteConfirmModal() is
+   rendered as a direct sibling of the page's real content inside <main>,
+   since contentHtml is "<div class='space-y-6'>...</div>" followed by one
+   or more modal divs appended after it) — those already carry Tailwind's
+   own .fixed class (position:fixed, covering the full viewport) and must
+   NOT be forced to position:relative, or they stop behaving as a
+   viewport-covering overlay and instead render inline in the page's normal
+   flow whereever they happen to sit in the DOM (this was a real bug: every
+   "Add ..." modal rendered pinned to the bottom of the page content instead
+   of centered over it, because this rule matched them too). */
+main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer):not(.fixed){
   position:relative;
   z-index:1;
 }
