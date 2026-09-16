@@ -745,7 +745,7 @@ function render() {
   } else if (path === "money") {
     app.innerHTML = renderShell(renderMoney(query.q || ""), "money", mobileDrawerWasOpen);
   } else if (path === "expenses") {
-    app.innerHTML = renderShell(renderExpenses(query.q || ""), "expenses", mobileDrawerWasOpen);
+    app.innerHTML = renderShell(renderExpenses(query.q || "", query.month || "", query.from || "", query.to || ""), "expenses", mobileDrawerWasOpen);
   } else if (path === "store") {
     app.innerHTML = renderShell(renderStore(query.month || ""), "store", mobileDrawerWasOpen);
   } else if (path === "hisab") {
@@ -1662,8 +1662,33 @@ function expenseItemsSummary(e) {
     return it.item + (it.quantity ? " (" + formatNumber(it.quantity, it.quantity % 1 ? 1 : 0) + (it.unit ? " " + it.unit : "") + ")" : "");
   }).join(", ");
 }
-function renderExpenses(search) {
-  var expenses = DB.expenses.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+function renderExpenses(search, monthKey, rangeFrom, rangeTo) {
+  /* Default to the current month, starting from its 1st day, unless the
+     user picked an explicit range — matches "Expense History te all Month
+     wise all data thakbe... by default 01 date thakbe every month er".
+     The "to" end defaults to the end of that month (capped at today, so a
+     future month never shows an empty range that reads as broken), not
+     always "today" — otherwise switching to a past month via the month
+     switcher would default to a "from 1st -> today" range that excludes
+     the rest of that past month. */
+  monthKey = monthKey && /^\d{4}-\d{2}$/.test(monthKey) ? monthKey : latestMonthKey();
+  var today = latestDateAcross();
+  var monthEnd = monthKey + "-" + String(daysInMonth(monthKey)).padStart(2, "0");
+  var defaultFrom = monthKey + "-01";
+  var defaultTo = monthEnd < today ? monthEnd : today;
+  var from = rangeFrom && /^\d{4}-\d{2}-\d{2}$/.test(rangeFrom) ? rangeFrom : defaultFrom;
+  var to = rangeTo && /^\d{4}-\d{2}-\d{2}$/.test(rangeTo) ? rangeTo : defaultTo;
+
+  /* Newest first; DB.expenses is itself in insertion order (new entries are
+     always pushed to the end), so tie-break equal dates by ORIGINAL array
+     index (descending) rather than leaving them in whatever order a stable
+     sort happens to preserve — otherwise an expense added today with the
+     same date as an earlier one would sort BELOW it instead of on top. */
+  var expenses = DB.expenses
+    .map(function (e, i) { return { e: e, i: i }; })
+    .sort(function (a, b) { return a.e.date === b.e.date ? b.i - a.i : (a.e.date < b.e.date ? 1 : -1); })
+    .map(function (x) { return x.e; })
+    .filter(function (e) { return e.date >= from && e.date <= to; });
   if (search) {
     var q = search.toLowerCase();
     expenses = expenses.filter(function (e) {
@@ -1707,10 +1732,13 @@ function renderExpenses(search) {
     );
   }).join("");
 
+  var isCustomRange = from !== defaultFrom || to !== defaultTo;
+  var rangeSubtitle = from === to ? dateLabelMed(from) : dateLabelMed(from) + " – " + dateLabelMed(to);
+
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Expenses</h1><p class="mt-1 text-sm text-muted">All meal/bazaar expenses recorded so far.</p></div>' +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Expenses</h1><p class="mt-1 text-sm text-muted">' + esc(rangeSubtitle) + "</p></div>" +
         '<button data-action="add-expense" class="btn-primary">' + icon("shopping-cart", "h-4 w-4") + "Add Expense</button>" +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
@@ -1720,8 +1748,22 @@ function renderExpenses(search) {
         statCard({ label: "People Involved", value: Object.keys(uniqueBuyers).length, icon: "users", tone: "warning" }) +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
-        '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Expense History</h2>' + searchBoxHtml("Search item or member...", search) + "</div>" +
-        (expenses.length === 0 ? '<div class="p-6">' + emptyState("shopping-cart", search ? "No matching expenses" : "No expenses yet", search ? "Try a different search term." : "Add the first expense.") + "</div>" :
+        '<div class="flex flex-col gap-3 border-b border-border p-5">' +
+          '<div class="flex flex-wrap items-center justify-between gap-3">' +
+            '<h2 class="text-sm font-semibold text-foreground">Expense History</h2>' +
+            searchBoxHtml("Search item or member...", search) +
+          "</div>" +
+          '<div class="flex flex-wrap items-center gap-2">' +
+            monthSwitcherHtml(monthKey, "expenses-month-nav") +
+            '<div class="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1 shadow-[var(--shadow-card)]">' +
+              '<input type="date" data-action="expenses-range-input" data-bound="from" value="' + esc(from) + '" class="rounded-lg border-0 bg-transparent px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-navy-600/20" />' +
+              '<span class="text-xs text-muted">to</span>' +
+              '<input type="date" data-action="expenses-range-input" data-bound="to" value="' + esc(to) + '" class="rounded-lg border-0 bg-transparent px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-navy-600/20" />' +
+            "</div>" +
+            (isCustomRange ? '<button data-action="expenses-range-reset" class="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-medium text-navy-900 shadow-[var(--shadow-card)] transition-colors hover:bg-navy-50">Reset to this month</button>' : "") +
+          "</div>" +
+        "</div>" +
+        (expenses.length === 0 ? '<div class="p-6">' + emptyState("shopping-cart", search ? "No matching expenses" : "No expenses in this range", search ? "Try a different search term." : "Add an expense or pick a different date range.") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Date</th><th class="px-5 py-3">Item</th><th class="px-5 py-3">Done By</th><th class="px-5 py-3">Note</th><th class="px-5 py-3 text-right">Amount</th><th class="px-5 py-3 text-right">Actions</th></tr></thead><tbody>' + rows + "</tbody></table></div>") +
       "</div>" +
     "</div>" +
@@ -3142,6 +3184,13 @@ document.addEventListener("click", function (e) {
     navigate("meals", { date: el.dataset.date });
   } else if (action === "store-month-nav") {
     navigate("store", { month: el.dataset.month });
+  } else if (action === "expenses-month-nav") {
+    /* Switching months clears any explicit from/to override so the new
+       month's own default range (its 1st day through its end/today) takes
+       over, rather than re-applying a stale custom range from before. */
+    navigate("expenses", { month: el.dataset.month, q: parseHash().query.q || "" });
+  } else if (action === "expenses-range-reset") {
+    navigate("expenses", { month: parseHash().query.month || "", q: parseHash().query.q || "" });
   } else if (action === "hisab-month-nav") {
     navigate("hisab", { month: el.dataset.month });
   } else if (action === "summary-month-nav") {
@@ -3324,6 +3373,15 @@ document.addEventListener("change", function (e) {
       if (hiddenInput) hiddenInput.value = dataUrl;
       setPicturePreview(fileInput.dataset.preview, dataUrl, previewName, "#888");
     });
+  } else if (e.target.dataset.action === "expenses-range-input") {
+    var rangeContainer = e.target.closest(".animate-slide-up");
+    var fromInput = rangeContainer ? rangeContainer.querySelector('[data-bound="from"]') : null;
+    var toInput = rangeContainer ? rangeContainer.querySelector('[data-bound="to"]') : null;
+    var fromVal = fromInput ? fromInput.value : "";
+    var toVal = toInput ? toInput.value : "";
+    if (!fromVal || !toVal) return; /* wait until both ends of the range are set */
+    if (fromVal > toVal) { toast("Start date must be before the end date.", "error"); return; }
+    navigate("expenses", { from: fromVal, to: toVal, q: parseHash().query.q || "" });
   }
 });
 
