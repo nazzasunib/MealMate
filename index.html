@@ -495,6 +495,14 @@ main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer):not(.fix
 @media (prefers-reduced-motion:reduce){
   .app-grid-flow-spot{ animation:none; opacity:0; }
 }
+
+/* ===== manual patch 11: Shopping List page two-column desktop layout.
+   lg:col-span-3/2 aren't in this pre-compiled Tailwind sheet (no class here
+   used them before), so the 3:2 split is done with a dedicated class
+   instead of relying on JIT compilation. ===== */
+@media (min-width:1024px){
+  .shopping-list-grid{ grid-template-columns:3fr 2fr; }
+}
 </style>
 </head>
 <body class="h-full bg-background">
@@ -1243,10 +1251,11 @@ function removeFromShoppingList(id) {
   saveDB();
 }
 /* Category display order: existing categories in their EXPENSE_CATEGORIES
-   order first (so the panel always reads in the same familiar order the
-   rest of the app already uses), then "Others" last for custom items. */
+   order — a custom item added via "Others" is filed under whichever real
+   category was selected when it was added, so no separate "Others" bucket
+   ever appears in the Shopping List panel. */
 function shoppingListGroupOrder() {
-  return EXPENSE_CATEGORIES.map(function (c) { return c.name; }).concat(["Others"]);
+  return EXPENSE_CATEGORIES.map(function (c) { return c.name; });
 }
 function groupShoppingListByCategory() {
   var order = shoppingListGroupOrder();
@@ -1269,62 +1278,41 @@ function shoppingListCategoryChipsHtml(activeCategory) {
       (isActive ? "bg-navy-900 text-white" : "border border-border bg-surface text-foreground hover:bg-gray-100") +
       ' rounded-xl px-3.5 py-2 text-sm font-medium transition-colors">' + esc(c.name) + "</button>"
     );
-  }).join("") +
-  '<button type="button" data-action="shopping-select-category" data-category="Others" class="' +
-  (activeCategory === "Others" ? "bg-navy-900 text-white" : "border border-dashed border-border bg-surface text-foreground hover:bg-gray-100") +
-  ' rounded-xl px-3.5 py-2 text-sm font-medium transition-colors">+ Others</button>';
+  }).join("");
 }
 
-function shoppingListItemChecklistHtml(categoryName) {
+/* "Others" is not a category of its own — it is a way to add a custom item
+   INTO whichever real category is currently selected, so the input row
+   lives inside that category's checklist rather than behind a separate
+   chip. The custom item is filed under `categoryName` like any other row. */
+function shoppingListItemChecklistHtml(categoryName, categorySearch) {
   if (!categoryName) return "";
-  if (categoryName === "Others") {
-    return (
-      '<div class="flex items-center gap-2">' +
-        '<input type="text" data-action="shopping-others-input" placeholder="Type an item name, e.g. Dishwashing Liquid" class="' + FIELD_CLASS + '" />' +
-        '<button type="button" data-action="shopping-add-others" class="btn-primary btn-sm shrink-0">' + icon("plus", "h-4 w-4") + "Add</button>" +
-      "</div>"
-    );
-  }
-  var items = itemsForCategory(categoryName);
-  return (
-    '<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">' +
+  var q = (categorySearch || "").trim().toLowerCase();
+  var items = itemsForCategory(categoryName).filter(function (it) { return !q || it.toLowerCase().indexOf(q) >= 0; });
+  var itemsHtml = items.length ?
+    '<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">' +
       items.map(function (it) {
         var checked = !!shoppingListEntry(categoryName, it);
         return (
           '<label class="flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors has-[:checked]:border-navy-900 has-[:checked]:bg-navy-50">' +
             '<input type="checkbox" data-action="shopping-toggle-item" data-category="' + esc(categoryName) + '" data-item="' + esc(it) + '"' + (checked ? " checked" : "") + ' class="h-4 w-4 shrink-0 cursor-pointer accent-navy-900" />' +
-            '<span class="truncate">' + esc(it) + "</span>" +
+            '<span class="min-w-0 flex-1 truncate" title="' + esc(it) + '">' + esc(it) + "</span>" +
           "</label>"
         );
       }).join("") +
+    "</div>" :
+    '<p class="px-1 py-2 text-sm text-muted">No matching items in ' + esc(categoryName) + ".</p>";
+  return (
+    '<div class="relative mb-3">' +
+      '<span class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted">' + icon("search", "h-4 w-4") + "</span>" +
+      '<input type="text" data-action="shopping-category-search" value="' + esc(categorySearch || "") + '" placeholder="Search in ' + esc(categoryName) + '" class="w-full rounded-xl border border-border bg-surface py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted transition-all focus:border-navy-600 focus:outline-none focus:ring-2 focus:ring-navy-600/20" />' +
+    "</div>" +
+    itemsHtml +
+    '<div class="mt-3 flex items-center gap-2 border-t border-border pt-3">' +
+      '<input type="text" data-action="shopping-others-input" placeholder="Others — type an item name" class="' + FIELD_CLASS + '" />' +
+      '<button type="button" data-action="shopping-add-others" data-category="' + esc(categoryName) + '" class="btn-primary btn-sm shrink-0">' + icon("plus", "h-4 w-4") + "Add</button>" +
     "</div>"
   );
-}
-
-/* Search matches item names across every category, showing which category
-   each result belongs to (since the same item name could in principle
-   exist twice), so a search-based add always uses the item's real
-   category — required for the "never create a duplicate category" rule to
-   hold even when adding via search instead of the category chips. */
-function shoppingListSearchResultsHtml(query) {
-  var q = (query || "").trim().toLowerCase();
-  if (!q) return "";
-  var matches = [];
-  EXPENSE_CATEGORIES.forEach(function (c) {
-    c.items.forEach(function (it) {
-      if (it.toLowerCase().indexOf(q) >= 0) matches.push({ category: c.name, item: it });
-    });
-  });
-  if (!matches.length) return '<p class="px-1 py-2 text-sm text-muted">No matching items.</p>';
-  return matches.map(function (m) {
-    var checked = !!shoppingListEntry(m.category, m.item);
-    return (
-      '<label class="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border px-3.5 py-2.5 text-sm text-foreground transition-colors has-[:checked]:border-navy-900 has-[:checked]:bg-navy-50">' +
-        '<span class="flex items-center gap-2"><input type="checkbox" data-action="shopping-toggle-item" data-category="' + esc(m.category) + '" data-item="' + esc(m.item) + '"' + (checked ? " checked" : "") + ' class="h-4 w-4 shrink-0 cursor-pointer accent-navy-900" /><span>' + esc(m.item) + "</span></span>" +
-        '<span class="shrink-0 text-xs text-muted">' + esc(m.category) + "</span>" +
-      "</label>"
-    );
-  }).join("");
 }
 
 function shoppingListPanelHtml() {
@@ -1359,30 +1347,29 @@ function shoppingListPanelHtml() {
   );
 }
 
-function renderShoppingList(activeCategory, search) {
+function shoppingListDateTimeLabel() {
+  var now = new Date();
+  return now.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) +
+    " | " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+function renderShoppingList(activeCategory, categorySearch) {
   var groups = groupShoppingListByCategory();
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Shopping List</h1><p class="mt-1 text-sm text-muted">Pick items from your existing categories and build today\'s bazaar list.</p></div>' +
-        (groups.length ? '<button data-action="download-shopping-list" class="btn-primary">' + icon("clipboard-list", "h-4 w-4") + "Download Shopping List</button>" : "") +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Shopping List</h1><p id="shopping-datetime" class="mt-1 text-sm text-muted">' + shoppingListDateTimeLabel() + "</p></div>" +
+        (groups.length ? '<button data-action="download-shopping-list" class="btn-primary">' + icon("clipboard-list", "h-4 w-4") + "Download PDF</button>" : "") +
       "</div>" +
-      '<div class="grid grid-cols-1 gap-6 lg:grid-cols-5">' +
-        '<div class="space-y-4 lg:col-span-3">' +
+      '<div class="shopping-list-grid grid grid-cols-1 gap-6">' +
+        '<div class="space-y-4">' +
           '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)]">' +
-            '<div class="relative mb-4">' +
-              '<span class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted">' + icon("search", "h-4 w-4") + "</span>" +
-              '<input id="shopping-search-input" value="' + esc(search || "") + '" placeholder="Search for an item, e.g. Chicken" class="w-full rounded-xl border border-border bg-surface py-2.5 pl-11 pr-3.5 text-sm text-foreground placeholder:text-muted transition-all focus:border-navy-600 focus:outline-none focus:ring-2 focus:ring-navy-600/20" />' +
-            "</div>" +
-            '<div id="shopping-search-results" class="space-y-1.5"' + (search ? "" : " hidden") + ">" + shoppingListSearchResultsHtml(search) + "</div>" +
-            '<div id="shopping-category-view"' + (search ? " hidden" : "") + '>' +
-              '<h2 class="mb-3 text-sm font-semibold text-foreground">Select a Category</h2>' +
-              '<div id="shopping-category-chips" class="flex flex-wrap gap-2">' + shoppingListCategoryChipsHtml(activeCategory) + "</div>" +
-              '<div id="shopping-item-checklist" class="mt-4">' + shoppingListItemChecklistHtml(activeCategory) + "</div>" +
-            "</div>" +
+            '<h2 class="mb-3 text-sm font-semibold text-foreground">Select a Category</h2>' +
+            '<div id="shopping-category-chips" class="flex flex-wrap gap-2">' + shoppingListCategoryChipsHtml(activeCategory) + "</div>" +
+            '<div id="shopping-item-checklist" class="mt-4">' + shoppingListItemChecklistHtml(activeCategory, categorySearch) + "</div>" +
           "</div>" +
         "</div>" +
-        '<div class="lg:col-span-2">' +
+        '<div>' +
           '<div class="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-card)] lg:sticky lg:top-20">' +
             '<h2 class="mb-4 text-xs font-semibold uppercase tracking-wide text-muted">Today\'s Shopping List</h2>' +
             '<div id="shopping-list-panel">' + shoppingListPanelHtml() + "</div>" +
@@ -1396,43 +1383,85 @@ function renderShoppingList(activeCategory, search) {
 function refreshShoppingListPanel() {
   var host = document.getElementById("shopping-list-panel");
   if (host) host.innerHTML = shoppingListPanelHtml();
+  var downloadHost = document.querySelector('[data-action="download-shopping-list"]');
+  if (!downloadHost && DB.shoppingList.length) {
+    /* the download button only renders once the list is non-empty, so a
+       first-ever add needs a full re-render to make it appear */
+    navigate("shopping-list", currentQueryWith({}));
+  }
 }
 
 function refreshShoppingListLeftPane() {
-  var searchInput = document.getElementById("shopping-search-input");
-  var searchValue = searchInput ? searchInput.value : "";
-  if (searchValue) {
-    var resultsHost = document.getElementById("shopping-search-results");
-    if (resultsHost) resultsHost.innerHTML = shoppingListSearchResultsHtml(searchValue);
-    return;
-  }
   var chipsHost = document.getElementById("shopping-category-chips");
   var activeChip = chipsHost ? chipsHost.querySelector(".bg-navy-900") : null;
   var activeCategory = activeChip ? activeChip.dataset.category : "";
+  var searchInput = document.querySelector('[data-action="shopping-category-search"]');
+  var categorySearch = searchInput ? searchInput.value : "";
   var checklistHost = document.getElementById("shopping-item-checklist");
-  if (checklistHost) checklistHost.innerHTML = shoppingListItemChecklistHtml(activeCategory);
+  if (checklistHost) checklistHost.innerHTML = shoppingListItemChecklistHtml(activeCategory, categorySearch);
 }
 
 function downloadShoppingListFile() {
   var groups = groupShoppingListByCategory();
   if (!groups.length) { toast("Your shopping list is empty.", "error"); return; }
-  var lines = ["SHOPPING LIST", "Date: " + dateLabelLong(latestDateAcross()), ""];
-  groups.forEach(function (g) {
-    lines.push(g.category);
-    g.rows.forEach(function (row) {
-      lines.push("- " + row.item + (row.quantity ? " — " + row.quantity : ""));
+  if (!window.jspdf) { toast("PDF export isn't available right now — please try again.", "error"); return; }
+
+  try {
+    var now = new Date();
+    var jsPDF = window.jspdf.jsPDF;
+    var pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    var pageWidth = pdf.internal.pageSize.getWidth();
+    var pageHeight = pdf.internal.pageSize.getHeight();
+    var margin = 48;
+    var y = margin;
+
+    function ensureSpace(needed) {
+      if (y + needed > pageHeight - margin) { pdf.addPage(); y = margin; }
+    }
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(20);
+    pdf.text("SHOPPING LIST", margin, y);
+    y += 26;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    pdf.setTextColor(90, 90, 90);
+    pdf.text("Date: " + now.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }), margin, y);
+    y += 16;
+    pdf.text("Time: " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }), margin, y);
+    y += 20;
+
+    pdf.setDrawColor(210, 210, 210);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 22;
+
+    groups.forEach(function (g) {
+      ensureSpace(24);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(13);
+      pdf.setTextColor(20, 20, 20);
+      pdf.text(g.category, margin, y);
+      y += 18;
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(11);
+      pdf.setTextColor(50, 50, 50);
+      g.rows.forEach(function (row) {
+        ensureSpace(16);
+        var line = "-  " + row.item + (row.quantity ? "  —  " + row.quantity : "");
+        pdf.text(line, margin + 12, y);
+        y += 16;
+      });
+      y += 12;
     });
-    lines.push("");
-  });
-  var blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement("a");
-  a.href = url;
-  a.download = "shopping-list-" + latestDateAcross() + ".txt";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+
+    var fileDate = latestDateAcross();
+    pdf.save("shopping-list-" + fileDate + ".pdf");
+    toast("PDF downloaded.", "success");
+  } catch (err) {
+    toast("Couldn't generate the PDF. Please try again.", "error");
+  }
 }
 
 /* ============================== APP SHELL (sidebar + topbar) ============================== */
@@ -3522,11 +3551,13 @@ document.addEventListener("click", function (e) {
   } else if (action === "shopping-add-others") {
     var othersInput = document.querySelector('[data-action="shopping-others-input"]');
     var othersName = othersInput ? othersInput.value.trim() : "";
+    var othersCategory = el.dataset.category;
     if (!othersName) { toast("Type an item name first.", "error"); return; }
-    addToShoppingList("Others", othersName);
+    addToShoppingList(othersCategory, othersName);
     if (othersInput) othersInput.value = "";
     refreshShoppingListPanel();
-    toast(othersName + " added to the list.", "success");
+    refreshShoppingListLeftPane();
+    toast(othersName + " added to " + othersCategory + ".", "success");
   } else if (action === "shopping-remove-item") {
     removeFromShoppingList(el.dataset.id);
     refreshShoppingListPanel();
@@ -3657,24 +3688,25 @@ document.addEventListener("input", function (e) {
     refreshItemSuggestions(e.target);
   } else if (e.target.dataset.action === "item-amount-input") {
     refreshExpenseItemTotal(e.target);
-  } else if (e.target.id === "shopping-search-input") {
-    var searchValue = e.target.value;
+  } else if (e.target.dataset.action === "shopping-category-search") {
+    var categorySearchValue = e.target.value;
     clearTimeout(SHOPPING_SEARCH_DEBOUNCE);
     SHOPPING_SEARCH_DEBOUNCE = setTimeout(function () {
-      /* Live-updates just the results list (not a full navigate()/render())
-         so the input never loses focus while typing. The URL's ?q= is kept
-         in sync too (replacing history so search keystrokes don't spam
-         back/forward), purely so the search term survives a page refresh —
-         it plays no role in re-rendering here. */
-      var host = document.getElementById("shopping-search-results");
-      if (host) host.innerHTML = shoppingListSearchResultsHtml(searchValue);
-      var categoryView = document.getElementById("shopping-category-view");
-      if (host) host.hidden = !searchValue;
-      if (categoryView) categoryView.hidden = !!searchValue;
-      var q = currentQueryWith({ q: searchValue });
-      if (!searchValue) delete q.q;
-      var qs = Object.keys(q).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(q[k]); }).join("&");
-      history.replaceState(null, "", "#/shopping-list" + (qs ? "?" + qs : ""));
+      /* Live-filters just the items grid (not a full navigate()/render())
+         so the input never loses focus while typing. Rebuilding the whole
+         checklist via refreshShoppingListLeftPane() would also blow away
+         the just-typed search value's cursor position, so only the items
+         list underneath is patched here instead. */
+      var checklistHost = document.getElementById("shopping-item-checklist");
+      var chipsHost = document.getElementById("shopping-category-chips");
+      var activeChip = chipsHost ? chipsHost.querySelector(".bg-navy-900") : null;
+      var activeCategory = activeChip ? activeChip.dataset.category : "";
+      if (checklistHost) checklistHost.innerHTML = shoppingListItemChecklistHtml(activeCategory, categorySearchValue);
+      var newSearchInput = document.querySelector('[data-action="shopping-category-search"]');
+      if (newSearchInput) {
+        newSearchInput.focus();
+        newSearchInput.setSelectionRange(newSearchInput.value.length, newSearchInput.value.length);
+      }
     }, 200);
   } else if (e.target.dataset.action === "shopping-quantity-input") {
     var qtyRow = DB.shoppingList.filter(function (r) { return r.id === e.target.dataset.id; })[0];
