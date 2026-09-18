@@ -1778,6 +1778,14 @@ function renderMeals(dateKey) {
   var members = activeMembers();
   var today = latestDateAcross();
   var monthDates = eachDateInMonth(monthKey).filter(function (d) { return d <= today; });
+  var memberMonthTotals = members.map(function (m) {
+    var total = monthDates.reduce(function (sum, d) {
+      var meal = mealFor(m.id, d);
+      return sum + (meal.breakfast ? 1 : 0) + (meal.lunch ? 1 : 0) + (meal.dinner ? 1 : 0);
+    }, 0);
+    return { member: m, total: total };
+  });
+  var monthGrandTotal = memberMonthTotals.reduce(function (sum, r) { return sum + r.total; }, 0);
   var monthRows = monthDates.map(function (d) {
     var dayTotal = 0;
     var cells = members.map(function (m) {
@@ -1816,6 +1824,21 @@ function renderMeals(dateKey) {
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Monthly Meal Summary — ' + monthLabel(monthKey) + "</h2></div>" +
+        (members.length === 0 ? "" :
+        '<div class="grid grid-cols-2 gap-4 border-b border-border p-5 sm:grid-cols-3 lg:grid-cols-4">' +
+          memberMonthTotals.map(function (r) {
+            return (
+              '<div class="flex items-center gap-3 rounded-xl border border-border bg-gray-50/60 px-4 py-3">' +
+                avatarHtml(r.member.pictureUrl, r.member.name, "h-9 w-9", r.member.avatarColor) +
+                '<div class="min-w-0"><p class="truncate text-sm font-medium text-foreground">' + esc(r.member.name) + "</p><p class=\"text-xs text-muted\">" + r.total + " meal" + (r.total === 1 ? "" : "s") + "</p></div>" +
+              "</div>"
+            );
+          }).join("") +
+          '<div class="flex items-center gap-3 rounded-xl border border-navy-900 bg-navy-50/60 px-4 py-3">' +
+            '<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy-900 text-white">' + icon("utensils-crossed", "h-4.5 w-4.5") + "</div>" +
+            '<div class="min-w-0"><p class="truncate text-sm font-semibold text-navy-900">Total</p><p class="text-xs text-navy-900/70">' + monthGrandTotal + " meal" + (monthGrandTotal === 1 ? "" : "s") + "</p></div>" +
+          "</div>" +
+        "</div>") +
         (members.length === 0 ? '<div class="p-6">' + emptyState("utensils-crossed", "No active members") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-2">Date</th>' +
           members.map(function (m) { return '<th class="px-3 py-2 text-right">' + esc(m.name) + "</th>"; }).join("") +
