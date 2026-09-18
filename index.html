@@ -1612,6 +1612,15 @@ function renderMoney(search) {
   var uniqueDepositors = {};
   deposits.forEach(function (d) { uniqueDepositors[d.memberId] = true; });
 
+  var depositorTotals = {};
+  DB.deposits.forEach(function (d) {
+    if (!depositorTotals[d.memberId]) depositorTotals[d.memberId] = { memberId: d.memberId, count: 0, amount: 0 };
+    depositorTotals[d.memberId].count += 1;
+    depositorTotals[d.memberId].amount += d.amount;
+  });
+  var depositorBreakdown = Object.keys(depositorTotals).map(function (k) { return depositorTotals[k]; }).sort(function (a, b) { return b.amount - a.amount; });
+  var depositorBreakdownTotal = depositorBreakdown.reduce(function (s, row) { return s + row.amount; }, 0);
+
   var rows = deposits.map(function (d) {
     var m = memberById(d.memberId);
     return (
@@ -1638,7 +1647,7 @@ function renderMoney(search) {
         statCard({ label: "Total Money Added", value: total, prefix: "৳", icon: "wallet", tone: "success" }) +
         statCard({ label: "Deposits", value: deposits.length, icon: "coins", tone: "navy" }) +
         statCard({ label: "Average Deposit", value: deposits.length ? total / deposits.length : 0, prefix: "৳", icon: "trending-up", tone: "gray" }) +
-        statCard({ label: "Depositors", value: Object.keys(uniqueDepositors).length, icon: "users", tone: "warning" }) +
+        '<button data-action="open-modal" data-modal="depositors-breakdown-modal" class="text-left">' + statCard({ label: "Depositors", value: Object.keys(uniqueDepositors).length, icon: "users", tone: "warning", helperText: "Click for who paid how much", interactive: true }) + "</button>" +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Deposit History</h2>' + searchBoxHtml("Search by member...", search) + "</div>" +
@@ -1647,7 +1656,22 @@ function renderMoney(search) {
       "</div>" +
     "</div>" +
     depositFormModal(null) + depositFormModal("__EDIT__") +
-    deleteConfirmModal("delete-deposit-modal", "Delete this deposit?", "This will remove the deposit and update the available balance.")
+    deleteConfirmModal("delete-deposit-modal", "Delete this deposit?", "This will remove the deposit and update the available balance.") +
+    modalWrapper("depositors-breakdown-modal", "Who Deposited How Much — All Time",
+      depositorBreakdown.length === 0 ? emptyState("users", "No deposits yet") :
+      '<div class="max-h-96 space-y-2 overflow-y-auto">' + depositorBreakdown.map(function (row) {
+        var m = memberById(row.memberId);
+        return (
+          '<div class="flex items-center justify-between rounded-xl border border-border px-4 py-3">' +
+            '<div class="flex items-center gap-3">' + avatarHtml(m ? m.pictureUrl : null, m ? m.name : "Unknown", "h-8 w-8", m ? m.avatarColor : "#888") +
+              '<div><p class="text-sm font-medium text-foreground">' + esc(m ? m.name : "Unknown") + '</p><p class="text-xs text-muted">' + row.count + " deposit" + (row.count === 1 ? "" : "s") + "</p></div>" +
+            "</div>" +
+            '<span class="text-sm font-semibold tabular-nums text-success-700">' + formatCurrency(row.amount) + "</span>" +
+          "</div>"
+        );
+      }).join("") +
+      '<div class="mt-1 flex items-center justify-between rounded-xl bg-navy-50 px-4 py-3"><span class="text-sm font-semibold text-navy-900">Total</span><span class="text-base font-bold tabular-nums text-navy-900">' + formatCurrency(depositorBreakdownTotal) + "</span></div>" +
+      "</div>")
   );
 }
 
