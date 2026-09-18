@@ -2121,7 +2121,12 @@ function renderExpenses(search, monthKey, rangeFrom, rangeTo) {
   );
 }
 
-var UNIT_OPTIONS_HTML = ["kg", "gm", "piece"].map(function (u) { return '<option value="' + u + '">' + u + "</option>"; }).join("");
+/* Standard unit list used by every Unit dropdown in the app (expense item
+   rows, Store "Add Usage" form). Keeping this as the single source of truth
+   means adding/renaming a unit here automatically updates every dropdown
+   that reads UNIT_OPTIONS_HTML — never hand-list units at the call site. */
+var UNIT_OPTIONS = ["kg", "g", "L", "mL", "pcs", "dozen", "packet", "box"];
+var UNIT_OPTIONS_HTML = UNIT_OPTIONS.map(function (u) { return '<option value="' + esc(u) + '">' + esc(u) + "</option>"; }).join("");
 var CATEGORY_OPTIONS_HTML = EXPENSE_CATEGORIES.map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.name) + "</option>"; }).join("");
 
 /* Renders a single repeatable item row for the expense form's item list.
