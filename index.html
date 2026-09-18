@@ -1969,7 +1969,7 @@ function closeMoneyMonth(monthKey, decisionsByMember) {
 function renderMoney(search, monthKeyParam) {
   var monthKey = monthKeyParam && /^\d{4}-\d{2}$/.test(monthKeyParam) ? monthKeyParam : latestMonthKey();
 
-  var deposits = DB.deposits.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+  var deposits = DB.deposits.filter(function (d) { return inMonth(d.date, monthKey); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
   if (search) {
     var q = search.toLowerCase();
     deposits = deposits.filter(function (d) { var m = memberById(d.memberId); return m && m.name.toLowerCase().indexOf(q) >= 0; });
@@ -1977,11 +1977,6 @@ function renderMoney(search, monthKeyParam) {
   var total = deposits.reduce(function (a, d) { return a + d.amount; }, 0);
   var uniqueDepositors = {};
   deposits.forEach(function (d) { uniqueDepositors[d.memberId] = true; });
-
-  var hisab = computeHisabSummary(monthKey);
-  var moneyClosed = findMoneyClosedMonth(monthKey);
-  var monthBreakdown = hisab.members.slice().sort(function (a, b) { return b.paid - a.paid; });
-  var monthBreakdownTotalPaid = hisab.totalPaid;
 
   var rows = deposits.map(function (d) {
     var m = memberById(d.memberId);
@@ -2002,18 +1997,21 @@ function renderMoney(search, monthKeyParam) {
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Money Added</h1><p class="mt-1 text-sm text-muted">All deposits recorded so far.</p></div>' +
-        '<button data-action="add-deposit" class="btn-primary">' + icon("wallet", "h-4 w-4") + "Add Deposit</button>" +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Money Added</h1><p class="mt-1 text-sm text-muted">Deposits recorded in ' + esc(monthLabel(monthKey)) + ".</p></div>" +
+        '<div class="flex items-center gap-2">' +
+          monthSwitcherHtml(monthKey, "money-month-nav") +
+          '<button data-action="add-deposit" class="btn-primary">' + icon("wallet", "h-4 w-4") + "Add Deposit</button>" +
+        "</div>" +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
-        statCard({ label: "Total Money Added", value: total, prefix: "৳", icon: "wallet", tone: "success" }) +
+        statCard({ label: "Money Added", value: total, prefix: "৳", icon: "wallet", tone: "success" }) +
         statCard({ label: "Deposits", value: deposits.length, icon: "coins", tone: "navy" }) +
         statCard({ label: "Average Deposit", value: deposits.length ? total / deposits.length : 0, prefix: "৳", icon: "trending-up", tone: "gray" }) +
         '<button data-action="open-modal" data-modal="depositors-breakdown-modal" class="text-left">' + statCard({ label: "Depositors", value: Object.keys(uniqueDepositors).length, icon: "users", tone: "warning", helperText: "Click for who paid how much", interactive: true }) + "</button>" +
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
-        '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Deposit History</h2>' + searchBoxHtml("Search by member...", search) + "</div>" +
-        (deposits.length === 0 ? '<div class="p-6">' + emptyState("wallet", search ? "No matching deposits" : "No deposits yet", search ? "Try a different search term." : "Add the first deposit.") + "</div>" :
+        '<div class="flex items-center justify-between gap-3 border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Deposit History -- ' + esc(monthLabel(monthKey)) + "</h2>" + searchBoxHtml("Search by member...", search) + "</div>" +
+        (deposits.length === 0 ? '<div class="p-6">' + emptyState("wallet", search ? "No matching deposits" : "No deposits this month", search ? "Try a different search term." : "Add a deposit or pick a different month.") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Date</th><th class="px-5 py-3">Member</th><th class="px-5 py-3">Note</th><th class="px-5 py-3 text-right">Amount</th><th class="px-5 py-3 text-right">Actions</th></tr></thead><tbody>' + rows + "</tbody></table></div>") +
       "</div>" +
     "</div>" +
@@ -2036,7 +2034,7 @@ function depositorsBreakdownBodyHtml(monthKey) {
   var monthBreakdown = hisab.members.slice().sort(function (a, b) { return b.paid - a.paid; });
   return (
     '<div class="mb-4 flex items-center justify-end gap-3">' +
-      monthSwitcherHtml(monthKey, "money-month-nav") +
+      monthSwitcherHtml(monthKey, "money-breakdown-month-nav") +
     "</div>" +
     (monthBreakdown.length === 0 ? emptyState("users", "No active members") :
     '<div class="max-h-96 space-y-2 overflow-y-auto">' + monthBreakdown.map(function (row) {
@@ -3924,6 +3922,8 @@ document.addEventListener("click", function (e) {
   } else if (action === "dashboard-month-nav") {
     navigate("dashboard", { month: el.dataset.month });
   } else if (action === "money-month-nav") {
+    navigate("money", { month: el.dataset.month, q: parseHash().query.q || "" });
+  } else if (action === "money-breakdown-month-nav") {
     refreshDepositorsBreakdownModal(el.dataset.month);
   } else if (action === "expenses-month-nav") {
     /* Switching months clears any explicit from/to override so the new
