@@ -1026,6 +1026,18 @@ function computeAllTimeSummary() {
   return { totalMoneyAdded: totalMoneyAdded, totalMealExpense: totalMealExpense, availableBalance: availableBalance };
 }
 
+/* Time-of-day greeting for the dashboard header, based on the viewer's own
+   local clock (not any date recorded in the data) so it always matches
+   when they're actually looking at the page. */
+function greetingForCurrentTime() {
+  var hour = new Date().getHours();
+  if (hour < 5) return "Good Night";
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+  if (hour < 21) return "Good Evening";
+  return "Good Night";
+}
+
 function renderDashboard(monthKeyParam) {
   var monthKey = monthKeyParam && /^\d{4}-\d{2}$/.test(monthKeyParam) ? monthKeyParam : latestMonthKey();
   var s = computeMonthSummary(monthKey);
@@ -1034,7 +1046,7 @@ function renderDashboard(monthKeyParam) {
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
         "<div>" +
-          '<h1 class="text-2xl font-semibold tracking-tight text-foreground">Good Morning, ' + esc(SESSION.name) + ' 👋</h1>' +
+          '<h1 class="text-2xl font-semibold tracking-tight text-foreground">' + esc(greetingForCurrentTime()) + ", " + esc(SESSION.name) + ' 👋</h1>' +
           '<p class="mt-1 text-sm text-muted">Here\'s your mess overview for ' + monthLabel(monthKey) + ".</p>" +
         "</div>" +
         monthSwitcherHtml(monthKey, "dashboard-month-nav") +
