@@ -2498,22 +2498,27 @@ function parseExpenseItemRows(form, monthKey) {
 
     /* "Previous stock finished?" reconciliation, only present on rows where
        findExistingStockFor() found stock to reconcile (see
-       stockReconcileBlockHtml). "Yes" (the default) or no block at all
-       means no correction is needed. "No" means the user typed how much of
-       the OLD stock is actually left -- carried as manualStockRemaining
-       (plus a manualStockPriorAvailable snapshot of what Available said a
-       moment ago) so the submit handler can record the right delta via
-       recordManualStockCarryForward -- see that function for why a delta,
-       not the raw typed number, is what actually gets stored. */
+       stockReconcileBlockHtml). No block at all (no existing stock for this
+       item+unit) means no correction is needed. "No" means the user typed
+       how much of the OLD stock is actually left. "Yes" means the old stock
+       is entirely used up, i.e. 0 remains. Either way this is carried as
+       manualStockRemaining so the submit handler can record the right
+       delta via recordManualStockCarryForward, which recomputes the "before
+       this purchase" baseline itself at save time -- see that function for
+       why a delta, not the raw typed number, is what actually gets stored.
+       Without this "Yes" branch, the default "Yes" choice recorded no
+       correction at all, so the old (supposedly finished) stock kept
+       silently adding into Available alongside the new purchase. */
     var finishedChoice = row.querySelector('[data-field="stock-finished"]:checked');
     var manualStockRemaining = null;
-    var manualStockPriorAvailable = null;
-    if (finishedChoice && finishedChoice.value === "no") {
-      var remainingRaw = (row.querySelector('[data-field="stock-remaining"]') || {}).value;
-      var remainingVal = remainingRaw !== "" && remainingRaw != null ? parseFloat(remainingRaw) : NaN;
-      manualStockRemaining = !isNaN(remainingVal) ? Math.max(0, remainingVal) : 0;
-      var existingForDelta = findExistingStockFor(itemName, unit, monthKey);
-      manualStockPriorAvailable = existingForDelta ? existingForDelta.available : 0;
+    if (finishedChoice && findExistingStockFor(itemName, unit, monthKey)) {
+      if (finishedChoice.value === "no") {
+        var remainingRaw = (row.querySelector('[data-field="stock-remaining"]') || {}).value;
+        var remainingVal = remainingRaw !== "" && remainingRaw != null ? parseFloat(remainingRaw) : NaN;
+        manualStockRemaining = !isNaN(remainingVal) ? Math.max(0, remainingVal) : 0;
+      } else {
+        manualStockRemaining = 0;
+      }
     }
 
     items.push({
@@ -2523,7 +2528,6 @@ function parseExpenseItemRows(form, monthKey) {
       unit: unit || null,
       amount: amount,
       manualStockRemaining: manualStockRemaining,
-      manualStockPriorAvailable: manualStockPriorAvailable,
     });
   }
   return { items: items };
@@ -2590,38 +2594,58 @@ function storeCarryForwardInto(monthKey) {
   return map;
 }
 
-/* Records (or updates) a manual "remaining from before" correction typed on
-   the Add/Edit Expense form when the user unchecks "Previous stock
-   finished?" for an item.
+/* Records (or updates) a manual "remaining from before" correction -- used
+   by both the Add/Edit Expense form's "Previous stock finished?" answer
+   (`remaining` is 0 for "Yes", or whatever was typed for "No") and the
+   Store page's standalone "Edit Stock" control (see editStockModal),
+   which lets the actual on-hand quantity be corrected at any time, not
+   just when a new purchase is being recorded.
 
-   The typed number is what the user says is ACTUALLY left of everything
+   The number is what the user says is ACTUALLY left of everything
    purchased so far this month (old purchases included) -- not an amount to
    add on top. So this cannot simply be added as another positive
    carry-forward row (computeStoreStockSummary() already counts every
-   purchase recorded this month, including the earlier ones, toward
-   `purchased`); doing that would double count the old, already-used
-   portion. Instead this stores the DIFFERENCE between what the user says
-   is left (`remaining`) and what the running total said was available a
-   moment ago (`priorAvailable`, i.e. purchased-so-far + carry-forward-so-
-   far, from findExistingStockFor() at the moment the user answered) --
-   normally negative, since it is correcting for stock that was used up.
+   purchase recorded this month toward `purchased`); doing that would
+   double count the old, already-used portion. Instead this stores the
+   DIFFERENCE between what the user says is left (`remaining`) and what
+   this item's Available would be with any EXISTING manual correction for
+   it removed (purchased-so-far + any real Close-Month carry-in, but not
+   a stale prior manual delta) -- normally negative, since it is correcting
+   for stock that was used up.
+
+   That "existing manual row removed" baseline is recomputed here from
+   scratch on every call, rather than trusting a caller-supplied prior-
+   Available snapshot: this function always REPLACES this item's one
+   manual row (see the filter below), so if a caller's snapshot had been
+   taken *after* an earlier manual correction was already applied (e.g.
+   editing the same item's stock a second time), computing the new delta
+   against that snapshot would double-count the row that's about to be
+   replaced -- the same "remaining" typed twice would keep drifting further
+   from what was actually typed. Recomputing the baseline here, with this
+   item's own manual row temporarily excluded, keeps every call idempotent:
+   calling this repeatedly with the same `remaining` always lands on the
+   same Available.
+
    Because storeCarryForwardInto() SUMS every carry-forward row for a
-   (item, unit, monthKey) rather than picking one, this delta composes
-   correctly on top of any real carry-forward Close Month already wrote in,
-   and on top of the current month's own purchases: available ends up
-   exactly `remaining` right after this expense is saved, and grows from
-   there only with whatever is purchased next.
+   (item, unit, monthKey) rather than picking one, the resulting delta
+   composes correctly on top of any real carry-forward Close Month already
+   wrote in, and on top of the current month's own purchases: available
+   ends up exactly `remaining` right after this call, and grows from there
+   only with whatever is purchased next.
 
    Written as its own DB.storeCarryForward row (fromMonthKey: "manual")
-   into the CURRENT month. Keyed by (item, unit, monthKey) so re-saving the
-   same expense (or correcting the same item again) replaces the prior
-   manual delta instead of stacking duplicates; a delta of exactly 0 (typed
-   remaining matches what was already available) removes any existing
-   manual row instead of storing a useless no-op entry. */
-function recordManualStockCarryForward(item, unit, monthKey, remaining, priorAvailable) {
+   into the given month. Keyed by (item, unit, monthKey) so calling this
+   again for the same item (whether from another expense save or another
+   Edit Stock correction) replaces the prior manual delta instead of
+   stacking duplicates; a delta of exactly 0 (typed remaining matches what
+   was already available) removes any existing manual row instead of
+   storing a useless no-op entry. */
+function recordManualStockCarryForward(item, unit, monthKey, remaining) {
   DB.storeCarryForward = DB.storeCarryForward.filter(function (c) {
     return !(c.monthKey === monthKey && c.fromMonthKey === "manual" && c.item === item && c.unit === unit);
   });
+  var baseline = findExistingStockFor(item, unit, monthKey);
+  var priorAvailable = baseline ? baseline.available : 0;
   var delta = remaining - priorAvailable;
   if (delta !== 0) {
     DB.storeCarryForward.push({ item: item, unit: unit, monthKey: monthKey, fromMonthKey: "manual", quantity: delta });
@@ -2746,19 +2770,22 @@ function storeStockRowHtml(r) {
   var unitLabel = r.unit ? " " + esc(r.unit) : "";
   /* Carry Forward can go negative -- see recordManualStockCarryForward --
      when a "Previous stock finished? No" correction on the Add Expense
-     form says less is left than the month's purchases alone would imply.
-     Shown in a distinct tone from a normal positive carry-in so it reads
-     as "reduced for stock already used" rather than a data glitch. */
+     form (or a manual stock edit -- see editStockModal) says less is
+     left than the month's purchases alone would imply. Shown in a distinct
+     tone from a normal positive carry-in so it reads as "reduced for stock
+     already used" rather than a data glitch. */
   var carryForwardHtml = !r.previousCarryForward ? "-" :
     (r.previousCarryForward < 0 ? '<span class="text-warning-700">' : "") +
     formatNumber(r.previousCarryForward, r.previousCarryForward % 1 ? 1 : 0) + unitLabel +
     (r.previousCarryForward < 0 ? "</span>" : "");
+  var key = storeStockKey(r.item, r.unit);
   return (
     '<tr class="border-b border-border transition-colors last:border-0 hover:bg-gray-100/50">' +
       '<td class="px-5 py-3 font-medium text-foreground">' + esc(r.item) + "</td>" +
       '<td class="px-5 py-3 text-right tabular-nums text-muted">' + carryForwardHtml + "</td>" +
       '<td class="px-5 py-3 text-right tabular-nums text-success-700">' + (r.purchased ? formatNumber(r.purchased, r.purchased % 1 ? 1 : 0) + unitLabel : "-") + "</td>" +
       '<td class="px-5 py-3 text-right font-semibold tabular-nums text-navy-900">' + (r.available ? formatNumber(r.available, r.available % 1 ? 1 : 0) + unitLabel : "-") + "</td>" +
+      '<td class="px-5 py-3 text-right"><button type="button" data-action="open-edit-stock-row" data-key="' + esc(key) + '" title="Edit available quantity" class="rounded-lg p-2 text-muted transition-colors hover:bg-gray-100 hover:text-foreground">' + icon("pencil", "h-4 w-4") + "</button></td>" +
     "</tr>"
   );
 }
@@ -2802,10 +2829,10 @@ function renderStore(monthKey) {
       "</div>" +
 
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
-        '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Current Stock -- ' + esc(monthLabel(monthKey)) + "</h2><p class=\"mt-0.5 text-xs text-muted\">Available = Carry Forward + Purchased. Close Month lets you type in the actual quantity left. Only items recorded with a quantity and unit are tracked here.</p></div>" +
+        '<div class="border-b border-border p-5"><h2 class="text-sm font-semibold text-foreground">Current Stock -- ' + esc(monthLabel(monthKey)) + "</h2><p class=\"mt-0.5 text-xs text-muted\">Available = Carry Forward + Purchased. Use the edit icon to correct an item's quantity by hand if it doesn't match what's actually left. Only items recorded with a quantity and unit are tracked here.</p></div>" +
         (stock.rows.length === 0 ? '<div class="p-6">' + emptyState("shopping-basket", "No trackable stock this month", "Add an expense with a quantity + unit to start tracking stock.") + "</div>" :
         '<div class="overflow-x-auto"><table class="w-full min-w-[480px] text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted">' +
-          '<th class="px-5 py-3">Item</th><th class="px-5 py-3 text-right">Carry Forward</th><th class="px-5 py-3 text-right">Purchased</th><th class="px-5 py-3 text-right">Available</th>' +
+          '<th class="px-5 py-3">Item</th><th class="px-5 py-3 text-right">Carry Forward</th><th class="px-5 py-3 text-right">Purchased</th><th class="px-5 py-3 text-right">Available</th><th class="px-5 py-3 text-right">Actions</th>' +
         "</tr></thead><tbody>" + stock.rows.map(storeStockRowHtml).join("") + "</tbody></table></div>") +
       "</div>" +
 
@@ -2829,7 +2856,8 @@ function renderStore(monthKey) {
       "</div>" +
     "</div>" +
     closeStoreMonthModal(monthKey) +
-    storeHistoryModal()
+    storeHistoryModal() +
+    editStockModal()
   );
 }
 
@@ -2873,6 +2901,34 @@ function closeStoreMonthModal(monthKey) {
     "</div>"
   );
   return modalWrapper("close-store-month-modal", "Close " + monthLabel(monthKey), body);
+}
+
+/* Single-item "Edit Stock" modal — lets the user directly correct one
+   item's Available quantity mid-month (not tied to closing the month).
+   Reuses recordManualStockCarryForward under the hood: same mechanism the
+   Add Expense form's "Previous stock finished?" toggle already uses, just
+   exposed here as its own standalone control on the Store page so a
+   mismatch can be fixed on the spot without waiting for the next purchase
+   or Close Month. */
+function editStockModalBody(item, unit, available) {
+  var unitLabel = unit ? " " + esc(unit) : "";
+  return (
+    '<p class="text-sm text-muted">Currently shows <span class="font-semibold text-foreground">' + formatNumber(available, available % 1 ? 1 : 0) + unitLabel + '</span> available for <span class="font-semibold text-foreground">' + esc(item) + '</span>. Type in the actual quantity you have on hand.</p>' +
+    '<div class="mt-4 flex items-center gap-2">' +
+      '<input type="number" min="0" step="0.1" id="edit-stock-quantity-input" value="' + (available % 1 ? available : Math.round(available)) + '" class="w-32 rounded-lg border border-border bg-surface px-3 py-2 text-right text-sm text-foreground focus:border-navy-600 focus:outline-none focus:ring-2 focus:ring-navy-600/20" />' +
+      (unit ? '<span class="text-sm text-muted">' + esc(unit) + "</span>" : "") +
+    "</div>"
+  );
+}
+function editStockModal() {
+  var body = (
+    '<div id="edit-stock-body"></div>' +
+    '<div class="mt-5 flex justify-end gap-2">' +
+      '<button type="button" data-action="close-modal" data-modal="edit-stock-modal" class="btn-secondary">Cancel</button>' +
+      '<button type="button" data-action="confirm-edit-stock" class="btn-primary">' + icon("pencil", "h-4 w-4") + "Save</button>" +
+    "</div>"
+  );
+  return modalWrapper("edit-stock-modal", "Edit Stock Quantity", body);
 }
 
 function storeHistoryListHtml() {
@@ -4096,6 +4152,10 @@ function openExpenseEditModal(id) {
 var PENDING_DELETE = null;
 var SEARCH_DEBOUNCE = null;
 var SHOPPING_SEARCH_DEBOUNCE = null;
+/* {monthKey, item, unit} for whichever stock row the
+   "Edit Stock" modal (see editStockModal / open-edit-stock-row /
+   confirm-edit-stock) is currently editing. */
+var EDIT_STOCK_TARGET = null;
 
 /* ============================== EVENT DELEGATION ============================== */
 document.addEventListener("click", function (e) {
@@ -4173,6 +4233,31 @@ document.addEventListener("click", function (e) {
     closeStoreMonth(el.dataset.month, remainingByKey);
     document.getElementById("close-store-month-modal").hidden = true;
     toast(monthLabel(el.dataset.month) + " closed — remaining stock carried forward to " + monthLabel(shiftMonthKey(el.dataset.month, 1)) + ".", "success");
+    render();
+  } else if (action === "open-edit-stock-row") {
+    /* storeStockKey() concatenates item+unit with no separator, so it can't
+       be reliably split back apart -- instead re-derive the row's own key
+       and match it against this month's already-computed stock summary
+       (the same summary the Store page's table itself just rendered from)
+       to find which item/unit/available this click refers to. */
+    var editMonthKey = parseHash().query.month && /^\d{4}-\d{2}$/.test(parseHash().query.month) ? parseHash().query.month : latestMonthKey();
+    var editStock = computeStoreStockSummary(editMonthKey);
+    var editRow = editStock.rows.filter(function (r) { return storeStockKey(r.item, r.unit) === el.dataset.key; })[0];
+    if (!editRow) { toast("Could not find that item.", "error"); return; }
+    EDIT_STOCK_TARGET = { monthKey: editMonthKey, item: editRow.item, unit: editRow.unit };
+    var editBody = document.getElementById("edit-stock-body");
+    if (editBody) editBody.innerHTML = editStockModalBody(editRow.item, editRow.unit, editRow.available);
+    document.getElementById("edit-stock-modal").hidden = false;
+  } else if (action === "confirm-edit-stock") {
+    if (!EDIT_STOCK_TARGET) { document.getElementById("edit-stock-modal").hidden = true; return; }
+    var editInput = document.getElementById("edit-stock-quantity-input");
+    var editVal = editInput ? parseFloat(editInput.value) : NaN;
+    if (isNaN(editVal) || editVal < 0) { toast("Please enter a valid quantity.", "error"); return; }
+    recordManualStockCarryForward(EDIT_STOCK_TARGET.item, EDIT_STOCK_TARGET.unit, EDIT_STOCK_TARGET.monthKey, editVal);
+    saveDB();
+    document.getElementById("edit-stock-modal").hidden = true;
+    toast("Stock for " + EDIT_STOCK_TARGET.item + " updated.", "success");
+    EDIT_STOCK_TARGET = null;
     render();
   } else if (action === "view-store-history-month") {
     var historyBody = document.getElementById("store-history-body");
@@ -4487,7 +4572,9 @@ document.addEventListener("submit", function (e) {
     var date = String(fd.get("date") || "");
     var amount = parseFloat(fd.get("amount"));
     var note = String(fd.get("note") || "").trim();
-    if (!memberId || !date || !(amount > 0)) { toast("Please fill in all required fields.", "error"); return; }
+    if (!memberId) { toast("Please select a member.", "error"); return; }
+    if (!date) { toast("Please select a date.", "error"); return; }
+    if (!(amount > 0)) { toast("Please enter a valid amount.", "error"); return; }
     if (dmode === "edit") {
       var did = String(fd.get("id") || "");
       var d = DB.deposits.filter(function (x) { return x.id === did; })[0];
@@ -4513,18 +4600,18 @@ document.addEventListener("submit", function (e) {
     if (!buyerIds.length) { toast("Please select who did it (Done By) before adding the expense.", "error"); return; }
     var eamount = eitems.reduce(function (s, it) { return s + it.amount; }, 0);
 
-    /* Apply every "Previous stock finished? No -- X left" correction the
-       user typed (see parseExpenseItemRows) as a manual stock carry-forward
-       delta for this item, in the month the expense is dated -- then strip
-       the transient UI-only fields before the item is stored, since
+    /* Apply every "Previous stock finished?" correction the user answered
+       (see parseExpenseItemRows -- "Yes" means 0 remains, "No" means the
+       typed remaining amount) as a manual stock carry-forward delta for
+       this item, in the month the expense is dated -- then strip the
+       transient UI-only fields before the item is stored, since
        DB.expenses items only ever hold {category, item, quantity, unit,
        amount} (see expenseItemsSummary and every other reader of .items). */
     eitems.forEach(function (it) {
       if (it.quantity > 0 && it.unit && it.manualStockRemaining !== null) {
-        recordManualStockCarryForward(it.item, it.unit, edateMonthKey, it.manualStockRemaining, it.manualStockPriorAvailable || 0);
+        recordManualStockCarryForward(it.item, it.unit, edateMonthKey, it.manualStockRemaining);
       }
       delete it.manualStockRemaining;
-      delete it.manualStockPriorAvailable;
     });
 
     if (emode === "edit") {
