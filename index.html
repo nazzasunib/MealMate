@@ -1241,6 +1241,39 @@ function pictureUploadFieldHtml(inputName, previewId, previewPictureUrl, preview
   );
 }
 
+/* One Yes/No pill pair for one meal type in the Default Meals field --
+   mirrors the same toggle style renderMeals() uses for the daily grid, so
+   a member's default reads the same way its daily override does. Each
+   button just flips a hidden input's value; nothing here touches DB.meals
+   -- this only sets what mealFor() falls back to when no daily override
+   exists yet for that member+date (see memberDefaultMeals()). */
+function defaultMealToggleHtml(type, label, value) {
+  return (
+    '<div>' +
+      '<p class="mb-1.5 text-xs font-medium text-muted">' + esc(label) + "</p>" +
+      '<input type="hidden" name="defaultMeal_' + type + '" value="' + (value ? "true" : "false") + '" />' +
+      '<div class="flex w-fit items-center gap-1 rounded-lg bg-gray-100 p-1">' +
+        '<button type="button" data-action="set-default-meal-toggle" data-type="' + type + '" data-value="false" class="h-7 w-12 rounded-md text-xs font-semibold transition-colors ' + (!value ? "bg-danger-600 text-white" : "text-muted hover:bg-white hover:text-foreground") + '">No</button>' +
+        '<button type="button" data-action="set-default-meal-toggle" data-type="' + type + '" data-value="true" class="h-7 w-12 rounded-md text-xs font-semibold transition-colors ' + (value ? "bg-success-600 text-white" : "text-muted hover:bg-white hover:text-foreground") + '">Yes</button>' +
+      "</div>" +
+    "</div>"
+  );
+}
+function defaultMealsFieldHtml(defaults) {
+  var d = defaults || DEFAULT_MEAL_DEFAULTS;
+  return (
+    '<div>' +
+      fieldLabel("Default Meals") +
+      '<p class="-mt-1 mb-2 text-xs text-muted">Whether each meal is assumed Yes or No for this member every day, until changed manually on the Meals page.</p>' +
+      '<div class="grid grid-cols-3 gap-3 rounded-xl border border-border p-3">' +
+        defaultMealToggleHtml("breakfast", "Breakfast", d.breakfast) +
+        defaultMealToggleHtml("lunch", "Lunch", d.lunch) +
+        defaultMealToggleHtml("dinner", "Dinner", d.dinner) +
+      "</div>" +
+    "</div>"
+  );
+}
+
 function memberFormModal(mode) {
   var isEdit = mode === "__EDIT__";
   var id = isEdit ? "member-edit-modal" : "member-add-modal";
@@ -1255,6 +1288,7 @@ function memberFormModal(mode) {
         "<div>" + fieldLabel("Email (optional)") + '<input name="email" type="email" placeholder="name@example.com" class="' + FIELD_CLASS + '" /></div>' +
       "</div>" +
       pictureUploadFieldHtml("pictureUrl", previewId, null, "?", "#888") +
+      defaultMealsFieldHtml(DEFAULT_MEAL_DEFAULTS) +
       (isEdit ? (
         "<div>" + fieldLabel("Status") +
           '<select name="status" class="' + FIELD_CLASS + ' cursor-pointer"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select>' +
@@ -1797,13 +1831,27 @@ function renderShell(contentHtml, activeKey, drawerOpen) {
 }
 
 /* ============================== DAILY MEALS ============================== */
-/* Lunch and dinner default to "eaten" (Yes) every day for every active member
-   unless explicitly turned off. Breakfast defaults to "not eaten" (No) and
-   must be turned on manually. A DB.meals row only exists once someone has
-   actually toggled something away from these defaults for that day. */
+/* Each member has their own per-meal default (member.defaultMeals -- see
+   memberDefaultMeals()/loadDB's migration), so which meals default to Yes
+   vs No is configurable per person (e.g. one member's breakfast defaults
+   off while another's lunch defaults off), not a single global rule. The
+   app-wide fallback used when a member has no defaultMeals set yet is
+   breakfast=No, lunch=Yes, dinner=Yes -- matching the original behavior.
+   A DB.meals row only exists once someone has actually toggled a meal
+   away from that member's own default for that day. */
+var DEFAULT_MEAL_DEFAULTS = { breakfast: false, lunch: true, dinner: true };
+function memberDefaultMeals(member) {
+  var d = (member && member.defaultMeals) || {};
+  return {
+    breakfast: d.breakfast !== undefined ? !!d.breakfast : DEFAULT_MEAL_DEFAULTS.breakfast,
+    lunch: d.lunch !== undefined ? !!d.lunch : DEFAULT_MEAL_DEFAULTS.lunch,
+    dinner: d.dinner !== undefined ? !!d.dinner : DEFAULT_MEAL_DEFAULTS.dinner,
+  };
+}
 function mealFor(memberId, dateKey) {
   var row = DB.meals.filter(function (m) { return m.memberId === memberId && m.date === dateKey; })[0];
-  return row || { breakfast: false, lunch: true, dinner: true };
+  if (row) return row;
+  return memberDefaultMeals(memberById(memberId));
 }
 
 function renderMeals(dateKey) {
@@ -1811,10 +1859,15 @@ function renderMeals(dateKey) {
   var totals = rows.reduce(function (acc, r) { acc.b += r.meal.breakfast ? 1 : 0; acc.l += r.meal.lunch ? 1 : 0; acc.d += r.meal.dinner ? 1 : 0; return acc; }, { b: 0, l: 0, d: 0 });
 
   function yesNoToggle(memberId, type, value) {
+    var member = memberById(memberId);
+    var isDefault = memberDefaultMeals(member)[type] === value;
     return (
       '<div class="mx-auto flex w-fit items-center gap-1 rounded-lg bg-gray-100 p-1">' +
         '<button type="button" data-action="set-meal" data-member="' + memberId + '" data-type="' + type + '" data-value="false" data-date="' + dateKey + '" class="h-7 w-12 rounded-md text-xs font-semibold transition-colors ' + (!value ? "bg-danger-600 text-white" : "text-muted hover:bg-white hover:text-foreground") + '">No</button>' +
         '<button type="button" data-action="set-meal" data-member="' + memberId + '" data-type="' + type + '" data-value="true" data-date="' + dateKey + '" class="h-7 w-12 rounded-md text-xs font-semibold transition-colors ' + (value ? "bg-success-600 text-white" : "text-muted hover:bg-white hover:text-foreground") + '">Yes</button>' +
+        '<button type="button" data-action="set-meal-default" data-member="' + memberId + '" data-type="' + type + '" data-value="' + (value ? "true" : "false") + '" title="' + (isDefault ? "This is already " + esc(member.name) + "'s default for " + type : "Make " + (value ? "Yes" : "No") + " " + esc(member.name) + "'s default for " + type + " every day") + '" class="ml-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ' + (isDefault ? "text-warning-600" : "text-muted hover:bg-white hover:text-warning-600") + '">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="' + (isDefault ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg>' +
+        "</button>" +
       "</div>"
     );
   }
@@ -1875,7 +1928,7 @@ function renderMeals(dateKey) {
   return (
     '<div class="space-y-6">' +
       '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">' +
-        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Meals</h1><p class="mt-1 text-sm text-muted">Lunch and dinner are Yes by default every day — turn them off if someone skips. Breakfast is No by default — turn it on manually.</p></div>' +
+        '<div><h1 class="text-2xl font-semibold tracking-tight text-foreground">Meals</h1><p class="mt-1 text-sm text-muted">Each member has their own default for Breakfast, Lunch and Dinner (set from Members) — this just overrides today\'s value manually.</p></div>' +
         dateSwitcherHtml(dateKey) +
       "</div>" +
       '<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">' +
@@ -1886,7 +1939,7 @@ function renderMeals(dateKey) {
       "</div>" +
       '<div class="animate-slide-up overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">' +
         (rows.length === 0 ? '<div class="p-6">' + emptyState("users", "No active members", "Add members from the Members page to start recording meals.") + "</div>" :
-        '<div class="overflow-x-auto"><table class="w-full min-w-[640px] text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Member</th><th class="px-3 py-3 text-center">Breakfast</th><th class="px-3 py-3 text-center">Lunch</th><th class="px-3 py-3 text-center">Dinner</th><th class="px-5 py-3 text-right">Total</th></tr></thead><tbody>' +
+        '<div class="overflow-x-auto"><table class="w-full min-w-[720px] text-sm"><thead><tr class="border-b border-border bg-gray-100/60 text-left text-xs font-semibold uppercase tracking-wide text-muted"><th class="px-5 py-3">Member</th><th class="px-3 py-3 text-center">Breakfast</th><th class="px-3 py-3 text-center">Lunch</th><th class="px-3 py-3 text-center">Dinner</th><th class="px-5 py-3 text-right">Total</th></tr></thead><tbody>' +
           '<tr class="border-b border-border bg-navy-50/50"><td class="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-navy-900">Set all</td><td class="px-3 py-3">' + setAllToggle("breakfast") + '</td><td class="px-3 py-3">' + setAllToggle("lunch") + '</td><td class="px-3 py-3">' + setAllToggle("dinner") + '</td><td></td></tr>' +
           tableRows + "</tbody></table></div>") +
       "</div>" +
@@ -4111,10 +4164,31 @@ function closeMonth(monthKey) {
   saveDB();
 }
 
+/* Syncs a member form's three Default Meals toggle pairs (both the hidden
+   defaultMeal_<type> inputs the submit handler reads, and the Yes/No
+   button visuals) to the given {breakfast, lunch, dinner} values -- used
+   both to populate the Edit form from an existing member and to reset the
+   Add form back to the app-wide default when it's freshly opened. */
+function setDefaultMealsInForm(form, defaults) {
+  ["breakfast", "lunch", "dinner"].forEach(function (type) {
+    var value = !!defaults[type];
+    var hidden = form.querySelector('[name="defaultMeal_' + type + '"]');
+    if (hidden) hidden.value = value ? "true" : "false";
+    form.querySelectorAll('[data-action="set-default-meal-toggle"][data-type="' + type + '"]').forEach(function (btn) {
+      var isSelected = (btn.dataset.value === "true") === value;
+      btn.classList.toggle("bg-danger-600", isSelected && !value);
+      btn.classList.toggle("bg-success-600", isSelected && value);
+      btn.classList.toggle("text-white", isSelected);
+      btn.classList.toggle("text-muted", !isSelected);
+    });
+  });
+}
+
 function openMemberEditModal(id) {
   var m = memberById(id);
   if (!m) return;
   var modal = document.getElementById("member-edit-modal");
+  var form = modal.querySelector("form");
   modal.querySelector('[name="id"]').value = m.id;
   modal.querySelector('[name="name"]').value = m.name;
   modal.querySelector('[name="phone"]').value = m.phone || "";
@@ -4122,6 +4196,7 @@ function openMemberEditModal(id) {
   modal.querySelector('[name="pictureUrl"]').value = m.pictureUrl || "";
   modal.querySelector('[name="status"]').value = m.status;
   setPicturePreview("member-edit-picture-preview", m.pictureUrl || null, m.name, m.avatarColor);
+  setDefaultMealsInForm(form, memberDefaultMeals(m));
   modal.hidden = false;
 }
 function openDepositEditModal(id) {
@@ -4303,9 +4378,21 @@ document.addEventListener("click", function (e) {
     var f = addModal.querySelector("form");
     if (f) f.reset();
     setPicturePreview("member-add-picture-preview", null, "?", "#888");
+    if (f) setDefaultMealsInForm(f, DEFAULT_MEAL_DEFAULTS);
     addModal.hidden = false;
   } else if (action === "edit-member") {
     openMemberEditModal(el.dataset.id);
+  } else if (action === "set-default-meal-toggle") {
+    var toggleForm = el.closest("form");
+    if (toggleForm) {
+      var current = {
+        breakfast: toggleForm.querySelector('[name="defaultMeal_breakfast"]').value === "true",
+        lunch: toggleForm.querySelector('[name="defaultMeal_lunch"]').value === "true",
+        dinner: toggleForm.querySelector('[name="defaultMeal_dinner"]').value === "true",
+      };
+      current[el.dataset.type] = el.dataset.value === "true";
+      setDefaultMealsInForm(toggleForm, current);
+    }
   } else if (action === "remove-picture") {
     var pForm = el.closest("form");
     var pHidden = pForm ? pForm.querySelector('[name="' + el.dataset.target + '"]') : null;
@@ -4373,6 +4460,16 @@ document.addEventListener("click", function (e) {
     setMealValue(el.dataset.member, el.dataset.date, el.dataset.type, el.dataset.value === "true");
     saveDB();
     render();
+  } else if (action === "set-meal-default") {
+    var defaultMember = memberById(el.dataset.member);
+    if (defaultMember) {
+      var newDefaults = memberDefaultMeals(defaultMember);
+      newDefaults[el.dataset.type] = el.dataset.value === "true";
+      defaultMember.defaultMeals = newDefaults;
+      saveDB();
+      toast(defaultMember.name + "'s default " + el.dataset.type + " is now " + (newDefaults[el.dataset.type] ? "Yes" : "No") + ".", "success");
+      render();
+    }
   } else if (action === "set-meal-all") {
     var allValue = el.dataset.value === "true";
     activeMembers().forEach(function (m) {
@@ -4552,15 +4649,20 @@ document.addEventListener("submit", function (e) {
     var phone = String(fd.get("phone") || "").trim();
     var memberEmail = String(fd.get("email") || "").trim();
     var pictureUrl = String(fd.get("pictureUrl") || "").trim();
+    var defaultMeals = {
+      breakfast: String(fd.get("defaultMeal_breakfast") || "false") === "true",
+      lunch: String(fd.get("defaultMeal_lunch") || "false") === "true",
+      dinner: String(fd.get("defaultMeal_dinner") || "false") === "true",
+    };
     if (name.length < 2) { toast("Name must be at least 2 characters.", "error"); return; }
     if (mode === "edit") {
       var id = String(fd.get("id") || "");
       var status = String(fd.get("status") || "ACTIVE") === "INACTIVE" ? "INACTIVE" : "ACTIVE";
       var m = memberById(id);
-      if (m) { m.name = name; m.status = status; m.phone = phone || null; m.email = memberEmail || null; m.pictureUrl = pictureUrl || null; }
+      if (m) { m.name = name; m.status = status; m.phone = phone || null; m.email = memberEmail || null; m.pictureUrl = pictureUrl || null; m.defaultMeals = defaultMeals; }
     } else {
       var color = AVATAR_COLORS[DB.members.length % AVATAR_COLORS.length];
-      DB.members.push({ id: uid("mem"), name: name, avatarColor: color, status: "ACTIVE", joinedAt: latestDateAcross(), phone: phone || null, email: memberEmail || null, pictureUrl: pictureUrl || null });
+      DB.members.push({ id: uid("mem"), name: name, avatarColor: color, status: "ACTIVE", joinedAt: latestDateAcross(), phone: phone || null, email: memberEmail || null, pictureUrl: pictureUrl || null, defaultMeals: defaultMeals });
     }
     saveDB();
     document.getElementById(mode === "edit" ? "member-edit-modal" : "member-add-modal").hidden = true;
