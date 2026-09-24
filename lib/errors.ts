@@ -25,6 +25,8 @@ export function friendlyError(err: unknown): string {
   for (const key of Object.keys(RPC_MESSAGES)) {
     if (msg === key || msg.includes(key) || code === key) return RPC_MESSAGES[key];
   }
+  if (code === "PGRST202" || code === "PGRST205" || code === "42P01" || code === "42883" || /could not find the (function|table)|schema cache|does not exist/i.test(msg))
+    return "Database setup isn't finished. Run supabase/migrations/0001_mealmate.sql in Supabase → SQL Editor, then try again.";
   if (/invalid login credentials/i.test(msg)) return "Wrong email or password.";
   if (/email not confirmed/i.test(msg)) return "Please confirm your email first — check your inbox (and spam folder).";
   if (/already registered|already been registered|user_already_exists/i.test(msg + code)) return "An account with this email already exists. Try logging in instead.";
@@ -38,5 +40,5 @@ export function friendlyError(err: unknown): string {
     return "Can't reach the server. Check your internet connection and try again.";
   if (code === "23505") return "That already exists.";
   if (code && /^(22|23)/.test(code)) return "Some of that information isn't valid. Please check and try again.";
-  return "Something went wrong. Please try again.";
+  return "Something went wrong. Please try again." + (msg ? " (" + msg.slice(0, 140) + ")" : "");
 }
