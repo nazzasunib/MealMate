@@ -516,6 +516,77 @@ main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer):not(.fix
   .lg\:z-20{ z-index:20; }
   .lg\:ml-64{ margin-left:16rem; }
 }
+
+/* ===== manual patch 13: royal navy + white auth background. Replaces the
+   solid bg-navy-950 base on the Login/Signup pages with a smooth diagonal
+   gradient (dark navy corners, lighter royal-blue band through the middle)
+   matching the reference image, while keeping the existing floating blob
+   accents layered on top for depth. Uses only the existing --navy-* tokens. ===== */
+.auth-bg{
+  background-image: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 35%, var(--navy-600) 55%, var(--navy-900) 80%, var(--navy-950) 100%);
+}
+
+/* ===== manual patch 14: apply the same royal-navy gradient to every stat
+   card box across the app (Dashboard/Money/Expenses/Meals/Members/Store/
+   Settlement summary tiles), matching the reference image where the grid
+   boxes themselves are filled with this navy-to-lighter-blue gradient
+   instead of a plain white card. Overrides card-premium's navy outline
+   (meant for light bg-surface cards) since it reads oddly on a navy fill,
+   and text inside statCard() was switched to white/white-70/white-50 to
+   stay readable against the dark gradient. ===== */
+.stat-card-bg{
+  background-image: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 40%, var(--navy-600) 60%, var(--navy-900) 100%);
+  outline: none;
+  border: none;
+}
+
+/* ===== manual patch 15: quick-action pills (Add Meal / Add Money / Add
+   Expense / Add Member on the Dashboard) fill with the same royal-navy
+   gradient on hover, growing outward from wherever the cursor enters the
+   button -- rather than snapping to solid navy all at once. Before/without
+   hover they stay exactly as before (white bg-surface, navy text/icon).
+   Implemented as a radial-gradient overlay positioned via --mx/--my custom
+   properties (set from pointer position by JS -- see the
+   "quick-action-hover-fill" mousemove/mouseenter listener below) that
+   scales from 0 to a radius comfortably covering the whole pill; only
+   `mask`-appropriate properties (background-position via custom props,
+   transform scale) are animated, both GPU-cheap. Text/icon color flips to
+   white once the fill has visually covered the button, timed to the same
+   transition duration so the label never reads dark-on-dark mid-hover. ===== */
+.quick-action-pill{
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: color .32s ease-out, border-color .32s ease-out;
+}
+.quick-action-pill::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), var(--navy-800) 0%, var(--navy-900) 55%, var(--navy-950) 100%);
+  transform: scale(0);
+  transform-origin: var(--mx, 50%) var(--my, 50%);
+  transition: transform .38s cubic-bezier(.22,.8,.36,1);
+  will-change: transform;
+}
+.quick-action-pill:hover::before,
+.quick-action-pill:focus-visible::before{
+  transform: scale(2.6);
+}
+.quick-action-pill:hover,
+.quick-action-pill:focus-visible{
+  color: #fff;
+  border-color: var(--navy-900);
+}
+.quick-action-pill:hover svg,
+.quick-action-pill:focus-visible svg{
+  color: #fff;
+  stroke: currentColor;
+}
+@media (prefers-reduced-motion: reduce){
+  .quick-action-pill::before{ transition: none; }
+}
 </style>
 </head>
 <body class="h-full bg-background">
@@ -846,7 +917,7 @@ function renderLogin() {
   var err = window.__loginError || "";
   window.__loginError = "";
   return (
-    '<div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 p-4">' +
+    '<div class="auth-bg relative flex min-h-screen items-center justify-center overflow-hidden p-4">' +
       '<div class="pointer-events-none absolute inset-0 overflow-hidden">' +
         '<div class="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-navy-700/40 blur-3xl motion-safe:animate-[float_9s_ease-in-out_infinite]"></div>' +
         '<div class="absolute -bottom-32 -right-16 h-[28rem] w-[28rem] rounded-full bg-navy-600/30 blur-3xl motion-safe:animate-[float_11s_ease-in-out_infinite_1s]"></div>' +
@@ -889,7 +960,7 @@ function renderSignup() {
   var err = window.__signupError || "";
   window.__signupError = "";
   return (
-    '<div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 p-4">' +
+    '<div class="auth-bg relative flex min-h-screen items-center justify-center overflow-hidden p-4">' +
       '<div class="pointer-events-none absolute inset-0 overflow-hidden">' +
         '<div class="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-navy-700/40 blur-3xl motion-safe:animate-[float_9s_ease-in-out_infinite]"></div>' +
         '<div class="absolute -bottom-32 -right-16 h-[28rem] w-[28rem] rounded-full bg-navy-600/30 blur-3xl motion-safe:animate-[float_11s_ease-in-out_infinite_1s]"></div>' +
@@ -947,16 +1018,16 @@ function statCard(opts) {
   var isInteractive = opts.href || opts.interactive;
   var compact = opts.compact;
   var body =
-    '<div class="card-premium group relative flex flex-col ' + (compact ? "gap-2 rounded-xl p-3.5" : "gap-3 rounded-2xl p-5") + ' border border-border bg-surface shadow-[var(--shadow-card)] animate-slide-up ' +
+    '<div class="card-premium stat-card-bg group relative flex flex-col ' + (compact ? "gap-2 rounded-xl p-3.5" : "gap-3 rounded-2xl p-5") + ' shadow-[var(--shadow-card)] animate-slide-up ' +
     (isInteractive ? "card-premium--interactive" : "") + '">' +
       '<div class="flex items-start justify-between">' +
         '<span class="stat-card-icon flex items-center justify-center rounded-xl ' + (compact ? "h-8 w-8" : "h-10 w-10") + " " + (TONE_CLASSES[opts.tone] || TONE_CLASSES.navy) + '">' + icon(opts.icon, compact ? "h-4 w-4" : "h-5 w-5") + "</span>" +
       "</div>" +
       "<div>" +
-        '<p class="' + (compact ? "text-lg" : "text-2xl") + ' font-semibold tracking-tight text-foreground tabular-nums">' + (opts.prefix || "") + value + (opts.suffix || "") + "</p>" +
-        '<p class="' + (compact ? "mt-0.5 text-xs" : "mt-1 text-sm") + ' font-medium text-muted">' + esc(opts.label) + "</p>" +
+        '<p class="' + (compact ? "text-lg" : "text-2xl") + ' font-semibold tracking-tight text-white tabular-nums">' + (opts.prefix || "") + value + (opts.suffix || "") + "</p>" +
+        '<p class="' + (compact ? "mt-0.5 text-xs" : "mt-1 text-sm") + ' font-medium text-white/70">' + esc(opts.label) + "</p>" +
       "</div>" +
-      (opts.helperText ? '<p class="text-xs text-muted">' + esc(opts.helperText) + "</p>" : "") +
+      (opts.helperText ? '<p class="text-xs text-white/50">' + esc(opts.helperText) + "</p>" : "") +
     "</div>";
   return opts.href ? '<a href="' + opts.href + '" class="block">' + body + "</a>" : body;
 }
@@ -1085,7 +1156,7 @@ function renderDashboard(monthKeyParam) {
 }
 
 function quickActionLink(iconName, label, path) {
-  return '<a href="#/' + path + '" class="card-premium card-premium--interactive inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm font-medium text-foreground shadow-[var(--shadow-card)]">' + icon(iconName, "h-4 w-4") + esc(label) + "</a>";
+  return '<a href="#/' + path + '" data-action="quick-action-hover-fill" class="quick-action-pill card-premium card-premium--interactive inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm font-medium text-foreground shadow-[var(--shadow-card)]">' + icon(iconName, "h-4 w-4") + esc(label) + "</a>";
 }
 
 function cashRow(label, value, tone, sign, bold) {
@@ -4510,6 +4581,18 @@ document.addEventListener("mousedown", function (e) {
   if (e.target.closest("[data-action='select-item-suggestion']")) {
     e.preventDefault();
   }
+});
+
+/* Tracks pointer position over each quick-action pill (Dashboard's Add
+   Meal/Money/Expense/Member buttons) so the hover fill in .quick-action-pill
+   ::before (see manual patch 15) grows outward from wherever the cursor
+   actually entered, instead of always expanding from the button's center. */
+document.addEventListener("pointermove", function (e) {
+  var pill = e.target.closest && e.target.closest('[data-action="quick-action-hover-fill"]');
+  if (!pill) return;
+  var rect = pill.getBoundingClientRect();
+  pill.style.setProperty("--mx", ((e.clientX - rect.left) / rect.width * 100) + "%");
+  pill.style.setProperty("--my", ((e.clientY - rect.top) / rect.height * 100) + "%");
 });
 
 document.addEventListener("focusout", function (e) {
