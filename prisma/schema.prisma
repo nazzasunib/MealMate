@@ -1,0 +1,219 @@
+// MealMate database schema (Supabase PostgreSQL via Prisma).
+//
+// Tenancy: every row belongs to one Profile (= one Supabase Auth account).
+// A Profile owns its mess: its Members, meals, money, expenses, shopping list
+// and month closings. This mirrors the legacy app, where login accounts and
+// the members list were separate things.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// One row per Supabase Auth user. `id` is the auth.users UUID.
+model Profile {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members            Member[]
+  meals              MealEntry[]
+  deposits           Deposit[]
+  expenses           Expense[]
+  shoppingItems      ShoppingListItem[]
+  stockCarryForwards StockCarryForward[]
+  storeClosings      StoreMonthClosing[]
+  settlementClosings SettlementClosing[]
+}
+
+model Member {
+  id          String       @id @default(cuid())
+  ownerId     String       @db.Uuid
+  name        String
+  phone       String?
+  email       String?
+  pictureUrl  String?
+  avatarColor String       @default("#0B1F4B")
+  status      MemberStatus @default(ACTIVE)
+  /// Per-member default meals, applied to any day without a saved MealEntry.
+  defaultBreakfast Boolean @default(false)
+  defaultLunch     Boolean @default(true)
+  defaultDinner    Boolean @default(true)
+  joinedAt    DateTime     @default(now()) @db.Date
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  owner    Profile         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  meals    MealEntry[]
+  deposits Deposit[]
+  expenses ExpenseBuyer[]
+
+  @@index([ownerId, status])
+}
+
+/// A manual override of one member's meals for one day. Days without a row
+/// fall back to the member's default meals (same rule as the legacy app).
+model MealEntry {
+  id        String   @id @default(cuid())
+  ownerId   String   @db.Uuid
+  memberId  String
+  date      DateTime @db.Date
+  breakfast Boolean
+  lunch     Boolean
+  dinner    Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner  Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  member Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, date])
+  @@index([ownerId, date])
+}
+
+model Deposit {
+  id       String   @id @default(cuid())
+  ownerId  String   @db.Uuid
+  memberId String
+  date     DateTime @db.Date
+  amount   Decimal  @db.Decimal(12, 2)
+  note     String?
+  /// Set when this deposit was created by a Settlement "Carry Forward" close
+  /// of the given month (YYYY-MM). Re-closing that month replaces these rows.
+  carriedFromMonth String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner  Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  member Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, date])
+  @@index([ownerId, carriedFromMonth])
+}
+
+/// One purchase trip. Holds one or more ExpenseItem rows; `amount` is their sum.
+model Expense {
+  id        String   @id @default(cuid())
+  ownerId   String   @db.Uuid
+  date      DateTime @db.Date
+  /// YYYY-MM, denormalised from `date` for simple monthly queries.
+  month     String
+  amount    Decimal  @db.Decimal(12, 2)
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner  Profile        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items  ExpenseItem[]
+  buyers ExpenseBuyer[]
+
+  @@index([ownerId, month])
+  @@index([ownerId, date])
+}
+
+model ExpenseItem {
+  id        String   @id @default(cuid())
+  expenseId String
+  position  Int      @default(0)
+  category  String?
+  item      String
+  quantity  Decimal? @db.Decimal(12, 3)
+  unit      String?
+  amount    Decimal  @db.Decimal(12, 2)
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+}
+
+/// "Done By" / "Paid By": which member(s) made the purchase.
+model ExpenseBuyer {
+  expenseId String
+  memberId  String
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([expenseId, memberId])
+}
+
+model ShoppingListItem {
+  id        String   @id @default(cuid())
+  ownerId   String   @db.Uuid
+  category  String
+  item      String
+  quantity  String?
+  unit      String?
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  /// An item appears at most once per category (legacy rule).
+  @@unique([ownerId, category, item])
+}
+
+/// Opening stock carried INTO `month` for one (item, unit).
+/// source = "close:<YYYY-MM>" when written by closing the previous month, or
+/// "manual" for a hand correction (stored as a delta, may be negative).
+model StockCarryForward {
+  id        String   @id @default(cuid())
+  ownerId   String   @db.Uuid
+  month     String
+  item      String
+  unit      String
+  source    String
+  quantity  Decimal  @db.Decimal(12, 3)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, month, item, unit, source])
+  @@index([ownerId, month])
+}
+
+/// Frozen snapshot of a closed Store month. History is never deleted.
+model StoreMonthClosing {
+  id       String   @id @default(cuid())
+  ownerId  String   @db.Uuid
+  month    String
+  closedAt DateTime @default(now())
+  /// { rows: StoreClosedRow[], totals: {...} }
+  snapshot Json
+
+  owner Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, month])
+}
+
+/// Frozen snapshot of a finalised Settlement month, plus the Paid / Carry
+/// Forward decision taken for each member with a leftover balance.
+model SettlementClosing {
+  id          String   @id @default(cuid())
+  ownerId     String   @db.Uuid
+  month       String
+  finalizedAt DateTime @default(now())
+  /// { totalBazarCost, totalPaid, totalMeals, mealRate, members, transfers }
+  snapshot    Json
+  /// [{ memberId, name, balance, choice: "paid" | "carry" }]
+  decisions   Json
+
+  owner Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, month])
+}
