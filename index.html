@@ -503,6 +503,19 @@ main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer):not(.fix
 @media (min-width:1024px){
   .shopping-list-grid{ grid-template-columns:3fr 2fr; }
 }
+
+/* ===== manual patch 12: fixed desktop sidebar. lg:fixed/lg:inset-y-0/
+   lg:left-0/lg:z-20/lg:ml-64 aren't in this pre-compiled Tailwind sheet
+   (no class here used them before), so they're added by hand -- keeps the
+   sidebar pinned to the viewport so only the main content column scrolls,
+   instead of the whole page (sidebar included) scrolling together. ===== */
+@media (min-width:1024px){
+  .lg\:fixed{ position:fixed; }
+  .lg\:inset-y-0{ top:0; bottom:0; }
+  .lg\:left-0{ left:0; }
+  .lg\:z-20{ z-index:20; }
+  .lg\:ml-64{ margin-left:16rem; }
+}
 </style>
 </head>
 <body class="h-full bg-background">
@@ -1819,10 +1832,10 @@ function appGridFlowLayerHtml() {
 function renderShell(contentHtml, activeKey, drawerOpen) {
   return (
     '<div class="flex min-h-screen">' +
-      '<aside class="hidden w-64 shrink-0 lg:block">' + sidebarHtml(activeKey) + "</aside>" +
+      '<aside class="hidden w-64 shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block">' + sidebarHtml(activeKey) + "</aside>" +
       '<div id="mobile-drawer-backdrop" class="' + (drawerOpen ? "" : "hidden") + ' fixed inset-0 z-30 bg-navy-950/40 lg:hidden" data-action="toggle-drawer"></div>' +
       '<aside class="' + (drawerOpen ? "" : "mm-drawer-closed") + ' fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-200 lg:hidden">' + sidebarHtml(activeKey, true) + "</aside>" +
-      '<div class="flex min-w-0 flex-1 flex-col">' +
+      '<div class="flex min-w-0 flex-1 flex-col lg:ml-64">' +
         topbarHtml() +
         '<main class="app-grid-bg flex-1 p-4 sm:p-6">' + appGridFlowLayerHtml() + appGridTextLayerHtml() + contentHtml + "</main>" +
       "</div>" +
