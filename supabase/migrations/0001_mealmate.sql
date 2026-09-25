@@ -33,9 +33,6 @@ create table if not exists public.group_invites (
   enabled     boolean not null default true,
   updated_at  timestamptz not null default now()
 );
--- When ON, anyone joining with the code/link becomes an ACTIVE member right
--- away; when OFF (default), the join waits for Admin/Moderator approval.
-alter table public.group_invites add column if not exists auto_approve boolean not null default false;
 
 create table if not exists public.group_members (
   id          uuid primary key default gen_random_uuid(),
@@ -81,7 +78,7 @@ create table if not exists public.members (
   user_id       uuid references auth.users (id) on delete set null,
   name          text not null check (char_length(name) between 1 and 80),
   avatar_color  text not null default '#0B1F4B' check (char_length(avatar_color) <= 32),
-  status        text not null default 'ACTIVE' check (status in ('ACTIVE', 'INACTIVE', 'REMOVED')),
+  status        text not null default 'ACTIVE' check (status in ('ACTIVE', 'INACTIVE')),
   joined_at     date not null default current_date,
   phone         text check (phone is null or char_length(phone) <= 40),
   email         text check (email is null or char_length(email) <= 254),
@@ -92,12 +89,6 @@ create table if not exists public.members (
   primary key (group_id, id)
 );
 create index if not exists members_user_idx on public.members (user_id);
--- A member removed with "keep their data": status REMOVED + left_at = the
--- last day they count. Their meals/deposits up to left_at stay in every
--- month's hisab; nothing after left_at is counted for them.
-alter table public.members add column if not exists left_at date;
-alter table public.members drop constraint if exists members_status_check;
-alter table public.members add constraint members_status_check check (status in ('ACTIVE', 'INACTIVE', 'REMOVED'));
 
 create table if not exists public.meals (
   group_id    uuid not null references public.meal_groups (id) on delete cascade,
@@ -112,6 +103,25 @@ create table if not exists public.meals (
   primary key (group_id, member_id, date)
 );
 create index if not exists meals_group_date_idx on public.meals (group_id, date);
+
+create table if not exists public.guest_meals (
+  group_id       uuid not null references public.meal_groups (id) on delete cascade,
+  id             text not null check (char_length(id) <= 64),
+  host_member_id text not null check (char_length(host_member_id) <= 64),
+  guest_name     text check (guest_name is null or char_length(guest_name) <= 120),
+  date           date not null,
+  breakfast      boolean not null default false,
+  lunch          boolean not null default false,
+  dinner         boolean not null default false,
+  quantity       integer not null default 1 check (quantity >= 1 and quantity <= 100),
+  note           text check (note is null or char_length(note) <= 500),
+  created_by     uuid default auth.uid(),
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  primary key (group_id, id),
+  check (breakfast or lunch or dinner)
+);
+create index if not exists guest_meals_group_date_idx on public.guest_meals (group_id, date);
 
 create table if not exists public.deposits (
   group_id               uuid not null references public.meal_groups (id) on delete cascade,
@@ -344,6 +354,7 @@ alter table public.group_members       enable row level security;
 alter table public.role_permissions    enable row level security;
 alter table public.members             enable row level security;
 alter table public.meals               enable row level security;
+alter table public.guest_meals         enable row level security;
 alter table public.deposits            enable row level security;
 alter table public.expenses            enable row level security;
 alter table public.shopping_items      enable row level security;
@@ -360,6 +371,7 @@ begin
     select policyname, tablename from pg_policies
     where schemaname = 'public' and tablename in (
       'profiles','meal_groups','group_invites','group_members','role_permissions','members','meals',
+      'guest_meals',
       'deposits','expenses','shopping_items','store_carry_forward','store_closed_months',
       'money_closed_months','settlements')
   loop
@@ -406,6 +418,17 @@ create policy meals_update on public.meals for update to authenticated
   using (group_id in (select public.my_groups_with('meals.edit')))
   with check (group_id in (select public.my_groups_with('meals.edit')));
 create policy meals_delete on public.meals for delete to authenticated
+  using (group_id in (select public.my_groups_with('meals.edit')));
+
+-- guest_meals
+create policy guest_meals_select on public.guest_meals for select to authenticated
+  using (group_id in (select public.my_group_ids()));
+create policy guest_meals_insert on public.guest_meals for insert to authenticated
+  with check (group_id in (select public.my_groups_with('meals.edit')));
+create policy guest_meals_update on public.guest_meals for update to authenticated
+  using (group_id in (select public.my_groups_with('meals.edit')))
+  with check (group_id in (select public.my_groups_with('meals.edit')));
+create policy guest_meals_delete on public.guest_meals for delete to authenticated
   using (group_id in (select public.my_groups_with('meals.edit')));
 
 -- deposits
@@ -619,7 +642,7 @@ begin
   if v_uid is null then raise exception 'NOT_AUTHENTICATED'; end if;
 
   perform public._invite_guard();
-  select i.group_id, i.enabled, i.auto_approve, g.name into v_inv
+  select i.group_id, i.enabled, g.name into v_inv
   from public.group_invites i join public.meal_groups g on g.id = i.group_id
   where i.code = public.normalize_invite_code(p_code);
   if not found then
@@ -641,14 +664,10 @@ begin
 
   -- Default role is always MEMBER, and every new join starts PENDING: it
   -- only becomes a real member (with roster + meal access) once an
-  -- Admin/Moderator approves it via approve_join_request() -- unless the
-  -- group has auto-approve ON, in which case it is activated right here.
-  -- Either way the roster row is stamped with the day they were let in.
+  -- Admin/Moderator approves it via approve_join_request(). No roster row
+  -- is created here -- that happens on approval, so meals only ever start
+  -- counting from the day someone is actually let in.
   insert into public.group_members (group_id, user_id, role, status) values (v_inv.group_id, v_uid, 'MEMBER', 'PENDING');
-  if v_inv.auto_approve then
-    perform public._activate_member(v_inv.group_id, v_uid);
-    return json_build_object('group_id', v_inv.group_id, 'group_name', v_inv.name, 'status', 'ACTIVE');
-  end if;
 
   return json_build_object('group_id', v_inv.group_id, 'group_name', v_inv.name, 'status', 'PENDING');
 exception
@@ -673,10 +692,8 @@ language sql stable security definer set search_path = public as $$
   order by gm.joined_at;
 $$;
 
--- Internal: flips a PENDING account to ACTIVE and links/creates its roster
--- row. Not granted to clients -- only called from the RPCs below.
-create or replace function public._activate_member(p_group uuid, p_user uuid)
-returns void language plpgsql volatile security definer set search_path = public as $$
+create or replace function public.approve_join_request(p_group uuid, p_user uuid)
+returns json language plpgsql volatile security definer set search_path = public as $$
 declare
   v_email text;
   v_full text;
@@ -684,6 +701,11 @@ declare
   v_count int;
   v_colors text[] := array['#0B1F4B','#1A3570','#16A34A','#B45309','#7C3AED','#DC2626'];
 begin
+  if not public.has_permission(p_group, 'members.manage') then raise exception 'FORBIDDEN'; end if;
+  if not exists (select 1 from public.group_members where group_id = p_group and user_id = p_user and status = 'PENDING') then
+    raise exception 'NOT_PENDING';
+  end if;
+
   update public.group_members set status = 'ACTIVE' where group_id = p_group and user_id = p_user;
 
   select email, full_name into v_email, v_full from public.profiles where id = p_user;
@@ -691,11 +713,11 @@ begin
   -- Link to the mess roster: re-activate a previous row, adopt a row the
   -- admin already created with the same email, or create a new one --
   -- and always stamp joined_at as TODAY, so meals never count from before
-  -- the day this account was actually let in.
-  select id into v_member_id from public.members where group_id = p_group and user_id = p_user and status <> 'REMOVED' limit 1;
+  -- the day this account was actually approved.
+  select id into v_member_id from public.members where group_id = p_group and user_id = p_user limit 1;
   if v_member_id is null and v_email is not null then
     select id into v_member_id from public.members
-      where group_id = p_group and user_id is null and status <> 'REMOVED' and lower(email) = lower(v_email)
+      where group_id = p_group and user_id is null and lower(email) = lower(v_email)
       order by created_at limit 1;
   end if;
   if v_member_id is not null then
@@ -706,17 +728,7 @@ begin
       values (p_group, public._roster_id(), p_user, coalesce(nullif(v_full, ''), 'Member'), v_email,
               v_colors[(v_count % array_length(v_colors, 1)) + 1], current_date);
   end if;
-end;
-$$;
 
-create or replace function public.approve_join_request(p_group uuid, p_user uuid)
-returns json language plpgsql volatile security definer set search_path = public as $$
-begin
-  if not public.has_permission(p_group, 'members.manage') then raise exception 'FORBIDDEN'; end if;
-  if not exists (select 1 from public.group_members where group_id = p_group and user_id = p_user and status = 'PENDING') then
-    raise exception 'NOT_PENDING';
-  end if;
-  perform public._activate_member(p_group, p_user);
   return json_build_object('ok', true);
 end;
 $$;
@@ -750,14 +762,6 @@ returns void language plpgsql volatile security definer set search_path = public
 begin
   if not public.has_permission(p_group, 'invites.manage') then raise exception 'FORBIDDEN'; end if;
   update public.group_invites set enabled = coalesce(p_enabled, false) where group_id = p_group;
-end;
-$$;
-
-create or replace function public.set_invite_auto_approve(p_group uuid, p_enabled boolean)
-returns void language plpgsql volatile security definer set search_path = public as $$
-begin
-  if not public.has_permission(p_group, 'invites.manage') then raise exception 'FORBIDDEN'; end if;
-  update public.group_invites set auto_approve = coalesce(p_enabled, false) where group_id = p_group;
 end;
 $$;
 
@@ -818,48 +822,6 @@ begin
 end;
 $$;
 
--- Deletes a roster member from the Members page. Also revokes the linked
--- account's access to the group (if any).
---   p_keep_data = true : the row stays as REMOVED with left_at = today, so
---                        everything up to today stays in the hisab and
---                        nothing new is counted for them afterwards.
---   p_keep_data = false: the row and ALL their meals / deposits are deleted,
---                        and they are dropped from every expense's buyers.
-create or replace function public.delete_roster_member(p_group uuid, p_member text, p_keep_data boolean)
-returns void language plpgsql volatile security definer set search_path = public as $$
-declare
-  v_user uuid;
-  v_role text;
-  v_admins int;
-begin
-  if not public.has_permission(p_group, 'members.remove') then raise exception 'FORBIDDEN'; end if;
-  perform 1 from public.meal_groups where id = p_group for update;
-  select user_id into v_user from public.members where group_id = p_group and id = p_member and status <> 'REMOVED';
-  if not found then raise exception 'NOT_A_MEMBER'; end if;
-  if v_user = auth.uid() then raise exception 'CANNOT_REMOVE_SELF'; end if;
-
-  if v_user is not null then
-    select role into v_role from public.group_members where group_id = p_group and user_id = v_user;
-    if v_role = 'ADMIN' then
-      select count(*) into v_admins from public.group_members where group_id = p_group and role = 'ADMIN';
-      if v_admins <= 1 then raise exception 'LAST_ADMIN'; end if;
-    end if;
-    delete from public.group_members where group_id = p_group and user_id = v_user;
-  end if;
-
-  if p_keep_data then
-    update public.members set status = 'REMOVED', left_at = current_date, user_id = null
-      where group_id = p_group and id = p_member;
-  else
-    delete from public.meals where group_id = p_group and member_id = p_member;
-    delete from public.deposits where group_id = p_group and member_id = p_member;
-    update public.expenses set buyer_ids = array_remove(buyer_ids, p_member)
-      where group_id = p_group and p_member = any(buyer_ids);
-    delete from public.members where group_id = p_group and id = p_member;
-  end if;
-end;
-$$;
-
 create or replace function public.update_group_name(p_group uuid, p_name text)
 returns void language plpgsql volatile security definer set search_path = public as $$
 begin
@@ -871,8 +833,6 @@ $$;
 
 -- Lock down function execution.
 revoke execute on all functions in schema public from public, anon;
--- Internal helper: callable only from the SECURITY DEFINER RPCs, never by a client.
-revoke execute on function public._activate_member(uuid, uuid) from authenticated;
 grant execute on function public.get_invite_preview(text) to anon, authenticated;
 grant execute on function
   public.my_group_ids(),
@@ -885,11 +845,9 @@ grant execute on function
   public.join_meal_group(text),
   public.regenerate_invite_code(uuid),
   public.set_invite_enabled(uuid, boolean),
-  public.set_invite_auto_approve(uuid, boolean),
   public.list_group_accounts(uuid),
   public.change_member_role(uuid, uuid, text),
   public.remove_group_member(uuid, uuid),
-  public.delete_roster_member(uuid, text, boolean),
   public.update_group_name(uuid, text),
   public.list_join_requests(uuid),
   public.approve_join_request(uuid, uuid),
