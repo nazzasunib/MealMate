@@ -157,9 +157,13 @@ export default function AppHost() {
             if (error) throw error;
           },
           getInvite: async () => {
-            const { data, error } = await sb.from("group_invites").select("code,enabled").eq("group_id", groupId).maybeSingle();
-            if (error) throw error;
-            return data;
+            let res = await sb.from("group_invites").select("code,enabled,auto_approve").eq("group_id", groupId).maybeSingle();
+            // Older database without the auto_approve column yet: still show the code/link.
+            if (res.error && /auto_approve/i.test(res.error.message || "")) {
+              res = await sb.from("group_invites").select("code,enabled").eq("group_id", groupId).maybeSingle();
+            }
+            if (res.error) throw res.error;
+            return res.data;
           },
           regenerateInvite: async () => {
             const { data, error } = await sb.rpc("regenerate_invite_code", { p_group: groupId });
@@ -168,6 +172,10 @@ export default function AppHost() {
           },
           setInviteEnabled: async (enabled: boolean) => {
             const { error } = await sb.rpc("set_invite_enabled", { p_group: groupId, p_enabled: enabled });
+            if (error) throw error;
+          },
+          setInviteAutoApprove: async (enabled: boolean) => {
+            const { error } = await sb.rpc("set_invite_auto_approve", { p_group: groupId, p_enabled: enabled });
             if (error) throw error;
           },
           changeRole: async (userId: string, role: string) => {

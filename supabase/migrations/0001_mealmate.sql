@@ -33,6 +33,9 @@ create table if not exists public.group_invites (
   enabled     boolean not null default true,
   updated_at  timestamptz not null default now()
 );
+-- When ON, anyone joining with the code/link becomes an ACTIVE member right
+-- away; when OFF (default), the join waits for Admin/Moderator approval.
+alter table public.group_invites add column if not exists auto_approve boolean not null default false;
 
 create table if not exists public.group_members (
   id          uuid primary key default gen_random_uuid(),
@@ -610,7 +613,7 @@ begin
   if v_uid is null then raise exception 'NOT_AUTHENTICATED'; end if;
 
   perform public._invite_guard();
-  select i.group_id, i.enabled, g.name into v_inv
+  select i.group_id, i.enabled, i.auto_approve, g.name into v_inv
   from public.group_invites i join public.meal_groups g on g.id = i.group_id
   where i.code = public.normalize_invite_code(p_code);
   if not found then
@@ -632,10 +635,14 @@ begin
 
   -- Default role is always MEMBER, and every new join starts PENDING: it
   -- only becomes a real member (with roster + meal access) once an
-  -- Admin/Moderator approves it via approve_join_request(). No roster row
-  -- is created here -- that happens on approval, so meals only ever start
-  -- counting from the day someone is actually let in.
+  -- Admin/Moderator approves it via approve_join_request() -- unless the
+  -- group has auto-approve ON, in which case it is activated right here.
+  -- Either way the roster row is stamped with the day they were let in.
   insert into public.group_members (group_id, user_id, role, status) values (v_inv.group_id, v_uid, 'MEMBER', 'PENDING');
+  if v_inv.auto_approve then
+    perform public._activate_member(v_inv.group_id, v_uid);
+    return json_build_object('group_id', v_inv.group_id, 'group_name', v_inv.name, 'status', 'ACTIVE');
+  end if;
 
   return json_build_object('group_id', v_inv.group_id, 'group_name', v_inv.name, 'status', 'PENDING');
 exception
@@ -660,8 +667,10 @@ language sql stable security definer set search_path = public as $$
   order by gm.joined_at;
 $$;
 
-create or replace function public.approve_join_request(p_group uuid, p_user uuid)
-returns json language plpgsql volatile security definer set search_path = public as $$
+-- Internal: flips a PENDING account to ACTIVE and links/creates its roster
+-- row. Not granted to clients -- only called from the RPCs below.
+create or replace function public._activate_member(p_group uuid, p_user uuid)
+returns void language plpgsql volatile security definer set search_path = public as $$
 declare
   v_email text;
   v_full text;
@@ -669,11 +678,6 @@ declare
   v_count int;
   v_colors text[] := array['#0B1F4B','#1A3570','#16A34A','#B45309','#7C3AED','#DC2626'];
 begin
-  if not public.has_permission(p_group, 'members.manage') then raise exception 'FORBIDDEN'; end if;
-  if not exists (select 1 from public.group_members where group_id = p_group and user_id = p_user and status = 'PENDING') then
-    raise exception 'NOT_PENDING';
-  end if;
-
   update public.group_members set status = 'ACTIVE' where group_id = p_group and user_id = p_user;
 
   select email, full_name into v_email, v_full from public.profiles where id = p_user;
@@ -681,7 +685,7 @@ begin
   -- Link to the mess roster: re-activate a previous row, adopt a row the
   -- admin already created with the same email, or create a new one --
   -- and always stamp joined_at as TODAY, so meals never count from before
-  -- the day this account was actually approved.
+  -- the day this account was actually let in.
   select id into v_member_id from public.members where group_id = p_group and user_id = p_user limit 1;
   if v_member_id is null and v_email is not null then
     select id into v_member_id from public.members
@@ -696,7 +700,17 @@ begin
       values (p_group, public._roster_id(), p_user, coalesce(nullif(v_full, ''), 'Member'), v_email,
               v_colors[(v_count % array_length(v_colors, 1)) + 1], current_date);
   end if;
+end;
+$$;
 
+create or replace function public.approve_join_request(p_group uuid, p_user uuid)
+returns json language plpgsql volatile security definer set search_path = public as $$
+begin
+  if not public.has_permission(p_group, 'members.manage') then raise exception 'FORBIDDEN'; end if;
+  if not exists (select 1 from public.group_members where group_id = p_group and user_id = p_user and status = 'PENDING') then
+    raise exception 'NOT_PENDING';
+  end if;
+  perform public._activate_member(p_group, p_user);
   return json_build_object('ok', true);
 end;
 $$;
@@ -730,6 +744,14 @@ returns void language plpgsql volatile security definer set search_path = public
 begin
   if not public.has_permission(p_group, 'invites.manage') then raise exception 'FORBIDDEN'; end if;
   update public.group_invites set enabled = coalesce(p_enabled, false) where group_id = p_group;
+end;
+$$;
+
+create or replace function public.set_invite_auto_approve(p_group uuid, p_enabled boolean)
+returns void language plpgsql volatile security definer set search_path = public as $$
+begin
+  if not public.has_permission(p_group, 'invites.manage') then raise exception 'FORBIDDEN'; end if;
+  update public.group_invites set auto_approve = coalesce(p_enabled, false) where group_id = p_group;
 end;
 $$;
 
@@ -801,6 +823,8 @@ $$;
 
 -- Lock down function execution.
 revoke execute on all functions in schema public from public, anon;
+-- Internal helper: callable only from the SECURITY DEFINER RPCs, never by a client.
+revoke execute on function public._activate_member(uuid, uuid) from authenticated;
 grant execute on function public.get_invite_preview(text) to anon, authenticated;
 grant execute on function
   public.my_group_ids(),
@@ -813,6 +837,7 @@ grant execute on function
   public.join_meal_group(text),
   public.regenerate_invite_code(uuid),
   public.set_invite_enabled(uuid, boolean),
+  public.set_invite_auto_approve(uuid, boolean),
   public.list_group_accounts(uuid),
   public.change_member_role(uuid, uuid, text),
   public.remove_group_member(uuid, uuid),
