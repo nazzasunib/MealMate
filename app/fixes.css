@@ -1,0 +1,74 @@
+/* Utility classes the app markup uses but the precompiled legacy.css never
+   shipped (there's no Tailwind build step here, so any class that isn't
+   already in legacy.css silently does nothing). Written in the same form
+   legacy.css uses. Loaded last, after legacy.css and mealmate.css. */
+
+/* ---- spacing ---- */
+.-mt-1{margin-top:calc(var(--spacing) * -1)}
+.mt-2\.5{margin-top:calc(var(--spacing) * 2.5)}
+.mt-4{margin-top:calc(var(--spacing) * 4)}
+.mb-2{margin-bottom:calc(var(--spacing) * 2)}
+.ml-0\.5{margin-left:calc(var(--spacing) * .5)}
+.ml-2{margin-left:calc(var(--spacing) * 2)}
+.pt-1{padding-top:var(--spacing)}
+.pt-1\.5{padding-top:calc(var(--spacing) * 1.5)}
+.pb-2{padding-bottom:calc(var(--spacing) * 2)}
+.pr-3{padding-right:calc(var(--spacing) * 3)}
+.px-1{padding-inline:var(--spacing)}
+.px-1\.5{padding-inline:calc(var(--spacing) * 1.5)}
+.space-y-5>:not(:last-child){margin-block-end:calc(var(--spacing) * 5)}
+
+/* ---- sizing ---- */
+.w-28{width:calc(var(--spacing) * 28)}
+.w-32{width:calc(var(--spacing) * 32)}
+.w-px{width:1px}
+.h-px{height:1px}
+.h-\[2\.375rem\]{height:2.375rem}
+.w-\[2\.375rem\]{width:2.375rem}
+.min-w-\[2rem\]{min-width:2rem}
+.min-w-\[480px\]{min-width:480px}
+.min-w-\[720px\]{min-width:720px}
+.max-h-\[16rem\]{max-height:16rem}
+.max-h-\[22rem\]{max-height:22rem}
+.max-h-\[28rem\]{max-height:28rem}
+
+/* ---- layout / position ---- */
+.inline-block{display:inline-block}
+.bottom-4{bottom:calc(var(--spacing) * 4)}
+.right-4{right:calc(var(--spacing) * 4)}
+.z-\[100\]{z-index:100}
+.opacity-0{opacity:0}
+
+/* ---- borders / backgrounds / text ---- */
+.border-0{border-style:var(--tw-border-style);border-width:0}
+.border-warning-100{border-color:var(--warning-100)}
+.bg-transparent{background-color:transparent}
+.bg-gray-50\/60{background-color:rgba(249,250,251,.6)}
+.bg-navy-50\/60{background-color:color-mix(in oklab, var(--navy-50) 60%, transparent)}
+.text-navy-900\/70{color:color-mix(in oklab, var(--navy-900) 70%, transparent)}
+.text-white\/60{color:rgba(255,255,255,.6)}
+.text-white\/80{color:rgba(255,255,255,.8)}
+.text-white\/85{color:rgba(255,255,255,.85)}
+.accent-navy-900{accent-color:var(--navy-900)}
+
+/* ---- state variants ---- */
+.disabled\:opacity-40:disabled{opacity:.4}
+.has-\[\:checked\]\:bg-navy-50:has(:checked){background-color:var(--navy-50)}
+
+/* ---- responsive ---- */
+@media (min-width:40rem){
+  .sm\:hidden{display:none}
+}
+@media (min-width:64rem){
+  .lg\:sticky{position:sticky}
+  .lg\:top-20{top:calc(var(--spacing) * 20)}
+}
+
+/* ---- keep button labels on one line ----
+   Buttons have a fixed height, so a label wrapping to two lines (e.g.
+   "Guest Meal" squeezed next to the date switcher) spilled out of the pill.
+   Icons inside them never shrink either. */
+.btn-primary,.btn-secondary,.btn-danger,.mm-btn,.mm-glass-btn{white-space:nowrap;flex-shrink:0}
+.btn-primary svg,.btn-secondary svg,.btn-danger svg,.mm-btn svg,.mm-glass-btn svg{flex-shrink:0}
+.mm-divider span{white-space:nowrap}
+.whitespace-nowrap{white-space:nowrap}

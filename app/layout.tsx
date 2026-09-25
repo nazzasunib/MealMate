@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./legacy.css";
 import "./mealmate.css";
+import "./fixes.css";
 
 export const metadata: Metadata = {
   title: { default: "MealMate", template: "%s · MealMate" },
