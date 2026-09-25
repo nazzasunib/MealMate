@@ -190,6 +190,14 @@ export default function AppHost() {
             s.broadcastEvent("membership");
             s.refreshAll();
           },
+          deleteMember: async (memberId: string, keepData: boolean) => {
+            await s.flushNow(); // our pending edits land before the server rewrites this member's rows
+            const { error } = await sb.rpc("delete_roster_member", { p_group: groupId, p_member: memberId, p_keep_data: keepData });
+            if (error) throw error;
+            s.broadcastEvent("membership");
+            s.broadcastEvent("changed", { tables: ["members", "meals", "deposits", "expenses"] });
+            s.refreshAll();
+          },
           renameGroup: async (name: string) => {
             const { error } = await sb.rpc("update_group_name", { p_group: groupId, p_name: name });
             if (error) throw error;
@@ -228,6 +236,7 @@ export default function AppHost() {
           db: s.db,
           profile,
           groupId,
+          userId: user.id,
           groupName: current.group_name,
           role: current.role,
           permissions: current.permissions,

@@ -81,7 +81,7 @@ create table if not exists public.members (
   user_id       uuid references auth.users (id) on delete set null,
   name          text not null check (char_length(name) between 1 and 80),
   avatar_color  text not null default '#0B1F4B' check (char_length(avatar_color) <= 32),
-  status        text not null default 'ACTIVE' check (status in ('ACTIVE', 'INACTIVE')),
+  status        text not null default 'ACTIVE' check (status in ('ACTIVE', 'INACTIVE', 'REMOVED')),
   joined_at     date not null default current_date,
   phone         text check (phone is null or char_length(phone) <= 40),
   email         text check (email is null or char_length(email) <= 254),
@@ -92,6 +92,12 @@ create table if not exists public.members (
   primary key (group_id, id)
 );
 create index if not exists members_user_idx on public.members (user_id);
+-- A member removed with "keep their data": status REMOVED + left_at = the
+-- last day they count. Their meals/deposits up to left_at stay in every
+-- month's hisab; nothing after left_at is counted for them.
+alter table public.members add column if not exists left_at date;
+alter table public.members drop constraint if exists members_status_check;
+alter table public.members add constraint members_status_check check (status in ('ACTIVE', 'INACTIVE', 'REMOVED'));
 
 create table if not exists public.meals (
   group_id    uuid not null references public.meal_groups (id) on delete cascade,
@@ -686,10 +692,10 @@ begin
   -- admin already created with the same email, or create a new one --
   -- and always stamp joined_at as TODAY, so meals never count from before
   -- the day this account was actually let in.
-  select id into v_member_id from public.members where group_id = p_group and user_id = p_user limit 1;
+  select id into v_member_id from public.members where group_id = p_group and user_id = p_user and status <> 'REMOVED' limit 1;
   if v_member_id is null and v_email is not null then
     select id into v_member_id from public.members
-      where group_id = p_group and user_id is null and lower(email) = lower(v_email)
+      where group_id = p_group and user_id is null and status <> 'REMOVED' and lower(email) = lower(v_email)
       order by created_at limit 1;
   end if;
   if v_member_id is not null then
@@ -812,6 +818,48 @@ begin
 end;
 $$;
 
+-- Deletes a roster member from the Members page. Also revokes the linked
+-- account's access to the group (if any).
+--   p_keep_data = true : the row stays as REMOVED with left_at = today, so
+--                        everything up to today stays in the hisab and
+--                        nothing new is counted for them afterwards.
+--   p_keep_data = false: the row and ALL their meals / deposits are deleted,
+--                        and they are dropped from every expense's buyers.
+create or replace function public.delete_roster_member(p_group uuid, p_member text, p_keep_data boolean)
+returns void language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_user uuid;
+  v_role text;
+  v_admins int;
+begin
+  if not public.has_permission(p_group, 'members.remove') then raise exception 'FORBIDDEN'; end if;
+  perform 1 from public.meal_groups where id = p_group for update;
+  select user_id into v_user from public.members where group_id = p_group and id = p_member and status <> 'REMOVED';
+  if not found then raise exception 'NOT_A_MEMBER'; end if;
+  if v_user = auth.uid() then raise exception 'CANNOT_REMOVE_SELF'; end if;
+
+  if v_user is not null then
+    select role into v_role from public.group_members where group_id = p_group and user_id = v_user;
+    if v_role = 'ADMIN' then
+      select count(*) into v_admins from public.group_members where group_id = p_group and role = 'ADMIN';
+      if v_admins <= 1 then raise exception 'LAST_ADMIN'; end if;
+    end if;
+    delete from public.group_members where group_id = p_group and user_id = v_user;
+  end if;
+
+  if p_keep_data then
+    update public.members set status = 'REMOVED', left_at = current_date, user_id = null
+      where group_id = p_group and id = p_member;
+  else
+    delete from public.meals where group_id = p_group and member_id = p_member;
+    delete from public.deposits where group_id = p_group and member_id = p_member;
+    update public.expenses set buyer_ids = array_remove(buyer_ids, p_member)
+      where group_id = p_group and p_member = any(buyer_ids);
+    delete from public.members where group_id = p_group and id = p_member;
+  end if;
+end;
+$$;
+
 create or replace function public.update_group_name(p_group uuid, p_name text)
 returns void language plpgsql volatile security definer set search_path = public as $$
 begin
@@ -841,6 +889,7 @@ grant execute on function
   public.list_group_accounts(uuid),
   public.change_member_role(uuid, uuid, text),
   public.remove_group_member(uuid, uuid),
+  public.delete_roster_member(uuid, text, boolean),
   public.update_group_name(uuid, text),
   public.list_join_requests(uuid),
   public.approve_join_request(uuid, uuid),

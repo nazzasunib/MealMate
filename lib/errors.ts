@@ -12,6 +12,7 @@ const RPC_MESSAGES: Record<string, string> = {
   FORBIDDEN: "You don't have permission to do that.",
   INVALID_ROLE: "That role isn't valid.",
   NOT_A_MEMBER: "That person is no longer in this MealMate.",
+  CANNOT_REMOVE_SELF: "You can't delete yourself from the member list.",
   WRONG_CURRENT_PASSWORD: "Current password is incorrect.",
   TOO_MANY_ATTEMPTS: "Too many wrong invite codes. Please wait an hour, or ask your Admin for the invite link.",
   IMPORT_FAILED: "Some records couldn't be imported. Nothing was lost — please try again.",
