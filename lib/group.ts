@@ -5,6 +5,7 @@ export type Membership = {
   group_id: string;
   group_name: string;
   role: "ADMIN" | "MODERATOR" | "MEMBER";
+  status: "ACTIVE" | "PENDING";
   joined_at: string;
   member_id: string | null;
   permissions: string[];

@@ -46,9 +46,10 @@ export function clearAllCaches() {
 
 export default function AppHost() {
   const router = useRouter();
-  const [phase, setPhase] = useState<"boot" | "ready" | "error">("boot");
+  const [phase, setPhase] = useState<"boot" | "ready" | "error" | "pending">("boot");
   const [error, setError] = useState("");
   const [bootLabel, setBootLabel] = useState("Signing you in…");
+  const [pendingGroupName, setPendingGroupName] = useState("");
   const started = useRef(false);
 
   useEffect(() => {
@@ -89,6 +90,11 @@ export default function AppHost() {
           return;
         }
         if (disposed) return;
+        if (membership.status === "PENDING") {
+          setPendingGroupName(membership.group_name);
+          setPhase("pending");
+          return;
+        }
         setBootLabel("Loading " + membership.group_name + "…");
 
         const [[engineMod, syncMod], profileRes] = await Promise.all([enginePromise, profilePromise]);
@@ -135,6 +141,20 @@ export default function AppHost() {
             const { data, error } = await sb.rpc("list_group_accounts", { p_group: groupId });
             if (error) throw error;
             return data || [];
+          },
+          listJoinRequests: async () => {
+            const { data, error } = await sb.rpc("list_join_requests", { p_group: groupId });
+            if (error) throw error;
+            return data || [];
+          },
+          approveJoinRequest: async (userId: string) => {
+            const { error } = await sb.rpc("approve_join_request", { p_group: groupId, p_user: userId });
+            if (error) throw error;
+            s.refreshAll();
+          },
+          rejectJoinRequest: async (userId: string) => {
+            const { error } = await sb.rpc("reject_join_request", { p_group: groupId, p_user: userId });
+            if (error) throw error;
           },
           getInvite: async () => {
             const { data, error } = await sb.from("group_invites").select("code,enabled").eq("group_id", groupId).maybeSingle();
@@ -300,6 +320,31 @@ export default function AppHost() {
       <div id="app" className="h-full" />
       <div id="toast-host" className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2" />
       {phase === "boot" && <Splash label={bootLabel} />}
+      {phase === "pending" && (
+        <div className="mm-fullscreen-msg">
+          <div className="mm-auth-card mm-auth-card--narrow">
+            <img src="/logo-icon.png" alt="" className="mm-auth-logo" />
+            <h1 className="mm-auth-title">Waiting for approval</h1>
+            <p className="mm-auth-sub">
+              Your request to join <strong>{pendingGroupName}</strong> is with an Admin or Moderator. You&apos;ll get
+              access as soon as someone approves it.
+            </p>
+            <button className="mm-btn mm-btn--primary mm-btn--block" onClick={() => window.location.reload()}>
+              Check again
+            </button>
+            <button
+              className="mm-btn mm-btn--ghost mm-btn--block"
+              onClick={async () => {
+                clearAllCaches();
+                await getSupabase().auth.signOut();
+                window.location.replace("/login");
+              }}
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
       {phase === "error" && (
         <div className="mm-fullscreen-msg">
           <div className="mm-auth-card mm-auth-card--narrow">

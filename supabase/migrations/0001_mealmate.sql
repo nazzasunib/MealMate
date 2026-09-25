@@ -45,6 +45,9 @@ create table if not exists public.group_members (
   unique (user_id)
 );
 create index if not exists group_members_group_idx on public.group_members (group_id, role);
+-- A join-by-invite-code account starts PENDING and only counts as a real
+-- member (with roster/meal access) once an Admin/Moderator approves it.
+alter table public.group_members add column if not exists status text not null default 'ACTIVE' check (status in ('ACTIVE', 'PENDING'));
 
 create table if not exists public.role_permissions (
   role        text not null check (role in ('ADMIN', 'MODERATOR', 'MEMBER')),
@@ -59,7 +62,7 @@ insert into public.role_permissions (role, permission) values
   ('ADMIN','invites.manage'),('ADMIN','roles.manage'),('ADMIN','meals.edit'),('ADMIN','expenses.create'),
   ('ADMIN','expenses.edit'),('ADMIN','expenses.delete'),('ADMIN','deposits.manage'),('ADMIN','shopping.manage'),
   ('ADMIN','stock.edit'),('ADMIN','month.close'),('ADMIN','settings.manage'),
-  ('MODERATOR','reports.view'),('MODERATOR','members.view'),('MODERATOR','meals.edit'),
+  ('MODERATOR','reports.view'),('MODERATOR','members.view'),('MODERATOR','members.manage'),('MODERATOR','meals.edit'),
   ('MODERATOR','expenses.create'),('MODERATOR','shopping.manage'),('MODERATOR','stock.edit'),
   ('MEMBER','reports.view')
 on conflict do nothing;
@@ -195,7 +198,7 @@ create or replace function public.is_group_member(p_group uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.group_members
-    where group_id = p_group and user_id = auth.uid()
+    where group_id = p_group and user_id = auth.uid() and status = 'ACTIVE'
   );
 $$;
 
@@ -205,16 +208,18 @@ returns boolean language sql stable security definer set search_path = public as
     select 1
     from public.group_members gm
     join public.role_permissions rp on rp.role = gm.role
-    where gm.group_id = p_group and gm.user_id = auth.uid() and rp.permission = p_permission
+    where gm.group_id = p_group and gm.user_id = auth.uid() and gm.status = 'ACTIVE' and rp.permission = p_permission
   );
 $$;
 
 -- Set-returning helpers: used as  group_id IN (SELECT my_group_ids())  so
 -- Postgres evaluates them ONCE per query (InitPlan) instead of once per row.
--- This keeps reads fast even when a group has years of data.
+-- This keeps reads fast even when a group has years of data. A PENDING
+-- (not-yet-approved) account resolves to zero rows here, so it has no
+-- access to any group data until an Admin/Moderator approves it.
 create or replace function public.my_group_ids()
 returns setof uuid language sql stable security definer set search_path = public as $$
-  select group_id from public.group_members where user_id = auth.uid();
+  select group_id from public.group_members where user_id = auth.uid() and status = 'ACTIVE';
 $$;
 
 create or replace function public.my_groups_with(p_permission text)
@@ -222,7 +227,7 @@ returns setof uuid language sql stable security definer set search_path = public
   select gm.group_id
   from public.group_members gm
   join public.role_permissions rp on rp.role = gm.role
-  where gm.user_id = auth.uid() and rp.permission = p_permission;
+  where gm.user_id = auth.uid() and gm.status = 'ACTIVE' and rp.permission = p_permission;
 $$;
 
 create or replace function public.shares_group_with(p_user uuid)
@@ -230,7 +235,7 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (
     select 1 from public.group_members a
     join public.group_members b on b.group_id = a.group_id
-    where a.user_id = auth.uid() and b.user_id = p_user
+    where a.user_id = auth.uid() and b.user_id = p_user and a.status = 'ACTIVE' and b.status = 'ACTIVE'
   );
 $$;
 
@@ -365,7 +370,7 @@ create policy profiles_update on public.profiles for update to authenticated
 create policy meal_groups_select on public.meal_groups for select to authenticated
   using (id in (select public.my_group_ids()));
 create policy group_members_select on public.group_members for select to authenticated
-  using (group_id in (select public.my_group_ids()));
+  using (group_id in (select public.my_group_ids()) or user_id = auth.uid());
 create policy group_invites_select on public.group_invites for select to authenticated
   using (group_id in (select public.my_groups_with('invites.manage')));
 create policy role_permissions_select on public.role_permissions for select to authenticated
@@ -374,8 +379,9 @@ create policy role_permissions_select on public.role_permissions for select to a
 -- members (the mess roster)
 create policy members_select on public.members for select to authenticated
   using (group_id in (select public.my_group_ids()));
-create policy members_insert on public.members for insert to authenticated
-  with check (group_id in (select public.my_groups_with('members.manage')));
+-- No members_insert policy: roster rows are created only by the
+-- SECURITY DEFINER approve_join_request()/create_meal_group() functions
+-- (which bypass RLS), never by a direct client insert.
 create policy members_update on public.members for update to authenticated
   using (group_id in (select public.my_groups_with('members.manage')))
   with check (group_id in (select public.my_groups_with('members.manage')));
@@ -484,9 +490,12 @@ begin
     'group_id', g.id,
     'group_name', g.name,
     'role', gm.role,
+    'status', gm.status,
     'joined_at', gm.joined_at,
     'member_id', (select m.id from public.members m where m.group_id = g.id and m.user_id = v_uid limit 1),
-    'permissions', coalesce((select json_agg(rp.permission order by rp.permission) from public.role_permissions rp where rp.role = gm.role), '[]'::json)
+    'permissions', case when gm.status = 'ACTIVE'
+      then coalesce((select json_agg(rp.permission order by rp.permission) from public.role_permissions rp where rp.role = gm.role), '[]'::json)
+      else '[]'::json end
   ) into v
   from public.group_members gm
   join public.meal_groups g on g.id = gm.group_id
@@ -620,33 +629,85 @@ begin
   insert into public.profiles (id, full_name, email)
     values (v_uid, split_part(coalesce(v_email, ''), '@', 1), coalesce(v_email, ''))
     on conflict (id) do nothing;
-  select full_name into v_full from public.profiles where id = v_uid;
 
-  -- Default role is always MEMBER. There is no parameter to ask for more.
-  insert into public.group_members (group_id, user_id, role) values (v_inv.group_id, v_uid, 'MEMBER');
+  -- Default role is always MEMBER, and every new join starts PENDING: it
+  -- only becomes a real member (with roster + meal access) once an
+  -- Admin/Moderator approves it via approve_join_request(). No roster row
+  -- is created here -- that happens on approval, so meals only ever start
+  -- counting from the day someone is actually let in.
+  insert into public.group_members (group_id, user_id, role, status) values (v_inv.group_id, v_uid, 'MEMBER', 'PENDING');
 
-  -- Link to the mess roster: re-activate a previous row, adopt a row the
-  -- admin already created with the same email, or create a new one.
-  select id into v_member_id from public.members
-    where group_id = v_inv.group_id and user_id = v_uid limit 1;
-  if v_member_id is null and v_email is not null then
-    select id into v_member_id from public.members
-      where group_id = v_inv.group_id and user_id is null and lower(email) = lower(v_email)
-      order by created_at limit 1;
-  end if;
-  if v_member_id is not null then
-    update public.members set user_id = v_uid, status = 'ACTIVE' where group_id = v_inv.group_id and id = v_member_id;
-  else
-    select count(*) into v_count from public.members where group_id = v_inv.group_id;
-    insert into public.members (group_id, id, user_id, name, email, avatar_color)
-      values (v_inv.group_id, public._roster_id(), v_uid, coalesce(nullif(v_full, ''), 'Member'), v_email,
-              v_colors[(v_count % array_length(v_colors, 1)) + 1]);
-  end if;
-
-  return json_build_object('group_id', v_inv.group_id, 'group_name', v_inv.name);
+  return json_build_object('group_id', v_inv.group_id, 'group_name', v_inv.name, 'status', 'PENDING');
 exception
   when unique_violation then
     raise exception 'ALREADY_IN_GROUP';
+end;
+$$;
+
+-- ---------------------------------------------------------------------
+-- Join-request approval (Admin/Moderator only). This is the ONLY way a
+-- roster (meal-tracking) row is ever created for someone who joined via
+-- invite code -- there is no manual "add member" path anymore.
+-- ---------------------------------------------------------------------
+create or replace function public.list_join_requests(p_group uuid)
+returns table (user_id uuid, full_name text, email text, requested_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select gm.user_id, p.full_name, p.email, gm.joined_at
+  from public.group_members gm
+  join public.profiles p on p.id = gm.user_id
+  where gm.group_id = p_group and gm.status = 'PENDING'
+    and public.has_permission(p_group, 'members.manage')
+  order by gm.joined_at;
+$$;
+
+create or replace function public.approve_join_request(p_group uuid, p_user uuid)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_email text;
+  v_full text;
+  v_member_id text;
+  v_count int;
+  v_colors text[] := array['#0B1F4B','#1A3570','#16A34A','#B45309','#7C3AED','#DC2626'];
+begin
+  if not public.has_permission(p_group, 'members.manage') then raise exception 'FORBIDDEN'; end if;
+  if not exists (select 1 from public.group_members where group_id = p_group and user_id = p_user and status = 'PENDING') then
+    raise exception 'NOT_PENDING';
+  end if;
+
+  update public.group_members set status = 'ACTIVE' where group_id = p_group and user_id = p_user;
+
+  select email, full_name into v_email, v_full from public.profiles where id = p_user;
+
+  -- Link to the mess roster: re-activate a previous row, adopt a row the
+  -- admin already created with the same email, or create a new one --
+  -- and always stamp joined_at as TODAY, so meals never count from before
+  -- the day this account was actually approved.
+  select id into v_member_id from public.members where group_id = p_group and user_id = p_user limit 1;
+  if v_member_id is null and v_email is not null then
+    select id into v_member_id from public.members
+      where group_id = p_group and user_id is null and lower(email) = lower(v_email)
+      order by created_at limit 1;
+  end if;
+  if v_member_id is not null then
+    update public.members set user_id = p_user, status = 'ACTIVE', joined_at = current_date where group_id = p_group and id = v_member_id;
+  else
+    select count(*) into v_count from public.members where group_id = p_group;
+    insert into public.members (group_id, id, user_id, name, email, avatar_color, joined_at)
+      values (p_group, public._roster_id(), p_user, coalesce(nullif(v_full, ''), 'Member'), v_email,
+              v_colors[(v_count % array_length(v_colors, 1)) + 1], current_date);
+  end if;
+
+  return json_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.reject_join_request(p_group uuid, p_user uuid)
+returns json language plpgsql volatile security definer set search_path = public as $$
+begin
+  if not public.has_permission(p_group, 'members.manage') then raise exception 'FORBIDDEN'; end if;
+  delete from public.group_members where group_id = p_group and user_id = p_user and status = 'PENDING';
+  if not found then raise exception 'NOT_PENDING'; end if;
+  return json_build_object('ok', true);
 end;
 $$;
 
@@ -683,7 +744,7 @@ begin
            gm.user_id = auth.uid()
     from public.group_members gm
     left join public.profiles p on p.id = gm.user_id
-    where gm.group_id = p_group
+    where gm.group_id = p_group and gm.status = 'ACTIVE'
     order by case gm.role when 'ADMIN' then 0 when 'MODERATOR' then 1 else 2 end, gm.joined_at;
 end;
 $$;
@@ -755,5 +816,8 @@ grant execute on function
   public.list_group_accounts(uuid),
   public.change_member_role(uuid, uuid, text),
   public.remove_group_member(uuid, uuid),
-  public.update_group_name(uuid, text)
+  public.update_group_name(uuid, text),
+  public.list_join_requests(uuid),
+  public.approve_join_request(uuid, uuid),
+  public.reject_join_request(uuid, uuid)
 to authenticated;
