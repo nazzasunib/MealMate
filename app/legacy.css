@@ -532,6 +532,33 @@ main.app-grid-bg > :not(.app-grid-text-layer):not(.app-grid-flow-layer):not(.fix
   background-image: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 40%, var(--navy-600) 60%, var(--navy-900) 100%);
   outline: none;
   border: none;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ===== manual patch 14b: same corner "lighting" glow used on the Task
+   Management stat cards -- a soft purple radial highlight sitting in the
+   top-right corner of every navy stat card, on its own layer behind the
+   content (z-index:-1 inside the card's own stacking context from
+   isolation:isolate above) so it never covers the number/label. Purely
+   decorative (no JS), it brightens slightly on hover/press together with
+   the existing card-premium lift for a bit more "shine" on interaction. ===== */
+.stat-card-bg::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(420px circle at 80% 0%, rgba(167,139,250,.22), transparent 45%);
+  opacity: .9;
+  transition: opacity .3s;
+}
+.stat-card-bg:hover::after{
+  opacity: 1;
+}
+.stat-card-bg:active::after{
+  opacity: 1;
+  background: radial-gradient(420px circle at 80% 0%, rgba(167,139,250,.34), transparent 45%);
 }
 
 /* ===== manual patch 15: quick-action pills (Add Meal / Add Money / Add
