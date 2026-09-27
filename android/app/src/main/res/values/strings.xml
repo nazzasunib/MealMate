@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MealMate</string>
+    <string name="title_activity_main">MealMate</string>
+    <string name="package_name">com.niduslab.mealmate</string>
+    <string name="custom_url_scheme">com.niduslab.mealmate</string>
+</resources>

@@ -1,0 +1,13 @@
+{
+  "appId": "com.niduslab.mealmate",
+  "appName": "MealMate",
+  "webDir": "public",
+  "server": {
+    "url": "https://meal-mate-woad.vercel.app",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
