@@ -359,3 +359,15 @@ main.app-grid-bg > .mm-page { z-index: auto !important; }
 
 /* Shopping list "Download PDF" is hidden (not removed) while the list is empty */
 [data-action="download-shopping-list"][hidden] { display: none !important; }
+
+/* ===== Website only (never the Android app / home-screen app: html.mm-app) =====
+   Dashboard: every stat card in a row gets the same height (the "Available
+   Balance" card's extra "Click for a breakdown" line made it taller), and the
+   quick-action buttons get more room — each has a navy outline ring 4–6px
+   outside it, so the old 12px gap left the rings almost touching. */
+html:not(.mm-app) .mm-quick-actions { gap: 1.5rem 1.5rem; padding: .375rem; }
+html:not(.mm-app) main .grid:has(> a > .stat-card-bg),
+html:not(.mm-app) main .grid:has(> .stat-card-bg) { grid-auto-rows: 1fr; }
+html:not(.mm-app) main .grid > a.block:has(> .stat-card-bg) { display: block; height: 100%; }
+html:not(.mm-app) main .grid > a.block > .stat-card-bg,
+html:not(.mm-app) main .grid > .stat-card-bg { height: 100%; }
