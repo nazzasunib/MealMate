@@ -340,3 +340,19 @@ input.mm-locked { opacity: .75; }
 /* The page wrapper must NOT become a stacking context, otherwise the
    app's fixed modals (z-50) would sit underneath the sticky top bar. */
 main.app-grid-bg > .mm-page { z-index: auto !important; }
+
+
+/* Bengali item names ("Chicken (মুরগি)"): Noto Sans Bengali is bundled with the
+   app (public/fonts, SIL Open Font License) so Bengali looks the same on every
+   phone, computer and inside the Android app, even offline. The browser only
+   downloads it when Bengali letters are actually on the page (unicode-range),
+   and Inter keeps drawing all English text. */
+@font-face {
+  font-family: "Noto Sans Bengali";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(/fonts/noto-sans-bengali.woff2) format("woff2-variations"), url(/fonts/noto-sans-bengali.woff2) format("woff2");
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1;
+}
+:root { --font-sans: "Inter Variable", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Nirmala UI", sans-serif; }
