@@ -189,3 +189,6 @@ html.mm-app .summary-cards-grid { grid-auto-rows: 1fr; gap: .75rem; }
 html.mm-app .summary-cards-grid .summary-accent-card { display: flex; flex-direction: column; height: 100%; padding: .9rem; }
 html.mm-app .summary-cards-grid .summary-accent-card .text-2xl { font-size: 1.25rem; line-height: 1.75rem; }
 html.mm-app .summary-cards-grid .summary-jump-link { margin-top: auto; padding-top: .35rem; }
+
+/* toasts (e.g. "Saved to Download/MealMate … Open") sit above the bottom bar */
+html.mm-app #toast-host { left: .75rem; right: .75rem; bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)); }
