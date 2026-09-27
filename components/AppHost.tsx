@@ -201,7 +201,7 @@ export default function AppHost() {
             const { error } = await sb.rpc("delete_roster_member", { p_group: groupId, p_member: memberId, p_keep_data: keepData });
             if (error) throw error;
             s.broadcastEvent("membership");
-            s.broadcastEvent("changed", { tables: ["members", "meals", "deposits", "expenses"] });
+            s.broadcastEvent("changed", { tables: ["members", "meals", "deposits", "guest_meals", "expenses"] });
             s.refreshAll();
           },
           renameGroup: async (name: string) => {
