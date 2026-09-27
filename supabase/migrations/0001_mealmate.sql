@@ -2,6 +2,8 @@
 -- MealMate — multi-user schema, permissions, RLS and RPCs
 -- Run this once in Supabase: Dashboard → SQL Editor → paste → Run.
 -- Safe to re-run: every object is created with IF NOT EXISTS / OR REPLACE.
+-- IMPORTANT: after this file, ALWAYS run 0002_super_admin.sql too — it
+-- replaces a few functions below (role changes, member removal, team list).
 -- =====================================================================
 
 create extension if not exists pgcrypto;

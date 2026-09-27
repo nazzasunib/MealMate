@@ -12,6 +12,8 @@ const RPC_MESSAGES: Record<string, string> = {
   FORBIDDEN: "You don't have permission to do that.",
   INVALID_ROLE: "That role isn't valid.",
   NOT_A_MEMBER: "That person is no longer in this MealMate.",
+  SUPER_ADMIN_PROTECTED: "The Super Admin can't be removed or have their role changed. Only they can hand the title to someone else.",
+  SUPER_ADMIN_ONLY: "Only the Super Admin can add, change or remove Admins.",
   CANNOT_REMOVE_SELF: "You can't delete yourself from the member list.",
   WRONG_CURRENT_PASSWORD: "Current password is incorrect.",
   TOO_MANY_ATTEMPTS: "Too many wrong invite codes. Please wait an hour, or ask your Admin for the invite link.",

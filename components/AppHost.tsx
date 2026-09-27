@@ -184,6 +184,12 @@ export default function AppHost() {
             s.broadcastEvent("membership");
             if (userId === user.id) await refreshMembership();
           },
+          transferSuperAdmin: async (userId: string) => {
+            const { error } = await sb.rpc("transfer_super_admin", { p_group: groupId, p_user: userId });
+            if (error) throw error;
+            s.broadcastEvent("membership");
+            await refreshMembership();
+          },
           removeAccount: async (userId: string) => {
             const { error } = await sb.rpc("remove_group_member", { p_group: groupId, p_user: userId });
             if (error) throw error;
@@ -218,13 +224,16 @@ export default function AppHost() {
             }
             const changed =
               next.role !== current.role ||
+              !!next.is_super_admin !== !!current.is_super_admin ||
               next.group_name !== current.group_name ||
               next.permissions.join(",") !== current.permissions.join(",");
             if (changed) {
               const roleChanged = next.role !== current.role;
+              const superChanged = !!next.is_super_admin !== !!current.is_super_admin;
               current = next;
-              engine?.updateContext({ role: next.role, permissions: next.permissions, groupName: next.group_name });
-              if (roleChanged) engine?.toast("Your role is now " + next.role.charAt(0) + next.role.slice(1).toLowerCase() + ".", "success");
+              engine?.updateContext({ role: next.role, isSuperAdmin: !!next.is_super_admin, permissions: next.permissions, groupName: next.group_name });
+              if (superChanged) engine?.toast(next.is_super_admin ? "You are now the Super Admin." : "You are no longer the Super Admin.", "success");
+              else if (roleChanged) engine?.toast("Your role is now " + next.role.charAt(0) + next.role.slice(1).toLowerCase() + ".", "success");
             }
             engine?.teamChanged();
           } catch {
@@ -239,6 +248,7 @@ export default function AppHost() {
           userId: user.id,
           groupName: current.group_name,
           role: current.role,
+          isSuperAdmin: !!current.is_super_admin,
           permissions: current.permissions,
           inviteBaseUrl: siteOrigin(),
           persist: () => {

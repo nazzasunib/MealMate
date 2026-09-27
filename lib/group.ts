@@ -5,6 +5,8 @@ export type Membership = {
   group_id: string;
   group_name: string;
   role: "ADMIN" | "MODERATOR" | "MEMBER";
+  /** The one member per mess nobody else can demote or remove (see 0002_super_admin.sql). */
+  is_super_admin?: boolean;
   status: "ACTIVE" | "PENDING";
   joined_at: string;
   member_id: string | null;
