@@ -1,0 +1,191 @@
+/* =====================================================================
+   Android app only. Every rule here is scoped to html.mm-app (set only
+   inside the MealMate Android app — see app/layout.tsx) or to classes that
+   are only rendered in app mode (mm-bottom-nav, mm-more-*). The website
+   never gets these styles.
+   ===================================================================== */
+
+/* ---------- no sideways wobble ---------- */
+html.mm-app, html.mm-app body { overflow-x: hidden; overscroll-behavior-x: none; }
+html.mm-app body { -webkit-tap-highlight-color: transparent; }
+
+/* ---------- top bar: brand on the left instead of the hamburger ---------- */
+html.mm-app .mm-app-brand { color: inherit; text-decoration: none; }
+
+/* ---------- room for the fixed bottom bar ---------- */
+html.mm-app .mm-app-main { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)); }
+
+/* ---------- fixed bottom tab bar (royal navy, same gradient as the stat cards) ---------- */
+.mm-bottom-nav {
+  position: fixed;
+  left: .75rem;
+  right: .75rem;
+  bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .25rem;
+  padding: .4rem;
+  border-radius: 1.25rem;
+  background-image: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 40%, var(--navy-600) 60%, var(--navy-900) 100%);
+  box-shadow: 0 10px 30px rgba(11, 31, 75, .35), 0 2px 6px rgba(11, 31, 75, .2);
+}
+.mm-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  min-height: 3.35rem;
+  padding: .3rem .15rem;
+  border: 0;
+  border-radius: .95rem;
+  background: none;
+  color: rgba(255, 255, 255, .62);
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .2s, color .2s;
+}
+.mm-tab-icon { display: flex; align-items: center; justify-content: center; }
+.mm-tab-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-tab.is-active { color: #fff; background: rgba(255, 255, 255, .15); }
+.mm-tab.is-active .mm-tab-icon svg { stroke-width: 2.4; }
+.mm-tab:active { background: rgba(255, 255, 255, .22); }
+
+/* ---------- "More" bottom sheet ---------- */
+.mm-more-backdrop { position: fixed; inset: 0; z-index: 45; background: rgba(5, 12, 30, .45); }
+.mm-more-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: .75rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: var(--surface);
+  box-shadow: 0 -12px 32px rgba(11, 31, 75, .25);
+  animation: mm-sheet-up .22s ease-out;
+}
+.mm-more-backdrop[hidden], .mm-more-sheet[hidden] { display: none; }
+.mm-more-handle { width: 2.5rem; height: .3rem; margin: 0 auto 1rem; border-radius: 99px; background: var(--border); }
+.mm-more-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.mm-more-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: 5.75rem;
+  padding: .85rem .4rem;
+  border-radius: 1rem;
+  background: var(--gray-100);
+  color: var(--foreground);
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+.mm-more-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: .9rem;
+  color: #fff;
+  background-image: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 45%, var(--navy-600) 100%);
+}
+.mm-more-item.is-active { box-shadow: inset 0 0 0 2px var(--navy-700); background: var(--navy-50); }
+.mm-more-item:active { background: var(--navy-50); }
+@keyframes mm-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .mm-more-sheet { animation: none; } }
+
+/* ---------- calmer cards: no double outline ring / sway on phones ---------- */
+html.mm-app .card-premium { outline: none; animation: none; }
+
+/* ---------- dashboard quick actions: even 3-column grid of same-size tiles ---------- */
+html.mm-app .mm-quick-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+html.mm-app .mm-quick-actions .quick-action-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 5rem;
+  padding: .75rem .4rem;
+  border-radius: 1rem;
+  font-size: .78rem;
+  line-height: 1.2;
+  text-align: center;
+}
+html.mm-app .mm-quick-actions .quick-action-pill svg { width: 1.3rem; height: 1.3rem; flex-shrink: 0; color: var(--navy-800); }
+
+/* ---------- stat cards: every card in a grid gets the same height ---------- */
+html.mm-app main .grid:has(> a > .stat-card-bg),
+html.mm-app main .grid:has(> .stat-card-bg) { grid-auto-rows: 1fr; gap: .75rem; }
+html.mm-app main .grid > a.block { display: block; height: 100%; }
+html.mm-app main .grid > a.block > .stat-card-bg,
+html.mm-app main .grid > .stat-card-bg { height: 100%; }
+
+/* ---------- tables become stacked cards (see appStackTables in engine.js) ---------- */
+html.mm-app table.mm-stack { display: block; width: 100%; min-width: 0 !important; }
+html.mm-app table.mm-stack thead { display: none; }
+html.mm-app table.mm-stack tbody,
+html.mm-app table.mm-stack tfoot { display: block; }
+html.mm-app table.mm-stack tr {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+html.mm-app table.mm-stack tbody tr:last-child { border-bottom: 0; }
+html.mm-app table.mm-stack tfoot tr { background: var(--navy-50); }
+html.mm-app table.mm-stack tr > td,
+html.mm-app table.mm-stack tr > th {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-width: 0;
+  padding: .28rem 0 !important;
+  border: 0 !important;
+  position: static !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: right !important;
+  white-space: normal;
+}
+html.mm-app table.mm-stack tr > [data-label]::before {
+  content: attr(data-label);
+  flex-shrink: 0;
+  max-width: 48%;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-align: left;
+  text-transform: uppercase;
+}
+html.mm-app table.mm-stack tr > .mm-cell-title { justify-content: flex-start; padding-bottom: .4rem !important; text-align: left !important; font-weight: 600; }
+html.mm-app table.mm-stack tr > .mm-cell-actions { justify-content: flex-end; }
+html.mm-app table.mm-stack tr > .mm-cell-full { display: block; text-align: left !important; }
+/* columns the website hides on small screens stay hidden */
+html.mm-app table.mm-stack tr > .hidden { display: none !important; }
+
+/* big (non-compact) stat cards: slightly smaller number + padding so values like
+   "৳65.64 / meal" stay on one line in a half-width phone column */
+html.mm-app .stat-card-bg.p-5 { padding: 1rem; gap: .6rem; }
+html.mm-app .stat-card-bg .text-2xl { font-size: 1.25rem; line-height: 1.75rem; }
+html.mm-app .stat-card-bg .h-10.w-10 { width: 2.25rem; height: 2.25rem; }
+
+/* Summary page "Executive Summary" cards: same even grid + one-line values */
+html.mm-app .summary-cards-grid { grid-auto-rows: 1fr; gap: .75rem; }
+html.mm-app .summary-cards-grid .summary-accent-card { display: flex; flex-direction: column; height: 100%; padding: .9rem; }
+html.mm-app .summary-cards-grid .summary-accent-card .text-2xl { font-size: 1.25rem; line-height: 1.75rem; }
+html.mm-app .summary-cards-grid .summary-jump-link { margin-top: auto; padding-top: .35rem; }

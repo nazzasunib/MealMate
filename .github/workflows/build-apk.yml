@@ -59,11 +59,18 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      # Friendly file name for the download page (https://meal-mate-woad.vercel.app/download).
+      # app-debug.apk is still published so links shared earlier keep working.
+      - name: Name the APK MealMate.apk
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/MealMate.apk
+
       - name: Publish to "latest-apk" release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-apk
           name: MealMate — Latest APK
-          body: "Auto-built from the latest main branch. Debug build — for testing/installing directly, not yet signed for the Play Store."
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          body: "Install from https://meal-mate-woad.vercel.app/download (step-by-step instructions). Debug build — for installing directly, not yet signed for the Play Store."
+          files: |
+            android/app/build/outputs/apk/debug/MealMate.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
