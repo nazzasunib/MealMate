@@ -192,3 +192,14 @@ html.mm-app .summary-cards-grid .summary-jump-link { margin-top: auto; padding-t
 
 /* toasts (e.g. "Saved to Download/MealMate … Open") sit above the bottom bar */
 html.mm-app #toast-host { left: .75rem; right: .75rem; bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)); }
+
+/* ---------- stacked-table cells: controls line up on the right ----------
+   Controls like the meal No/Yes toggle carry "mx-auto" (centred in a website
+   table column). In a stacked card row the label sits on the left, so auto
+   margins centred each toggle in whatever space was left after its label —
+   BREAKFAST / LUNCH / DINNER have different widths, so the toggles zig-zagged.
+   Pin them to the right edge instead. */
+html.mm-app table.mm-stack tr > td > .mx-auto { margin-left: auto; margin-right: 0; }
+/* the "set everyone" toggle has no ★ button: reserve the same space so its
+   No / Yes line up with the member rows below */
+html.mm-app table.mm-stack .mm-meal-set-all::after { content: ""; flex: 0 0 1.875rem; height: 1.75rem; }
