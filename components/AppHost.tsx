@@ -137,6 +137,15 @@ export default function AppHost() {
             const { error } = await sb.auth.updateUser({ password: nextPw });
             if (error) throw error;
           },
+          // Profile photos of the people linked to member rows (profiles RLS lets
+          // group-mates read each other's profile), so a member's own uploaded
+          // photo shows everywhere instead of their initials.
+          listProfilePictures: async (ids: string[]) => {
+            if (!ids.length) return [];
+            const { data, error } = await sb.from("profiles").select("id,avatar_url").in("id", ids);
+            if (error) throw error;
+            return data || [];
+          },
           listAccounts: async () => {
             const { data, error } = await sb.rpc("list_group_accounts", { p_group: groupId });
             if (error) throw error;
