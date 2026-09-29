@@ -14,6 +14,7 @@ type EngineHandle = {
   updateContext: (patch: Record<string, unknown>) => void;
   teamChanged: () => void;
   syncChanged: () => void;
+  activityChanged: () => void;
   toast: (msg: string, tone?: string) => void;
   unmount: () => void;
 };
@@ -117,6 +118,7 @@ export default function AppHost() {
           },
           onStateChange: () => engine?.syncChanged(),
           onError: (err: unknown) => engine?.toast("Couldn't save: " + friendlyError(err), "error"),
+          onActivity: () => engine?.activityChanged(),
         });
         sync = s;
 
@@ -220,6 +222,47 @@ export default function AppHost() {
             s.broadcastEvent("membership");
           },
           importBackup: (data: Record<string, unknown>) => s.importData(data),
+
+          /* ---- notifications (activity feed) & meal requests — migration 0004 ---- */
+          listActivity: async () => {
+            const { data, error } = await sb.rpc("list_activity", { p_group: groupId, p_limit: 100 });
+            if (error) throw error;
+            return data || [];
+          },
+          logActivity: async (kind: string, action: string, summary: string) => {
+            const { error } = await sb.from("activity_log").insert({ group_id: groupId, kind, action, summary: summary.slice(0, 400) });
+            if (!error) s.broadcastEvent("activity");
+          },
+          listRequests: async () => {
+            const { data, error } = await sb.from("meal_requests").select("*").eq("group_id", groupId).order("created_at", { ascending: false }).limit(200);
+            if (error) throw error;
+            return data || [];
+          },
+          createRequest: async (r: { kind: string; from: string; to: string; breakfast: boolean; lunch: boolean; dinner: boolean; guestName?: string; quantity?: number; note?: string }) => {
+            const { data, error } = await sb.rpc("create_meal_request", {
+              p_group: groupId, p_kind: r.kind, p_from: r.from, p_to: r.to || r.from,
+              p_breakfast: r.breakfast, p_lunch: r.lunch, p_dinner: r.dinner,
+              p_guest_name: r.guestName || null, p_quantity: r.quantity || 1, p_note: r.note || null,
+            });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+            return data as string;
+          },
+          cancelRequest: async (id: string) => {
+            const { error } = await sb.rpc("cancel_meal_request", { p_id: id });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          decideRequest: async (id: string, approve: boolean, note: string) => {
+            const { error } = await sb.rpc("decide_meal_request", { p_id: id, p_approve: approve, p_note: note || null });
+            if (error) throw error;
+            if (approve) {
+              // the database switched meals off / added the guest meal: fetch it here and tell everyone else
+              s.refreshAll();
+              s.broadcastEvent("changed", { tables: ["meals", "guest_meals"] });
+            }
+            s.broadcastEvent("activity");
+          },
         };
 
         async function refreshMembership() {
@@ -286,7 +329,7 @@ export default function AppHost() {
           setPhase("ready");
         }
 
-        s.subscribe({ onMembership: refreshMembership });
+        s.subscribe({ onMembership: refreshMembership, onActivity: () => engine?.activityChanged() });
         // Just joined? Let the Admin's Team page know right away.
         if (Date.now() - new Date(current.joined_at).getTime() < 5 * 60 * 1000) {
           setTimeout(() => s.broadcastEvent("membership"), 1500);

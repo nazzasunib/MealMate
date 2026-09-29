@@ -18,6 +18,15 @@ const RPC_MESSAGES: Record<string, string> = {
   WRONG_CURRENT_PASSWORD: "Current password is incorrect.",
   TOO_MANY_ATTEMPTS: "Too many wrong invite codes. Please wait an hour, or ask your Admin for the invite link.",
   IMPORT_FAILED: "Some records couldn't be imported. Nothing was lost — please try again.",
+  PAST_DATE: "You can only request today or a future date.",
+  NO_MEALS: "Pick at least one meal (Breakfast, Lunch or Dinner).",
+  INVALID_RANGE: "Pick an end date on or after the start date (up to 31 days).",
+  INVALID_DATE: "Pick a date.",
+  NO_MEMBER_ROW: "Your account isn't linked to a member in this MealMate yet — ask an Admin.",
+  DUPLICATE_REQUEST: "You already have the same request waiting for approval.",
+  ALREADY_DECIDED: "This request was already handled.",
+  MEMBER_GONE: "That member is no longer in this MealMate.",
+  NOT_FOUND: "That request no longer exists.",
 };
 
 export function friendlyError(err: unknown): string {

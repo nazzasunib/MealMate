@@ -203,3 +203,8 @@ html.mm-app table.mm-stack tr > td > .mx-auto { margin-left: auto; margin-right:
 /* the "set everyone" toggle has no ★ button: reserve the same space so its
    No / Yes line up with the member rows below */
 html.mm-app table.mm-stack .mm-meal-set-all::after { content: ""; flex: 0 0 1.875rem; height: 1.75rem; }
+
+/* notifications panel: full-width sheet under the top bar on phones */
+html.mm-app .mm-notif-panel { position: fixed; left: .75rem; right: .75rem; top: 4.25rem; width: auto; max-height: calc(100vh - 11.5rem); }
+html.mm-app .mm-bell { width: 2.4rem; height: 2.4rem; }
+html.mm-app .mm-req-actions > * { flex: 1 1 0; justify-content: center; }
