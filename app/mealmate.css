@@ -432,3 +432,26 @@ html:not(.mm-app) main .grid > .stat-card-bg { height: 100%; }
 .mm-req-meal input { width: 1rem; height: 1rem; accent-color: var(--navy-900); }
 .mm-req-meal:has(input:checked) { border-color: var(--navy-800); background: var(--navy-50); }
 [data-req-only][hidden] { display: none !important; }
+
+/* ===================== Shopping list rows: Qty + Price ===================== */
+.mm-shop-row { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.mm-shop-inputs { display: inline-flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+.mm-shop-input { width: 4.75rem; border-radius: .5rem; border: 1px solid var(--border); background: var(--surface); padding: .25rem .5rem; text-align: right; font-size: .75rem; color: var(--foreground); }
+.mm-shop-input::placeholder { color: var(--muted); }
+.mm-shop-input:focus { outline: none; border-color: var(--navy-600); box-shadow: 0 0 0 2px rgba(42, 74, 147, .2); }
+.mm-shop-price { position: relative; display: inline-flex; align-items: center; }
+.mm-shop-taka { position: absolute; left: .45rem; font-size: .72rem; color: var(--muted); pointer-events: none; }
+.mm-shop-price .mm-shop-input { padding-left: 1.1rem; }
+.mm-shop-total { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem .9rem; border-radius: .85rem; background: var(--navy-50); color: var(--navy-900); font-size: .88rem; font-weight: 600; }
+.mm-shop-total[hidden] { display: none; }
+.mm-shop-total strong { font-size: 1rem; }
+.mm-shop-total-note { font-weight: 500; font-size: .75rem; color: var(--muted); }
+/* narrow list (phone, app, or the website's side column): Qty/Price move to a
+   second line so the item name isn't cut off */
+#shopping-list-panel { container-type: inline-size; }
+@container (max-width: 520px) {
+  .mm-shop-name { flex: 1 1 0; }
+  .mm-shop-remove { order: 2; }
+  .mm-shop-inputs { order: 3; flex-basis: 100%; justify-content: flex-end; }
+  .mm-shop-input { width: 6rem; font-size: .8rem; padding-top: .35rem; padding-bottom: .35rem; }
+}
