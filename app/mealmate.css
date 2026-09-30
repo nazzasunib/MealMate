@@ -455,3 +455,10 @@ html:not(.mm-app) main .grid > .stat-card-bg { height: 100%; }
   .mm-shop-inputs { order: 3; flex-basis: 100%; justify-content: flex-end; }
   .mm-shop-input { width: 6rem; font-size: .8rem; padding-top: .35rem; padding-bottom: .35rem; }
 }
+
+/* request time (exact) + same-day flag */
+.mm-req-stamp { margin-top: .35rem; font-size: .78rem; color: var(--muted); line-height: 1.5; }
+.mm-req-stamp b { color: var(--foreground); font-weight: 600; }
+.mm-req-sameday { display: inline-block; margin-left: .25rem; padding: .02rem .45rem; border-radius: 999px; background: var(--warning-100); color: var(--warning-700); font-size: .68rem; font-weight: 700; }
+.mm-notif-foot { width: 100%; border: 0; background: none; cursor: pointer; }
+.mm-notif-foot:disabled { color: var(--muted); cursor: default; background: none; }
