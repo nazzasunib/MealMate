@@ -12,8 +12,9 @@ import "./app-mode.css";
    ("standalone") and gets the same app layout; there we also let the page use
    the whole screen (viewport-fit=cover) so the bottom bar sits above the home
    indicator. Only then does <html> get the "mm-app" class — the website in a
-   normal browser tab is unaffected. */
-const APP_MODE_SCRIPT = `(function(){try{var d=document.documentElement,ua=navigator.userAgent||"",q=/[?&]app=(1|0)\\b/.exec(location.search);if(q){try{q[1]==="1"?localStorage.setItem("mm-app-mode","1"):localStorage.removeItem("mm-app-mode")}catch(e){}}var saved=false;try{saved=localStorage.getItem("mm-app-mode")==="1"}catch(e){}var cap=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform();var home=false;try{home=navigator.standalone===true||window.matchMedia("(display-mode: standalone)").matches}catch(e){}if(ua.indexOf("MealMateApp")>=0||cap||saved||home)d.classList.add("mm-app");if(home){var fit=function(){var m=document.querySelector('meta[name="viewport"]');if(m&&m.content.indexOf("viewport-fit")<0)m.content+=", viewport-fit=cover"};fit();document.addEventListener("DOMContentLoaded",fit)}}catch(e){}})();`;
+   normal browser tab is unaffected. The same script applies the saved
+   light/dark theme ("mm-theme") so dark mode never flashes white. */
+const APP_MODE_SCRIPT = `(function(){try{var d=document.documentElement,ua=navigator.userAgent||"",q=/[?&]app=(1|0)\\b/.exec(location.search);if(q){try{q[1]==="1"?localStorage.setItem("mm-app-mode","1"):localStorage.removeItem("mm-app-mode")}catch(e){}}var saved=false;try{saved=localStorage.getItem("mm-app-mode")==="1"}catch(e){}var cap=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform();var home=false;try{home=navigator.standalone===true||window.matchMedia("(display-mode: standalone)").matches}catch(e){}if(ua.indexOf("MealMateApp")>=0||cap||saved||home)d.classList.add("mm-app");if(home){var fit=function(){var m=document.querySelector('meta[name="viewport"]');if(m&&m.content.indexOf("viewport-fit")<0)m.content+=", viewport-fit=cover"};fit();document.addEventListener("DOMContentLoaded",fit)}}catch(e){}try{if(localStorage.getItem("mm-theme")==="dark")document.documentElement.classList.add("mm-dark")}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: { default: "MealMate", template: "%s · MealMate" },
