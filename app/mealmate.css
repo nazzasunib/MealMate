@@ -582,3 +582,7 @@ html.mm-dark .mm-invite-hero { box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 18
 html.mm-dark main .btn-primary { box-shadow: 0 0 0 1px rgba(255,255,255,.28), 0 8px 20px -8px rgba(0,0,0,.6); }
 /* avatar in the dark top bar gets a light ring so a navy initials circle stays visible */
 html.mm-dark header.sticky [data-action="toggle-usermenu"] > :first-child { box-shadow: 0 0 0 2px rgba(255,255,255,.35); border-radius: 999px; }
+
+/* offline: say so in words on phones too ("Offline · saved"), not only a dot */
+.mm-sync-badge[data-state="offline"] [data-sync-label] { display: inline !important; }
+.mm-sync-badge[data-state="offline"] { padding: 0 .6rem !important; white-space: nowrap; }

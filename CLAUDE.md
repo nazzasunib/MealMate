@@ -69,7 +69,7 @@ Roles (table `role_permissions`): ADMIN = everything; MODERATOR = reports.view, 
 - **Website vs app UI:** the Android app (and iPhone home-screen app) gets its own layout: royal-navy bottom bar (Dashboard, Meals, Expenses, Settlement, More), More sheet, tables turned into stacked cards (`appStackTables`). Detected by user-agent `MealMateApp` (Capacitor `appendUserAgent`), the Capacitor bridge, `navigator.standalone`, or `?app=1` (preview; `?app=0` turns off). **When the owner says "only APK" or "only website", scope CSS to `html.mm-app` / `html:not(.mm-app)` and verify the other one is unchanged.**
 - **APK loads the live site** → web changes need **no APK rebuild**. Only changes under `android/`, `capacitor.config.json`, `package*.json` trigger the CI build, and users must reinstall from `/download`.
 - **Downloads in the app:** Android WebView ignores blob/data downloads, so PDFs/backups go through the native `Downloader` plugin (`saveFileInApp()` in engine.js) → saved to `Download/MealMate`, with an "Open" toast. Website keeps normal browser downloads.
-- **Categories:** 8 categories (Fish & Meat, Vegetables, Grocery, Spices, Fruits, Dairy & Breakfast, Beverages, Household), each ending with "Others". Item names are **stored in English**; Bengali is display-only via `ITEM_BN` + `itemLabel()` → "Chicken (মুরগি)".
+- **Categories:** 9 categories (Fish & Meat, Vegetables, Grocery, Spices, Fruits, Dairy & Breakfast, Beverages, Household, Gas & Fuel), items A–Z, each ending with "Others". Item names are **stored in English**; Bengali is display-only via `ITEM_BN` + `itemLabel()` → "Chicken (মুরগি)".
 - **Shopping list price:** stored inside the existing `quantity` text column as `qty\u001Fprice` (see `encodeShopQty/decodeShopQty` in sync.js) — no DB column. Estimated total under the list and in the PDF.
 - **PDF Bengali:** jsPDF can't shape Bengali, so Bengali names are drawn on a canvas (`bengaliPdfImage`) and placed as images. Money in PDFs is written "Tk" (no ৳ glyph in Helvetica).
 - **Profile photos:** member avatars use the linked account's profile photo (`memberPic()` → profiles.avatar_url via `ctx.api.listProfilePictures`), then the Admin-set member picture, then initials.
@@ -77,6 +77,12 @@ Roles (table `role_permissions`): ADMIN = everything; MODERATOR = reports.view, 
 - **Meal requests:** members request Meal Off (date/range + meals) or Guest Meal; Admin/Moderator approve/reject; exact "Requested on …" time + "Same-day request" tag.
 - **Dashboard (website only):** equal-height stat cards, wider gap between quick-action pills.
 - Bengali font: Noto Sans Bengali bundled; `--font-sans` includes it.
+- **Offline mode (Oct 2026):** web + app work without internet after one online visit on that device.
+  - `public/sw.js` (service worker, registered by the inline script in `app/layout.tsx`) keeps `/_next/static`, fonts, icons (cache-first) and pages `/app`, `/login`, `/` (network-first, saved copy when offline). The page posts the files it loaded (`performance` entries) so lazily loaded chunks (engine, sync) are kept too. Bump `VERSION` in sw.js to drop old caches. `/sw.js` is served `no-cache` (next.config.mjs).
+  - Data: `AppHost` keeps `mealmate-cache:<uid>` = `sync.exportState()` (the data **plus `__base`, the last server copy**) and `mealmate-boot:<uid>` (membership + profile). Offline boot uses the saved session from `mealmate-auth` when the token can't be refreshed.
+  - `sync.js`: unsaved edits = diff between data and base, so edits made offline survive closing the app. `load()` rebases unsaved edits on top of fresh server rows and then saves them (last write wins). `flush()` skips the network while `navigator.onLine === false`; the `online` event sends everything.
+  - Needs internet (shows "You're offline…"): meal requests and approvals, Team & Invites, join/approve, profile/password, backup import, notifications list.
+- **Theme:** light/dark switch in the top bar (`mm-theme` in localStorage, applied before paint). Dark = navy page + light stat cards (`html.mm-dark` rules at the end of `app/mealmate.css`). The Synced badge is hidden unless offline / not saved.
 
 ## 6. How to make a change and ship it (the usual flow)
 

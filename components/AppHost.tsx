@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabase, isConfigured, siteOrigin } from "@/lib/supabase";
 import { friendlyError } from "@/lib/errors";
 import { completePendingIntent, getMembership, type Membership } from "@/lib/group";
+import type { Session, User } from "@supabase/supabase-js";
 import Splash from "./Splash";
 import ConfigMissing from "./ConfigMissing";
 
@@ -19,7 +20,12 @@ type EngineHandle = {
   unmount: () => void;
 };
 
+/* ---------- offline support ----------
+   The mess data (plus the last server copy, so edits made offline can be
+   found and sent later) is kept on this device, together with what's needed
+   to open the app without internet: the membership and the profile. */
 const CACHE_PREFIX = "mealmate-cache:";
+const BOOT_PREFIX = "mealmate-boot:";
 
 function readCache(uid: string, groupId: string) {
   try {
@@ -35,13 +41,43 @@ function writeCache(uid: string, groupId: string, db: unknown) {
   try {
     localStorage.setItem(CACHE_PREFIX + uid, JSON.stringify({ groupId, db, at: Date.now() }));
   } catch {
-    /* quota exceeded (large pictures) — the cache is only a speed-up */
-    try { localStorage.removeItem(CACHE_PREFIX + uid); } catch {}
+    /* storage full: keep the older copy rather than lose everything */
   }
+}
+type BootCache = { membership: Membership; profile: { name: string; email: string; avatarUrl: string | null } };
+function readBoot(uid: string): BootCache | null {
+  try {
+    const raw = localStorage.getItem(BOOT_PREFIX + uid);
+    return raw ? (JSON.parse(raw) as BootCache) : null;
+  } catch {
+    return null;
+  }
+}
+function writeBoot(uid: string, boot: BootCache) {
+  try { localStorage.setItem(BOOT_PREFIX + uid, JSON.stringify(boot)); } catch {}
+}
+/** The signed-in session as last saved on this device (used only when the
+ *  server can't be reached to refresh it). */
+function readStoredSession(): { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } } | null {
+  try {
+    const raw = localStorage.getItem("mealmate-auth");
+    const v = raw ? JSON.parse(raw) : null;
+    return v && v.user ? v : v && v.currentSession && v.currentSession.user ? v.currentSession : null;
+  } catch {
+    return null;
+  }
+}
+function isNetErr(err: unknown): boolean {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  if (!err) return false;
+  const e = err as { name?: string; message?: string };
+  return e.name === "TypeError" || e.name === "AuthRetryableFetchError" || /Failed to fetch|NetworkError|Load failed|fetch failed|Network request failed|ERR_INTERNET|ERR_NETWORK/i.test(String(e.message || err));
 }
 export function clearAllCaches() {
   try {
-    Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX)).forEach((k) => localStorage.removeItem(k));
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith(CACHE_PREFIX) || k.startsWith(BOOT_PREFIX))
+      .forEach((k) => localStorage.removeItem(k));
   } catch {}
 }
 
@@ -65,19 +101,47 @@ export default function AppHost() {
 
     (async () => {
       try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (!session) {
+        let session: Session | null = null;
+        let sessionErr: unknown = null;
+        try {
+          const res = await sb.auth.getSession();
+          session = res.data.session;
+          sessionErr = res.error;
+        } catch (e) {
+          sessionErr = e;
+        }
+        let user: User | null = session ? session.user : null;
+        let offlineBoot = false;
+        if (!user) {
+          // No internet to refresh the login? Carry on with the saved one.
+          const stored = readStoredSession();
+          if (stored && stored.user && readBoot(stored.user.id) && isNetErr(sessionErr)) {
+            user = stored.user as unknown as User;
+            offlineBoot = true;
+          }
+        }
+        if (!user) {
           router.replace("/login");
           return;
         }
-        const user = session.user;
+        const boot = readBoot(user.id);
 
         // Kick off code download while we talk to the server.
         const enginePromise = Promise.all([import("@/lib/engine/engine"), import("@/lib/engine/sync")]);
-        const profilePromise = sb.from("profiles").select("full_name,email,avatar_url").eq("id", user.id).maybeSingle();
+        const profilePromise = offlineBoot
+          ? Promise.resolve({ data: null })
+          : Promise.resolve(sb.from("profiles").select("full_name,email,avatar_url").eq("id", user.id).maybeSingle()).catch(() => ({ data: null }));
 
-        let membership: Membership | null = await getMembership(sb);
-        if (!membership) {
+        let membership: Membership | null = null;
+        try {
+          membership = offlineBoot && boot ? boot.membership : await getMembership(sb);
+        } catch (e) {
+          if (boot && isNetErr(e)) {
+            membership = boot.membership;
+            offlineBoot = true;
+          } else throw e;
+        }
+        if (!membership && !offlineBoot) {
           setBootLabel("Setting up your MealMate…");
           const res = await completePendingIntent(sb, user);
           if (res.done) membership = await getMembership(sb);
@@ -99,24 +163,47 @@ export default function AppHost() {
         setBootLabel("Loading " + membership.group_name + "…");
 
         const [[engineMod, syncMod], profileRes] = await Promise.all([enginePromise, profilePromise]);
-        const p = profileRes.data;
-        const profile = {
-          name: (p && p.full_name) || (user.user_metadata?.full_name as string) || (user.email || "").split("@")[0],
-          email: (p && p.email) || user.email || "",
-          avatarUrl: (p && p.avatar_url) || null,
-        };
+        const p = (profileRes as { data: { full_name?: string; email?: string; avatar_url?: string } | null }).data;
+        const profile = p
+          ? {
+              name: p.full_name || (user.user_metadata?.full_name as string) || (user.email || "").split("@")[0],
+              email: p.email || user.email || "",
+              avatarUrl: p.avatar_url || null,
+            }
+          : boot && boot.profile
+            ? boot.profile
+            : {
+                name: (user.user_metadata?.full_name as string) || (user.email || "").split("@")[0],
+                email: user.email || "",
+                avatarUrl: null,
+              };
+        if (!offlineBoot) writeBoot(user.id, { membership, profile });
 
         let current: Membership = membership;
         const groupId = current.group_id;
 
+        const uid = user.id;
+        let saveT: number | undefined;
+        // Keep this device's copy current (unsaved offline edits included).
+        const saveLocalNow = () => {
+          window.clearTimeout(saveT);
+          writeCache(uid, groupId, s.exportState());
+        };
+        const saveLocal = () => {
+          window.clearTimeout(saveT);
+          saveT = window.setTimeout(saveLocalNow, 250);
+        };
         const s = syncMod.createSync({
           supabase: sb,
           groupId,
           onRemoteChange: () => {
             engine?.refresh();
-            writeCache(user.id, groupId, s.db);
+            saveLocal();
           },
-          onStateChange: () => engine?.syncChanged(),
+          onStateChange: () => {
+            engine?.syncChanged();
+            saveLocal();
+          },
           onError: (err: unknown) => engine?.toast("Couldn't save: " + friendlyError(err), "error"),
           onActivity: () => engine?.activityChanged(),
         });
@@ -305,6 +392,7 @@ export default function AppHost() {
           inviteBaseUrl: siteOrigin(),
           persist: () => {
             s.persist();
+            saveLocal();
           },
           isFresh: () => s.isFresh(),
           syncState: () => s.state(),
@@ -317,12 +405,22 @@ export default function AppHost() {
         const cached = readCache(user.id, groupId);
         if (cached) {
           s.hydrate(cached);
+          if (navigator.onLine === false) s.markOffline();
           engine = engineMod.mountEngine(ctx) as EngineHandle;
           setPhase("ready");
         }
-        await s.load();
+        let loadedOnline = true;
+        try {
+          await s.load();
+        } catch (e) {
+          // No internet: keep working from this device's copy; edits are sent later.
+          if (cached && isNetErr(e)) {
+            loadedOnline = false;
+            s.markOffline();
+          } else throw e;
+        }
         if (disposed) return;
-        writeCache(user.id, groupId, s.db);
+        if (loadedOnline) saveLocalNow();
         if (engine) engine.refresh();
         else {
           engine = engineMod.mountEngine(ctx) as EngineHandle;
@@ -338,7 +436,7 @@ export default function AppHost() {
         // Catch up after the phone wakes up / tab regains focus.
         let lastRefresh = Date.now();
         const onVisible = () => {
-          if (document.visibilityState !== "visible") return;
+          if (document.visibilityState !== "visible") { saveLocalNow(); return; }
           if (Date.now() - lastRefresh < 5000) return;
           lastRefresh = Date.now();
           s.refreshAll();
@@ -346,7 +444,17 @@ export default function AppHost() {
         };
         document.addEventListener("visibilitychange", onVisible);
         window.addEventListener("focus", onVisible);
-        window.addEventListener("online", onVisible);
+        // Internet is back: send what was done offline, then fetch the latest.
+        const onOnline = () => {
+          lastRefresh = Date.now();
+          s.refreshAll();
+          refreshMembership();
+        };
+        const onOffline = () => s.markOffline();
+        window.addEventListener("online", onOnline);
+        window.addEventListener("offline", onOffline);
+        const onHide = () => saveLocalNow();
+        window.addEventListener("pagehide", onHide);
         const poll = window.setInterval(() => {
           if (document.visibilityState === "visible") {
             lastRefresh = Date.now();
@@ -355,7 +463,9 @@ export default function AppHost() {
           }
         }, 60000);
         const beforeUnload = (e: BeforeUnloadEvent) => {
-          if (s.hasPendingWrites()) {
+          saveLocalNow();
+          // offline edits are already kept on this device — no need to warn
+          if (s.hasPendingWrites() && navigator.onLine !== false) {
             s.flushNow();
             e.preventDefault();
             e.returnValue = "";
@@ -365,7 +475,9 @@ export default function AppHost() {
         cleanups.push(() => {
           document.removeEventListener("visibilitychange", onVisible);
           window.removeEventListener("focus", onVisible);
-          window.removeEventListener("online", onVisible);
+          window.removeEventListener("online", onOnline);
+          window.removeEventListener("offline", onOffline);
+          window.removeEventListener("pagehide", onHide);
           window.removeEventListener("beforeunload", beforeUnload);
           window.clearInterval(poll);
         });
@@ -379,7 +491,11 @@ export default function AppHost() {
         cleanups.push(() => authSub.subscription.unsubscribe());
       } catch (err) {
         if (disposed) return;
-        setError(friendlyError(err));
+        setError(
+          isNetErr(err)
+            ? "You're offline. Open MealMate once with internet on this device — after that it works offline too."
+            : friendlyError(err)
+        );
         setPhase("error");
       }
     })();

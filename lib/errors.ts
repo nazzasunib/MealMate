@@ -49,7 +49,7 @@ export function friendlyError(err: unknown): string {
   if (/jwt expired|refresh token|session.*(missing|expired)/i.test(msg)) return "Your session expired. Please log in again.";
   if (code === "42501" || /row-level security|permission denied/i.test(msg)) return "You don't have permission to do that.";
   if (/failed to fetch|networkerror|network request failed|load failed|fetch failed/i.test(msg) || (typeof navigator !== "undefined" && navigator.onLine === false))
-    return "Can't reach the server. Check your internet connection and try again.";
+    return "You're offline. This one needs internet — meals, money, expenses and the shopping list still work and will sync later.";
   if (code === "23505") return "That already exists.";
   if (code && /^(22|23)/.test(code)) return "Some of that information isn't valid. Please check and try again.";
   return "Something went wrong. Please try again." + (msg ? " (" + msg.slice(0, 140) + ")" : "");

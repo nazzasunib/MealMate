@@ -14,6 +14,14 @@ const nextConfig = {
         ],
       },
       {
+        // the offline service worker must always be re-checked, never cached
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
         source: "/fonts/:file*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
