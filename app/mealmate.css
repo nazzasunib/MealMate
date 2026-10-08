@@ -557,10 +557,10 @@ html.mm-dark #user-menu, html.mm-dark header [class*="bg-surface"]:not(header) {
 /* top bar: glassy navy instead of white */
 html.mm-dark header.sticky { background: rgba(7,22,54,.55) !important; border-color: rgba(255,255,255,.1) !important; }
 html.mm-dark header.sticky .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,.1); }
-/* stat cards: royal navy (a lighter blue than the page so they stand out), white text */
+/* stat cards: same dark royal-navy gradient as the quick-action cards, light edge, white text */
 html.mm-dark .stat-card-bg:not(.mm-invite-hero) {
-  background-image: linear-gradient(135deg, #1a3570 0%, #24448a 45%, #2d52a8 100%) !important; background-color: #24448a !important;
-  box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 14px 34px -14px rgba(0,0,0,.7) !important;
+  background-image: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 40%, var(--navy-600) 60%, var(--navy-900) 100%) !important; background-color: var(--navy-900) !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.3), 0 14px 34px -14px rgba(0,0,0,.7) !important;
 }
 /* card outline ring reads better light on navy */
 html.mm-dark .card-premium:not(.stat-card-bg) { outline-color: rgba(255,255,255,.18); }
