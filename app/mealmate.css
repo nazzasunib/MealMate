@@ -582,3 +582,25 @@ html.mm-dark header.sticky [data-action="toggle-usermenu"] > :first-child { box-
 /* offline: say so in words on phones too ("Offline · saved"), not only a dot */
 .mm-sync-badge[data-state="offline"] [data-sync-label] { display: inline !important; }
 .mm-sync-badge[data-state="offline"] { padding: 0 .6rem !important; white-space: nowrap; }
+
+/* ---- quick-action cards: royal navy with white text (Light and Dark) ---- */
+main .quick-action-pill {
+  --foreground: #fff;
+  background-color: var(--navy-900) !important;
+  background-image: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 40%, var(--navy-600) 60%, var(--navy-900) 100%) !important;
+  border-color: rgba(255,255,255,.12) !important; color: #fff !important; outline: none !important;
+}
+main .quick-action-pill svg, html.mm-app .mm-quick-actions .quick-action-pill svg { color: #fff !important; stroke: currentColor; }
+.quick-action-pill::before { background-image: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), #3a62c0 0%, #2d52a8 55%, #24448a 100%); }
+html.mm-dark main .quick-action-pill { border-color: rgba(255,255,255,.3) !important; }
+
+/* ---- cards never jump up or grow when tapped on a phone / the app ---- */
+@media (hover: none), (pointer: coarse) {
+  .card-premium.card-premium--interactive:hover { transform: none; box-shadow: none; }
+  .card-premium.card-premium--interactive:hover .stat-card-icon { transform: none; }
+  .card-premium.card-premium--interactive:active { transform: scale(.985); transition: transform .12s ease-out; }
+}
+html.mm-app .card-premium.card-premium--interactive:hover { transform: none; box-shadow: none; }
+html.mm-app .card-premium.card-premium--interactive:hover .stat-card-icon { transform: none; }
+html.mm-app .card-premium.card-premium--interactive:active { transform: scale(.985); transition: transform .12s ease-out; }
+.mm-greet-sub { align-content: flex-start; align-items: flex-start !important; }
