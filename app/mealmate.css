@@ -478,24 +478,28 @@ main.app-grid-bg { background-image: none !important; animation: none !important
    a real problem. ---- */
 .mm-sync-badge[data-state="idle"], .mm-sync-badge[data-state="saving"] { display: none !important; }
 
-/* ---- Light / Dark / System switch (sits where "Synced" used to be) ---- */
-.mm-theme-seg {
-  position: relative; flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 2px;
-  border-radius: 999px; background: var(--gray-100); border: 1px solid var(--border);
+/* ---- light / dark switch (sits where "Synced" used to be) ---- */
+.mm-theme-toggle {
+  position: relative; flex: none; width: 3.25rem; height: 1.85rem; border-radius: 999px; cursor: pointer;
+  background: var(--gray-100); border: 1px solid var(--border);
+  transition: background-color .35s ease, border-color .35s ease;
 }
-.mm-theme-opt {
-  width: 1.65rem; height: 1.65rem; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
-  background: transparent; border: 0; color: var(--muted); transition: background-color .3s ease, color .3s ease, transform .3s ease;
+.mm-theme-toggle:hover { border-color: var(--navy-700); }
+.mm-theme-toggle:focus-visible { outline: 2px solid var(--navy-700); outline-offset: 2px; }
+.mm-theme-knob {
+  position: absolute; top: 2px; left: 2px; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  display: grid; place-items: center; background: #fff; color: #f59e0b;
+  box-shadow: 0 1px 3px rgba(16,24,40,.25);
+  transition: transform .4s cubic-bezier(.34,1.4,.64,1), background-color .35s ease, color .35s ease;
 }
-.mm-theme-opt svg { width: .95rem; height: .95rem; }
-.mm-theme-opt:hover { color: var(--foreground); }
-.mm-theme-opt:focus-visible { outline: 2px solid var(--navy-600); outline-offset: 1px; }
-.mm-theme-opt[aria-checked="true"] { background: var(--navy-800); color: #fff; box-shadow: 0 1px 4px rgba(16,24,40,.3); }
-html.mm-dark .mm-theme-seg { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.22); }
-html.mm-dark .mm-theme-opt { color: #c6d0ee; }
-html.mm-dark .mm-theme-opt[aria-checked="true"] { background: #fff; color: var(--navy-900); }
+.mm-theme-ico { position: absolute; width: .95rem; height: .95rem; transition: opacity .3s ease, transform .4s ease; }
+.mm-theme-ico--moon { opacity: 0; transform: rotate(-90deg) scale(.6); }
+html.mm-dark .mm-theme-toggle { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22); }
+html.mm-dark .mm-theme-knob { transform: translateX(1.4rem); background: #f6f7fb; color: var(--navy-900); }
+html.mm-dark .mm-theme-ico--sun { opacity: 0; transform: rotate(90deg) scale(.6); }
+html.mm-dark .mm-theme-ico--moon { opacity: 1; transform: none; }
 /* smooth colour change only while switching (never slows normal paints) */
-html.mm-theme-switching, html.mm-theme-switching *:not(.mm-theme-opt) {
+html.mm-theme-switching, html.mm-theme-switching *:not(.mm-theme-knob):not(.mm-theme-ico) {
   transition: background-color .35s ease, color .35s ease, border-color .35s ease !important;
 }
 
@@ -525,86 +529,60 @@ html.mm-theme-switching, html.mm-theme-switching *:not(.mm-theme-opt) {
 }
 
 /* ======================================================================
-   THEMES — Light / Dark / System (System follows the device; the script
-   in app/layout.tsx and setThemeMode() in engine.js turn it into the
-   html.mm-dark class).
-   In BOTH modes every card/panel is royal navy with white text:
-     Light: white page   + navy cards
-     Dark : deep navy page + lighter royal-navy cards (clearly different)
+   DARK MODE (html.mm-dark) — the two main colours swap places:
+   the page takes the navy stat-card colour, and the stat cards take the
+   light page colour. White panels (tables, forms, menus, pop-ups) stay
+   light so everything inside them reads exactly as before.
    ====================================================================== */
-html { --mm-card: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 40%, var(--navy-600) 60%, var(--navy-900) 100%); }
-html:not(.mm-dark) body, html:not(.mm-dark) main.app-grid-bg, html:not(.mm-dark) .mm-auth-main { background-color: #fff !important; background-image: none !important; }
-
-html.mm-dark { color-scheme: dark; --mm-night: #050d24; --mm-card: linear-gradient(135deg, #1a3570 0%, #24448a 45%, #2d52a8 100%); }
-html.mm-dark body, html.mm-dark main.app-grid-bg, html.mm-dark .mm-auth-main {
+html.mm-dark { color-scheme: dark; --mm-night: #0b1f4b; }
+html.mm-dark body,
+html.mm-dark main.app-grid-bg,
+html.mm-dark .mm-auth-main {
   background-color: var(--mm-night) !important;
-  background-image: linear-gradient(160deg, #030a1c 0%, #071636 55%, #0a1e4a 100%) !important;
-  background-size: auto !important; background-attachment: fixed !important;
+  background-image: linear-gradient(135deg, var(--navy-950, #071636) 0%, var(--navy-800) 40%, var(--navy-600, #1d4ed8) 75%, var(--navy-900) 100%) !important;
+  background-size: auto !important;
+  background-attachment: fixed !important;
 }
 html.mm-dark .mm-auth-main::before { display: none; }
-/* text sitting straight on the dark page */
+/* text sitting straight on the navy page */
 html.mm-dark main, html.mm-dark .mm-auth-main, html.mm-dark header.sticky {
   --foreground: #f1f4ff; --muted: #b4bfdf; --border: rgba(255,255,255,.14); --gray-100: rgba(255,255,255,.08);
 }
-html.mm-dark header.sticky { background: rgba(5,13,36,.7) !important; border-color: rgba(255,255,255,.1) !important; }
+/* light panels keep the normal light-theme colours inside them */
+html.mm-dark main .bg-surface, html.mm-dark main [class*="bg-surface"],
+html.mm-dark main .stat-card-bg:not(.mm-invite-hero), html.mm-dark main .fixed,
+html.mm-dark .mm-auth-main .bg-surface, html.mm-dark .mm-auth-main [class*="bg-surface"],
+html.mm-dark main .btn-secondary, html.mm-dark main .mm-btn--secondary, html.mm-dark main .mm-req-card,
+html.mm-dark main .mm-notif-panel, html.mm-dark .mm-notif-panel, html.mm-dark main .mm-req-tabs,
+html.mm-dark main input, html.mm-dark main select, html.mm-dark main textarea,
+html.mm-dark #user-menu, html.mm-dark header [class*="bg-surface"]:not(header) {
+  --foreground: #101828; --muted: #667085; --border: #e4e7ec; --gray-100: #f2f4f7;
+}
+/* top bar: glassy navy instead of white */
+html.mm-dark header.sticky { background: rgba(7,22,54,.55) !important; border-color: rgba(255,255,255,.1) !important; }
 html.mm-dark header.sticky .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,.1); }
-html.mm-dark header.sticky [data-action="toggle-usermenu"] > :first-child { box-shadow: 0 0 0 2px rgba(255,255,255,.35); border-radius: 999px; }
-
-/* every card / panel: navy + white text (variables flip so all the
-   text, icons and borders inside switch to light automatically) */
-main .bg-surface, main [class*="bg-surface"], .mm-auth-main .bg-surface, .mm-auth-main [class*="bg-surface"],
-main .btn-secondary, main .mm-btn--secondary, main .mm-req-card, main .quick-action-pill,
-.mm-notif-panel, main .mm-req-tabs, #user-menu, main .stat-card-bg {
-  --foreground: #fff; --muted: #c6d0ee; --gray-500: #c6d0ee; --border: rgba(255,255,255,.2); --gray-100: rgba(255,255,255,.1);
-  color: #fff;
+/* stat cards: light card, navy text */
+html.mm-dark .stat-card-bg:not(.mm-invite-hero) {
+  background-image: none !important; background-color: #f6f7fb !important;
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.45) !important;
 }
-main .bg-surface, main [class*="bg-surface"], .mm-auth-main .bg-surface, .mm-auth-main [class*="bg-surface"],
-main .btn-secondary, main .mm-btn--secondary, main .mm-req-card, main .quick-action-pill,
-.mm-notif-panel, main .mm-req-tabs, #user-menu {
-  background-color: var(--navy-900) !important; background-image: var(--mm-card) !important;
-}
-/* panels inside panels: flat, slightly lighter, so they do not repeat the gradient */
-main .bg-surface .bg-surface, main [class*="bg-surface"] [class*="bg-surface"], main .mm-req-card .bg-surface {
-  background-image: none !important; background-color: rgba(255,255,255,.07) !important;
-}
-main .stat-card-bg:not(.mm-invite-hero) { background-image: var(--mm-card) !important; background-color: var(--navy-900) !important; }
-main .bg-surface svg, main .quick-action-pill svg, .mm-notif-panel svg, #user-menu svg { color: inherit; }
-html.mm-app .mm-quick-actions .quick-action-pill svg { color: #fff; }
-/* quick-action hover fill: a lighter navy sweep so the hover still shows */
-.quick-action-pill::before { background-image: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), #3a62c0 0%, #2d52a8 55%, #24448a 100%); }
-.quick-action-pill:hover, .quick-action-pill:focus-visible { border-color: rgba(255,255,255,.55); }
-/* form fields inside cards */
-main input, main select, main textarea, .mm-auth-main input, .mm-auth-main select, .mm-auth-main textarea, #user-menu input {
-  --foreground: #fff; --muted: #c6d0ee; --border: rgba(255,255,255,.28);
-  background-color: rgba(255,255,255,.1) !important; background-image: none; color: #fff !important; caret-color: #fff;
-}
-main input::placeholder, main textarea::placeholder, .mm-auth-main input::placeholder { color: rgba(255,255,255,.55) !important; }
-main select option, .mm-auth-main select option { background: #12295c; color: #fff; }
-main input[type="date"], main input[type="month"], main input[type="time"] { color-scheme: dark; }
-/* tables inside cards */
-main table { color: #fff; }
-main tbody tr:hover { background-color: rgba(255,255,255,.07); }
-/* white-page text in Light mode keeps the normal dark colours (variables untouched there) */
-/* pop-up cards: keep the dimmed backdrop, only the box is navy */
-html.mm-dark main .card-premium:not(.stat-card-bg), html.mm-dark main .bg-surface { outline-color: rgba(255,255,255,.2); box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 14px 34px -16px rgba(0,0,0,.7); }
-html.mm-dark main .stat-card-bg:not(.mm-invite-hero) { box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 14px 34px -14px rgba(0,0,0,.7) !important; }
+html.mm-dark .stat-card-bg:not(.mm-invite-hero)::after { background: radial-gradient(420px circle at 80% 0%, rgba(29,78,216,.10), transparent 45%); }
+html.mm-dark .stat-card-bg:not(.mm-invite-hero) p.text-white { color: var(--navy-900) !important; }
+html.mm-dark .stat-card-bg:not(.mm-invite-hero) .text-white\/70 { color: #475467 !important; }
+html.mm-dark .stat-card-bg:not(.mm-invite-hero) .text-white\/50 { color: #667085 !important; }
+/* card outline ring reads better light on navy */
+html.mm-dark .card-premium:not(.stat-card-bg) { outline-color: rgba(255,255,255,.18); }
+/* app bottom bar: lift it off the navy page */
 html.mm-dark.mm-app nav[class*="mm-tab"], html.mm-dark .mm-tabbar { box-shadow: 0 -1px 0 rgba(255,255,255,.12), 0 -12px 30px -10px rgba(0,0,0,.5); }
+
+/* the invite banner on Team & Invites stays navy (it is a banner, not a
+   stat card) with a soft light edge so it still stands out */
 html.mm-dark .mm-invite-hero { box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 18px 40px -16px rgba(0,0,0,.6) !important; }
+/* navy buttons sitting on the navy page get a light edge */
 html.mm-dark main .btn-primary { box-shadow: 0 0 0 1px rgba(255,255,255,.28), 0 8px 20px -8px rgba(0,0,0,.6); }
+/* avatar in the dark top bar gets a light ring so a navy initials circle stays visible */
+html.mm-dark header.sticky [data-action="toggle-usermenu"] > :first-child { box-shadow: 0 0 0 2px rgba(255,255,255,.35); border-radius: 999px; }
 
 /* offline: say so in words on phones too ("Offline · saved"), not only a dot */
 .mm-sync-badge[data-state="offline"] [data-sync-label] { display: inline !important; }
 .mm-sync-badge[data-state="offline"] { padding: 0 .6rem !important; white-space: nowrap; }
-
-/* icons inside the navy quick-action cards are white */
-main .quick-action-pill svg, html.mm-app .mm-quick-actions .quick-action-pill svg { color: #fff !important; stroke: currentColor; }
-
-/* hard-coded navy shades used inside cards flip to light-on-navy */
-main .bg-surface .text-navy-900, main [class*="bg-surface"] .text-navy-900, .mm-notif-panel .text-navy-900, #user-menu .text-navy-900,
-main .mm-req-card .text-navy-900, html.mm-dark main .text-navy-900 { color: #fff !important; }
-main .bg-surface .text-navy-900\/70 { color: rgba(255,255,255,.75) !important; }
-main .bg-surface .bg-navy-50, main .bg-surface .bg-navy-50\/50, main .bg-surface .bg-navy-50\/60,
-main .mm-req-card .bg-navy-50, .mm-notif-panel .bg-navy-50, #user-menu .bg-navy-50 { background-color: rgba(255,255,255,.1) !important; }
-main .bg-surface .bg-navy-100, .mm-notif-panel .bg-navy-100 { background-color: rgba(255,255,255,.16) !important; }
-/* quick-action cards: no extra outline ring, the card itself is the edge */
-main .quick-action-pill { outline: none !important; }

@@ -82,7 +82,7 @@ Roles (table `role_permissions`): ADMIN = everything; MODERATOR = reports.view, 
   - Data: `AppHost` keeps `mealmate-cache:<uid>` = `sync.exportState()` (the data **plus `__base`, the last server copy**) and `mealmate-boot:<uid>` (membership + profile). Offline boot uses the saved session from `mealmate-auth` when the token can't be refreshed.
   - `sync.js`: unsaved edits = diff between data and base, so edits made offline survive closing the app. `load()` rebases unsaved edits on top of fresh server rows and then saves them (last write wins). `flush()` skips the network while `navigator.onLine === false`; the `online` event sends everything.
   - Needs internet (shows "You're offline…"): meal requests and approvals, Team & Invites, join/approve, profile/password, backup import, notifications list.
-- **Theme:** Light / Dark / System switch (3 icons) in the top bar. `mm-theme` in localStorage = light|dark|system (default light); the inline script in `app/layout.tsx` applies it before paint; `setThemeMode()` in engine.js follows the device when System. In BOTH modes every card/panel is royal navy with white text (variables flip inside panels); Light = white page, Dark = deep navy page + lighter navy cards. CSS = "THEMES" block at the end of `app/mealmate.css`. The Synced badge is hidden unless offline / not saved.
+- **Theme:** light/dark switch in the top bar (`mm-theme` in localStorage, applied before paint). Dark = navy page + light stat cards (`html.mm-dark` rules at the end of `app/mealmate.css`). The Synced badge is hidden unless offline / not saved.
 
 ## 6. How to make a change and ship it (the usual flow)
 
