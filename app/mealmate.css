@@ -546,7 +546,7 @@ html.mm-dark main, html.mm-dark .mm-auth-main, html.mm-dark header.sticky {
 }
 /* light panels keep the normal light-theme colours inside them */
 html.mm-dark main .bg-surface, html.mm-dark main [class*="bg-surface"],
-html.mm-dark main .stat-card-bg:not(.mm-invite-hero), html.mm-dark main .fixed,
+html.mm-dark main .fixed,
 html.mm-dark .mm-auth-main .bg-surface, html.mm-dark .mm-auth-main [class*="bg-surface"],
 html.mm-dark main .btn-secondary, html.mm-dark main .mm-btn--secondary, html.mm-dark main .mm-req-card,
 html.mm-dark main .mm-notif-panel, html.mm-dark .mm-notif-panel, html.mm-dark main .mm-req-tabs,
@@ -557,15 +557,11 @@ html.mm-dark #user-menu, html.mm-dark header [class*="bg-surface"]:not(header) {
 /* top bar: glassy navy instead of white */
 html.mm-dark header.sticky { background: rgba(7,22,54,.55) !important; border-color: rgba(255,255,255,.1) !important; }
 html.mm-dark header.sticky .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,.1); }
-/* stat cards: light card, navy text */
+/* stat cards: royal navy (a lighter blue than the page so they stand out), white text */
 html.mm-dark .stat-card-bg:not(.mm-invite-hero) {
-  background-image: none !important; background-color: #f6f7fb !important;
-  box-shadow: 0 10px 30px -12px rgba(0,0,0,.45) !important;
+  background-image: linear-gradient(135deg, #1a3570 0%, #24448a 45%, #2d52a8 100%) !important; background-color: #24448a !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 14px 34px -14px rgba(0,0,0,.7) !important;
 }
-html.mm-dark .stat-card-bg:not(.mm-invite-hero)::after { background: radial-gradient(420px circle at 80% 0%, rgba(29,78,216,.10), transparent 45%); }
-html.mm-dark .stat-card-bg:not(.mm-invite-hero) p.text-white { color: var(--navy-900) !important; }
-html.mm-dark .stat-card-bg:not(.mm-invite-hero) .text-white\/70 { color: #475467 !important; }
-html.mm-dark .stat-card-bg:not(.mm-invite-hero) .text-white\/50 { color: #667085 !important; }
 /* card outline ring reads better light on navy */
 html.mm-dark .card-premium:not(.stat-card-bg) { outline-color: rgba(255,255,255,.18); }
 /* app bottom bar: lift it off the navy page */
@@ -604,3 +600,14 @@ html.mm-app .card-premium.card-premium--interactive:hover { transform: none; box
 html.mm-app .card-premium.card-premium--interactive:hover .stat-card-icon { transform: none; }
 html.mm-app .card-premium.card-premium--interactive:active { transform: scale(.985); transition: transform .12s ease-out; }
 .mm-greet-sub { align-content: flex-start; align-items: flex-start !important; }
+
+/* the date range bar (Expenses) stays inside the screen on phones */
+.mm-range { max-width: 100%; min-width: 0; }
+@media (max-width: 640px) {
+  .mm-range { width: 100%; }
+  .mm-range input[type="date"] { flex: 1 1 0; min-width: 0; width: 100%; }
+}
+html.mm-app .mm-range { width: 100%; }
+html.mm-app .mm-range input[type="date"] { flex: 1 1 0; min-width: 0; width: 100%; }
+/* grey icon badges on the navy stat cards (dark mode) */
+html.mm-dark .stat-card-bg .stat-card-icon.bg-gray-100 { background-color: rgba(255,255,255,.18) !important; color: #fff !important; }
