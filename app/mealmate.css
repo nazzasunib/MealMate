@@ -611,3 +611,10 @@ html.mm-app .mm-range { width: 100%; }
 html.mm-app .mm-range input[type="date"] { flex: 1 1 0; min-width: 0; width: 100%; }
 /* grey icon badges on the navy stat cards (dark mode) */
 html.mm-dark .stat-card-bg .stat-card-icon.bg-gray-100 { background-color: rgba(255,255,255,.18) !important; color: #fff !important; }
+
+/* notifications: each line opens the page with its history */
+.mm-notif-item.is-link { cursor: pointer; transition: background-color .15s ease; }
+.mm-notif-item.is-link:hover { background: var(--gray-100); }
+.mm-notif-item.is-link.is-unread:hover { background: var(--navy-100, #e3e9f7); }
+.mm-notif-item.is-link:focus-visible { outline: 2px solid var(--navy-600); outline-offset: -2px; }
+html.mm-dark .mm-notif-item.is-link.is-unread:hover { background: #dfe6f6; }
