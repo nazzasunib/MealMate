@@ -42,7 +42,8 @@ A shared mess (shared-house) manager for Bangladesh: daily meals (Breakfast/Lunc
 | `app/download/page.tsx` | Public APK download page (Android steps, iPhone "Add to Home Screen" steps, in-app-browser detection). |
 | `app/manifest.ts` | PWA manifest (iPhone home-screen install). |
 | `app/login, create, join, start, forgot, reset` | Auth/onboarding pages. `/dashboard` redirects to `/app`. |
-| `supabase/migrations/0001…0004` | Database (run in order in Supabase SQL Editor). |
+| `supabase/migrations/0001…0005` | Database (run in order in Supabase SQL Editor). |
+| `supabase/functions/push/index.ts` | Edge Function that sends phone notifications (see §5). Excluded from the Next.js type check (tsconfig). |
 | `supabase/tests/*.sql` | SQL tests (run on a local Postgres after `stub_supabase.sql` + migrations). |
 | `android/` | Capacitor Android project. `android/app/src/main/java/com/niduslab/mealmate/DownloaderPlugin.java` = native file saving. |
 | `.github/workflows/build-apk.yml` | Builds the APK on GitHub Actions and publishes release `latest-apk`. |
@@ -61,6 +62,7 @@ Migrations — the **owner runs them himself** in Supabase → SQL Editor (paste
 | `0002_super_admin.sql` | One Super Admin per mess (`group_members.is_super_admin`): can't be removed/demoted, only they manage Admins, can hand the title to someone else (`transfer_super_admin`). |
 | `0003_delete_roster_member.sql` | `delete_roster_member` (Admin chooses keep/delete money records; Admins only). |
 | `0004_activity_and_requests.sql` | `activity_log` (notifications; author stamped by DB trigger; 60-day retention via `list_activity`), `meal_requests` + `create_meal_request / cancel_meal_request / decide_meal_request` (approve applies meal-off or adds guest meal). **Already run on production (1 Oct 2026).** |
+| `0005_push_notifications.sql` | `push_tokens` (phone ↔ account + mess; no direct access) + `save_push_token / delete_push_token`, `activity_log.pushed_at` (sent-once marker for the push function). Test: `supabase/tests/test_push.sql`. |
 
 Roles (table `role_permissions`): ADMIN = everything; MODERATOR = reports.view, members.view, members.manage, meals.edit, expenses.create, shopping.manage, stock.edit; MEMBER = reports.view. Super Admin is an ADMIN with the flag.
 
@@ -74,6 +76,7 @@ Roles (table `role_permissions`): ADMIN = everything; MODERATOR = reports.view, 
 - **PDF Bengali:** jsPDF can't shape Bengali, so Bengali names are drawn on a canvas (`bengaliPdfImage`) and placed as images. Money in PDFs is written "Tk" (no ৳ glyph in Helvetica).
 - **Profile photos:** member avatars use the linked account's profile photo (`memberPic()` → profiles.avatar_url via `ctx.api.listProfilePictures`), then the Admin-set member picture, then initials.
 - **Notifications (bell):** lines written after each save by `sync.js` (`describeChanges`, deduped for 3 min) and by request RPCs. "Mark all as read" button (read state per device in localStorage). Exact time shown.
+- **Phone notifications (Android, Oct 2026):** `@capacitor/push-notifications` + Firebase Cloud Messaging (free). App: `setupPush()` in engine.js asks permission, saves the token (`ctx.api.savePushToken` → `save_push_token`), tap opens `data.route`; sign-out deletes the token. Server: Edge Function `supabase/functions/push` (deployed from the Supabase dashboard editor, secret `FCM_SERVICE_ACCOUNT` = Firebase service-account JSON) called by a Database Webhook on INSERT into `activity_log`; it claims the row (`pushed_at`), then sends only: meal off, guest meal added/edited/removed, money added, money/expense edited or deleted, meal requests (new → Admins/Moderators, approved → everyone, rejected → requester). Everyone else in the mess gets it except the person who did it. Everything else stays in the bell only. Needs `android/app/google-services.json` (Firebase Android app `com.niduslab.mealmate`) for the APK build; status-bar icon `res/drawable/ic_stat_mealmate.xml`, channel `mealmate`.
 - **Meal requests:** members request Meal Off (date/range + meals) or Guest Meal; Admin/Moderator approve/reject; exact "Requested on …" time + "Same-day request" tag.
 - **Dashboard (website only):** equal-height stat cards, wider gap between quick-action pills.
 - Bengali font: Noto Sans Bengali bundled; `--font-sans` includes it.

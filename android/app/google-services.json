@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1067474901713",
+    "project_id": "mealmate-c3342",
+    "storage_bucket": "mealmate-c3342.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1067474901713:android:2f753a1d515235537943f0",
+        "android_client_info": {
+          "package_name": "com.niduslab.mealmate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCgs1kzi7PXQRKTaVFdXZufdarf2FcN-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

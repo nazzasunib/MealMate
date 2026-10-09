@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@capacitor/push-notifications": "^8.1.3",
     "@supabase/supabase-js": "^2.117.1",
     "jspdf": "^2.5.2",
     "next": "15.5.26",

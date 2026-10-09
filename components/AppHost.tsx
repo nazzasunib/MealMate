@@ -212,6 +212,11 @@ export default function AppHost() {
         const api = {
           signOut: async () => {
             try { await s.flushNow(); } catch {}
+            // stop phone notifications for this account on this phone
+            try {
+              const tok = localStorage.getItem("mm-push-token");
+              if (tok) { await sb.rpc("delete_push_token", { p_token: tok }); localStorage.removeItem("mm-push-token"); }
+            } catch {}
             clearAllCaches();
             await sb.auth.signOut();
             window.location.replace("/login");
@@ -229,6 +234,11 @@ export default function AppHost() {
           // Profile photos of the people linked to member rows (profiles RLS lets
           // group-mates read each other's profile), so a member's own uploaded
           // photo shows everywhere instead of their initials.
+          // phone notifications: remember which phone belongs to this account + mess
+          savePushToken: async (token: string, platform: string) => {
+            const { error } = await sb.rpc("save_push_token", { p_group: groupId, p_token: token, p_platform: platform });
+            if (error) throw error;
+          },
           listProfilePictures: async (ids: string[]) => {
             if (!ids.length) return [];
             const { data, error } = await sb.from("profiles").select("id,avatar_url").in("id", ids);
