@@ -27,6 +27,9 @@ const RPC_MESSAGES: Record<string, string> = {
   ALREADY_DECIDED: "This request was already handled.",
   MEMBER_GONE: "That member is no longer in this MealMate.",
   NOT_FOUND: "That request no longer exists.",
+  NO_MEMBERS: "Pick at least one member for the shopping list.",
+  TOO_FAR: "Pick a close date within the next 60 days.",
+  TITLE_REQUIRED: "Write a title for the notice.",
 };
 
 export function friendlyError(err: unknown): string {

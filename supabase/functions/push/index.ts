@@ -5,7 +5,9 @@
 //   • meal off (direct change, or a meal-off request)
 //   • guest meals (added / edited / deleted, or a guest-meal request)
 //   • money added (deposit)
-//   • edits / deletes of money: deposits and expenses
+//   • expenses added, edited or deleted; deposits edited or deleted
+//   • the shopping list assigned to you (only the assigned members)
+//   • notices posted or updated
 // Everything else stays in the app's bell only.
 //
 // Who gets it: everyone in the mess except the person who did it.
@@ -34,7 +36,7 @@ type Row = {
   created_at: string;
   pushed_at: string | null;
 };
-type Plan = { title: string; route: string; audience: "all" | "managers" | "target" };
+type Plan = { title: string; route: string; audience: "all" | "managers" | "target" | "shoppers" };
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, idle_timeout: 20 });
 
@@ -63,8 +65,16 @@ function plan(r: Row): Plan | null {
       if (r.action === "deleted") return { title: "Money deleted", route: "money", audience: "all" };
       return null;
     case "expense":
+      if (r.action === "added") return { title: "Expense added", route: "expenses", audience: "all" };
       if (r.action === "updated") return { title: "Expense edited", route: "expenses", audience: "all" };
       if (r.action === "deleted") return { title: "Expense deleted", route: "expenses", audience: "all" };
+      return null;
+    case "shopping":
+      // only "the list was assigned to you" — single item changes stay quiet
+      return r.action === "assigned" ? { title: "Shopping list for you", route: "shopping-list", audience: "shoppers" } : null;
+    case "notice":
+      if (r.action === "posted") return { title: "New notice", route: "notices", audience: "all" };
+      if (r.action === "updated") return { title: "Notice updated", route: "notices", audience: "all" };
       return null;
   }
   return null;
@@ -124,6 +134,15 @@ Deno.serve(async (req) => {
       select user_id::text, role from public.group_members where group_id = ${row.group_id} and status = 'ACTIVE'`;
     if (p.audience === "managers") members = members.filter((m) => m.role === "ADMIN" || m.role === "MODERATOR");
     if (p.audience === "target") members = members.filter((m) => m.user_id === row.target_user);
+    if (p.audience === "shoppers") {
+      // the members the shopping list is assigned to (their linked accounts)
+      const shoppers = await sql<{ user_id: string }[]>`
+        select m.user_id::text from public.shopping_plans sp
+          join public.members m on m.group_id = sp.group_id and m.id = any(sp.member_ids)
+         where sp.group_id = ${row.group_id} and m.user_id is not null`;
+      const ids = new Set(shoppers.map((x) => x.user_id));
+      members = members.filter((m) => ids.has(m.user_id));
+    }
     const users = members.map((m) => m.user_id).filter((u) => u && u !== String(row.actor_id));
     if (!users.length) return new Response("nobody to tell", { status: 200 });
 

@@ -330,6 +330,54 @@ export default function AppHost() {
             const { error } = await sb.from("activity_log").insert({ group_id: groupId, kind, action, summary: summary.slice(0, 400) });
             if (!error) s.broadcastEvent("activity");
           },
+          // ---- shopping list assignment (who goes to the bazar, until when) ----
+          getShoppingPlan: async () => {
+            const { data, error } = await sb.from("shopping_plans").select("*").eq("group_id", groupId).maybeSingle();
+            if (error) throw error;
+            return data || null;
+          },
+          setShoppingPlan: async (memberIds: string[], closeDate: string, note: string) => {
+            const { error } = await sb.rpc("set_shopping_plan", { p_group: groupId, p_member_ids: memberIds, p_close_date: closeDate, p_note: note || null });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          clearShoppingPlan: async () => {
+            const { error } = await sb.rpc("clear_shopping_plan", { p_group: groupId });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          // the day after the close date the list is cleared on the server; fetch the empty list then
+          sweepShopping: async () => {
+            const { data, error } = await sb.rpc("sweep_shopping", { p_group: groupId });
+            if (error) throw error;
+            if (data) {
+              s.refreshAll();
+              s.broadcastEvent("changed", { tables: ["shopping_items"] });
+              s.broadcastEvent("activity");
+            }
+            return !!data;
+          },
+          // ---- notices ----
+          listNotices: async () => {
+            const { data, error } = await sb.from("notices").select("*").eq("group_id", groupId).order("created_at", { ascending: false }).limit(100);
+            if (error) throw error;
+            return data || [];
+          },
+          createNotice: async (title: string, body: string) => {
+            const { error } = await sb.rpc("create_notice", { p_group: groupId, p_title: title, p_body: body });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          updateNotice: async (id: string, title: string, body: string) => {
+            const { error } = await sb.rpc("update_notice", { p_id: id, p_title: title, p_body: body });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          deleteNotice: async (id: string) => {
+            const { error } = await sb.rpc("delete_notice", { p_id: id });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+          },
           listRequests: async () => {
             const { data, error } = await sb.from("meal_requests").select("*").eq("group_id", groupId).order("created_at", { ascending: false }).limit(200);
             if (error) throw error;
