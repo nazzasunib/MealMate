@@ -15,7 +15,12 @@
 //
 // Secrets (Supabase → Edge Functions → Secrets):
 //   FCM_SERVICE_ACCOUNT = the whole Firebase service-account JSON
-// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
+// SUPABASE_DB_URL is provided by Supabase (direct database connection, so
+// this works with both the old and the new Supabase API keys).
+// Deploy with "Verify JWT" OFF: the function trusts nothing from the caller,
+// it re-reads the row from the database and sends each line only once.
+
+import postgres from "npm:postgres@3.4.5";
 
 type Row = {
   id: number;
@@ -31,8 +36,7 @@ type Row = {
 };
 type Plan = { title: string; route: string; audience: "all" | "managers" | "target" };
 
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, idle_timeout: 20 });
 
 function plan(r: Row): Plan | null {
   const s = r.summary || "";
@@ -64,16 +68,6 @@ function plan(r: Row): Plan | null {
       return null;
   }
   return null;
-}
-
-async function rest(path: string, init: RequestInit = {}) {
-  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    ...init,
-    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, "Content-Type": "application/json", ...(init.headers || {}) },
-  });
-  if (!res.ok) throw new Error(`${path}: ${res.status} ${await res.text()}`);
-  const t = await res.text();
-  return t ? JSON.parse(t) : null;
 }
 
 // ---- Google sign-in for FCM (service account -> short-lived access token) ----
@@ -115,11 +109,10 @@ Deno.serve(async (req) => {
 
     // Never trust the caller's copy: claim the real row once (pushed_at is
     // null -> now). A second call for the same line gets nothing back.
-    const claimed: Row[] = await rest(`activity_log?id=eq.${id}&pushed_at=is.null&created_at=gte.${encodeURIComponent(new Date(Date.now() - 10 * 60 * 1000).toISOString())}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ pushed_at: new Date().toISOString() }),
-    });
+    const claimed = await sql<Row[]>`
+      update public.activity_log set pushed_at = now()
+       where id = ${id} and pushed_at is null and created_at > now() - interval '10 minutes'
+      returning id, group_id, actor_id, actor_name, kind, action, summary, target_user, created_at, pushed_at`;
     const row = claimed && claimed[0];
     if (!row) return new Response("already handled", { status: 200 });
 
@@ -127,17 +120,15 @@ Deno.serve(async (req) => {
     if (!p) return new Response("bell only", { status: 200 });
 
     // who should get it
-    let members: { user_id: string; role: string }[] = await rest(
-      `group_members?group_id=eq.${row.group_id}&status=eq.ACTIVE&select=user_id,role`,
-    );
+    let members = await sql<{ user_id: string; role: string }[]>`
+      select user_id::text, role from public.group_members where group_id = ${row.group_id} and status = 'ACTIVE'`;
     if (p.audience === "managers") members = members.filter((m) => m.role === "ADMIN" || m.role === "MODERATOR");
     if (p.audience === "target") members = members.filter((m) => m.user_id === row.target_user);
-    const users = members.map((m) => m.user_id).filter((u) => u && u !== row.actor_id);
+    const users = members.map((m) => m.user_id).filter((u) => u && u !== String(row.actor_id));
     if (!users.length) return new Response("nobody to tell", { status: 200 });
 
-    const tokens: { token: string }[] = await rest(
-      `push_tokens?group_id=eq.${row.group_id}&user_id=in.(${users.join(",")})&select=token`,
-    );
+    const tokens = await sql<{ token: string }[]>`
+      select token from public.push_tokens where group_id = ${row.group_id} and user_id::text = any(${users})`;
     if (!tokens.length) return new Response("no phones", { status: 200 });
 
     const sa = JSON.parse(Deno.env.get("FCM_SERVICE_ACCOUNT") || "{}");
@@ -170,9 +161,7 @@ Deno.serve(async (req) => {
       if (res.status === 404 || /UNREGISTERED/.test(err)) dead.push(token);
       else console.error("FCM", res.status, err);
     }));
-    if (dead.length) {
-      await rest(`push_tokens?token=in.(${dead.map((t) => `"${t}"`).join(",")})`, { method: "DELETE" }).catch(() => {});
-    }
+    if (dead.length) await sql`delete from public.push_tokens where token = any(${dead})`.catch(() => {});
     return new Response(JSON.stringify({ sent, removed: dead.length }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
