@@ -363,14 +363,27 @@ export default function AppHost() {
             if (error) throw error;
             return data || [];
           },
-          createNotice: async (title: string, body: string) => {
-            const { error } = await sb.rpc("create_notice", { p_group: groupId, p_title: title, p_body: body });
+          createNotice: async (title: string, body: string, startDate: string, endDate: string) => {
+            const { error } = await sb.rpc("create_notice", { p_group: groupId, p_title: title, p_body: body, p_start: startDate, p_end: endDate });
             if (error) throw error;
             s.broadcastEvent("activity");
           },
-          updateNotice: async (id: string, title: string, body: string) => {
-            const { error } = await sb.rpc("update_notice", { p_id: id, p_title: title, p_body: body });
+          updateNotice: async (id: string, title: string, body: string, startDate: string, endDate: string) => {
+            const { error } = await sb.rpc("update_notice", { p_id: id, p_title: title, p_body: body, p_start: startDate, p_end: endDate });
             if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          endNotice: async (id: string) => {
+            const { error } = await sb.rpc("end_notice", { p_id: id });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          // bazar finished: clear the whole shopping list + its assignment
+          finishShopping: async () => {
+            const { error } = await sb.rpc("finish_shopping", { p_group: groupId });
+            if (error) throw error;
+            s.refreshAll();
+            s.broadcastEvent("changed", { tables: ["shopping_items"] });
             s.broadcastEvent("activity");
           },
           deleteNotice: async (id: string) => {

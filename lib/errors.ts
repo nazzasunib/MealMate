@@ -30,6 +30,7 @@ const RPC_MESSAGES: Record<string, string> = {
   NO_MEMBERS: "Pick at least one member for the shopping list.",
   TOO_FAR: "Pick a close date within the next 60 days.",
   TITLE_REQUIRED: "Write a title for the notice.",
+  BAD_DATES: "Pick a start date and an end date on or after it.",
 };
 
 export function friendlyError(err: unknown): string {
