@@ -3,8 +3,6 @@
 --
 -- 1. notices.start_date / end_date (required for new notices) and
 --    notices.ended_at (set by "End notice").
--- 2. finish_shopping: clears the whole shopping list and its assignment
---    (bazar finished) so a new list can be started.
 --
 -- Safe to run more than once.
 -- =====================================================================
@@ -62,21 +60,9 @@ begin
 end;
 $$;
 
-create or replace function public.finish_shopping(p_group uuid)
-returns void language plpgsql security definer set search_path = public as $$
-begin
-  if p_group not in (select public.my_groups_with('shopping.manage')) then raise exception 'FORBIDDEN'; end if;
-  delete from public.shopping_items where group_id = p_group;
-  delete from public.shopping_plans where group_id = p_group;
-  perform public._log_activity(p_group, 'shopping', 'closed', 'finished the bazar — the shopping list was cleared');
-end;
-$$;
-
 revoke all on function public.create_notice(uuid, text, text, date, date) from public, anon;
 revoke all on function public.update_notice(uuid, text, text, date, date) from public, anon;
 revoke all on function public.end_notice(uuid) from public, anon;
-revoke all on function public.finish_shopping(uuid) from public, anon;
 grant execute on function public.create_notice(uuid, text, text, date, date) to authenticated;
 grant execute on function public.update_notice(uuid, text, text, date, date) to authenticated;
 grant execute on function public.end_notice(uuid) to authenticated;
-grant execute on function public.finish_shopping(uuid) to authenticated;

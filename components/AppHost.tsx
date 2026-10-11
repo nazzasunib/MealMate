@@ -331,19 +331,33 @@ export default function AppHost() {
             if (!error) s.broadcastEvent("activity");
           },
           // ---- shopping list assignment (who goes to the bazar, until when) ----
-          getShoppingPlan: async () => {
-            const { data, error } = await sb.from("shopping_plans").select("*").eq("group_id", groupId).maybeSingle();
+          listShoppingLists: async () => {
+            const { data, error } = await sb.from("shopping_lists").select("*").eq("group_id", groupId).order("created_at", { ascending: true });
             if (error) throw error;
-            return data || null;
+            return data || [];
           },
-          setShoppingPlan: async (memberIds: string[], closeDate: string, note: string) => {
-            const { error } = await sb.rpc("set_shopping_plan", { p_group: groupId, p_member_ids: memberIds, p_close_date: closeDate, p_note: note || null });
+          createShoppingList: async (name: string, date: string) => {
+            const { data, error } = await sb.rpc("create_shopping_list", { p_group: groupId, p_name: name || null, p_date: date });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+            return data as string;
+          },
+          assignShoppingList: async (listId: string, memberIds: string[], date: string, note: string) => {
+            const { error } = await sb.rpc("assign_shopping_list", { p_list: listId, p_member_ids: memberIds, p_date: date, p_note: note || null });
             if (error) throw error;
             s.broadcastEvent("activity");
           },
-          clearShoppingPlan: async () => {
-            const { error } = await sb.rpc("clear_shopping_plan", { p_group: groupId });
+          clearListAssignment: async (listId: string) => {
+            const { error } = await sb.rpc("clear_list_assignment", { p_list: listId });
             if (error) throw error;
+            s.broadcastEvent("activity");
+          },
+          // Shopping Done: the list and its items are deleted
+          finishShoppingList: async (listId: string) => {
+            const { error } = await sb.rpc("finish_shopping_list", { p_list: listId });
+            if (error) throw error;
+            s.refreshAll();
+            s.broadcastEvent("changed", { tables: ["shopping_items"] });
             s.broadcastEvent("activity");
           },
           // the day after the close date the list is cleared on the server; fetch the empty list then
@@ -376,14 +390,6 @@ export default function AppHost() {
           endNotice: async (id: string) => {
             const { error } = await sb.rpc("end_notice", { p_id: id });
             if (error) throw error;
-            s.broadcastEvent("activity");
-          },
-          // bazar finished: clear the whole shopping list + its assignment
-          finishShopping: async () => {
-            const { error } = await sb.rpc("finish_shopping", { p_group: groupId });
-            if (error) throw error;
-            s.refreshAll();
-            s.broadcastEvent("changed", { tables: ["shopping_items"] });
             s.broadcastEvent("activity");
           },
           deleteNotice: async (id: string) => {

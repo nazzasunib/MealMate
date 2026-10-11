@@ -137,9 +137,10 @@ Deno.serve(async (req) => {
     if (p.audience === "shoppers") {
       // the members the shopping list is assigned to (their linked accounts)
       const shoppers = await sql<{ user_id: string }[]>`
-        select m.user_id::text from public.shopping_plans sp
+        select m.user_id::text from public.shopping_lists sp
           join public.members m on m.group_id = sp.group_id and m.id = any(sp.member_ids)
-         where sp.group_id = ${row.group_id} and m.user_id is not null`;
+         where sp.id = (select id from public.shopping_lists where group_id = ${row.group_id} order by updated_at desc limit 1)
+           and m.user_id is not null`;
       const ids = new Set(shoppers.map((x) => x.user_id));
       members = members.filter((m) => ids.has(m.user_id));
     }
