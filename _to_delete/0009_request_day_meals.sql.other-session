@@ -1,0 +1,167 @@
+-- =====================================================================
+-- MealMate 0009 — Date-wise meal-off requests
+--
+-- A meal-off request over a date range can now pick meals per day
+-- (e.g. 20 Oct: only Lunch stays ON, 24 Oct: only Dinner stays ON).
+-- meal_requests.day_meals = jsonb array of {"d":"YYYY-MM-DD","b":bool,"l":bool,"dn":bool}
+-- where true = that meal is switched OFF that day. NULL = old behaviour
+-- (same meals for every day in the range). breakfast/lunch/dinner keep the
+-- union of all days, so older screens still work.
+--
+-- Safe to run more than once.
+-- =====================================================================
+
+alter table public.meal_requests add column if not exists day_meals jsonb;
+
+drop function if exists public.create_meal_request(uuid, text, date, date, boolean, boolean, boolean, text, integer, text);
+
+create or replace function public.create_meal_request(
+  p_group uuid, p_kind text, p_from date, p_to date,
+  p_breakfast boolean, p_lunch boolean, p_dinner boolean,
+  p_guest_name text default null, p_quantity integer default 1, p_note text default null,
+  p_days jsonb default null)
+returns uuid
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_member record;
+  v_id uuid;
+  v_today date := (now() at time zone 'Asia/Dhaka')::date;
+  v_to date := coalesce(p_to, p_from);
+  v_summary text;
+  v_b boolean := coalesce(p_breakfast, false);
+  v_l boolean := coalesce(p_lunch, false);
+  v_d boolean := coalesce(p_dinner, false);
+  v_days jsonb := null;
+  e jsonb;
+  v_day date;
+begin
+  if p_group not in (select public.my_group_ids()) then raise exception 'FORBIDDEN'; end if;
+  if p_kind not in ('MEAL_OFF', 'GUEST') then raise exception 'INVALID_KIND'; end if;
+  if p_from is null then raise exception 'INVALID_DATE'; end if;
+  if p_from < v_today then raise exception 'PAST_DATE'; end if;
+  if p_kind = 'GUEST' then v_to := p_from; end if;
+  if v_to < p_from or v_to - p_from > 30 then raise exception 'INVALID_RANGE'; end if;
+
+  -- date-wise meals (meal off over a range only)
+  if p_kind = 'MEAL_OFF' and p_days is not null and v_to > p_from then
+    if jsonb_typeof(p_days) <> 'array' or jsonb_array_length(p_days) not between 1 and 31 then raise exception 'INVALID_RANGE'; end if;
+    v_b := false; v_l := false; v_d := false;
+    v_days := '[]'::jsonb;
+    for e in select * from jsonb_array_elements(p_days) loop
+      v_day := (e ->> 'd')::date;
+      if v_day is null or v_day < p_from or v_day > v_to then raise exception 'INVALID_RANGE'; end if;
+      if coalesce((e ->> 'b')::boolean, false) or coalesce((e ->> 'l')::boolean, false) or coalesce((e ->> 'dn')::boolean, false) then
+        v_days := v_days || jsonb_build_array(jsonb_build_object(
+          'd', v_day, 'b', coalesce((e ->> 'b')::boolean, false),
+          'l', coalesce((e ->> 'l')::boolean, false), 'dn', coalesce((e ->> 'dn')::boolean, false)));
+        v_b := v_b or coalesce((e ->> 'b')::boolean, false);
+        v_l := v_l or coalesce((e ->> 'l')::boolean, false);
+        v_d := v_d or coalesce((e ->> 'dn')::boolean, false);
+      end if;
+    end loop;
+  end if;
+  if not (v_b or v_l or v_d) then raise exception 'NO_MEALS'; end if;
+
+  select id, name into v_member from public.members
+   where group_id = p_group and user_id = auth.uid() and status = 'ACTIVE'
+   order by created_at limit 1;
+  if v_member.id is null then raise exception 'NO_MEMBER_ROW'; end if;
+
+  if exists (select 1 from public.meal_requests
+              where group_id = p_group and member_id = v_member.id and status = 'PENDING' and kind = p_kind
+                and date_from = p_from and date_to = v_to) then
+    raise exception 'DUPLICATE_REQUEST';
+  end if;
+
+  insert into public.meal_requests (group_id, member_id, member_name, requested_by, kind, date_from, date_to,
+                                    breakfast, lunch, dinner, guest_name, quantity, note, day_meals)
+  values (p_group, v_member.id, left(v_member.name, 80), auth.uid(), p_kind, p_from, v_to,
+          v_b, v_l, v_d,
+          nullif(left(btrim(coalesce(p_guest_name, '')), 120), ''),
+          case when p_kind = 'GUEST' then greatest(1, least(coalesce(p_quantity, 1), 20)) else 1 end,
+          nullif(left(btrim(coalesce(p_note, '')), 300), ''), v_days)
+  returning id into v_id;
+
+  v_summary := case when p_kind = 'MEAL_OFF'
+    then 'requested meal off · ' || public._req_dates(p_from, v_to)
+         || case when v_days is not null then ' · date wise' else ' · ' || public._req_meals(v_b, v_l, v_d) end
+    else 'requested ' || case when coalesce(p_quantity, 1) > 1 then coalesce(p_quantity, 1)::text || ' guest meals' else 'a guest meal' end
+         || coalesce(' (' || nullif(btrim(coalesce(p_guest_name, '')), '') || ')', '')
+         || ' · ' || public._req_dates(p_from, p_from) || ' · ' || public._req_meals(v_b, v_l, v_d) end;
+  perform public._log_activity(p_group, 'request', 'requested', v_summary);
+  return v_id;
+end;
+$$;
+
+create or replace function public.decide_meal_request(p_id uuid, p_approve boolean, p_note text default null)
+returns void
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  r public.meal_requests;
+  v_def jsonb;
+  v_d date;
+  v_summary text;
+  e jsonb;
+  v_ob boolean; v_ol boolean; v_od boolean;
+begin
+  select * into r from public.meal_requests where id = p_id for update;
+  if r.id is null or r.group_id not in (select public.my_group_ids()) then raise exception 'NOT_FOUND'; end if;
+  if not public.has_permission(r.group_id, 'meals.edit') then raise exception 'FORBIDDEN'; end if;
+  if r.status <> 'PENDING' then raise exception 'ALREADY_DECIDED'; end if;
+
+  if p_approve then
+    select default_meals into v_def from public.members where group_id = r.group_id and id = r.member_id;
+    if not found then raise exception 'MEMBER_GONE'; end if;
+    if r.kind = 'MEAL_OFF' then
+      for v_d in select generate_series(r.date_from, r.date_to, interval '1 day')::date loop
+        if r.day_meals is not null then
+          -- date wise: only the meals ticked for this exact day (none = day untouched)
+          select coalesce((x ->> 'b')::boolean, false), coalesce((x ->> 'l')::boolean, false), coalesce((x ->> 'dn')::boolean, false)
+            into v_ob, v_ol, v_od
+            from jsonb_array_elements(r.day_meals) x where (x ->> 'd')::date = v_d limit 1;
+          if not found then continue; end if;
+        else
+          v_ob := r.breakfast; v_ol := r.lunch; v_od := r.dinner;
+        end if;
+        insert into public.meals (group_id, member_id, date, breakfast, lunch, dinner, updated_by, updated_at)
+        values (r.group_id, r.member_id, v_d,
+                case when v_ob then false else coalesce((v_def ->> 'breakfast')::boolean, false) end,
+                case when v_ol then false else coalesce((v_def ->> 'lunch')::boolean, true) end,
+                case when v_od then false else coalesce((v_def ->> 'dinner')::boolean, true) end,
+                auth.uid(), now())
+        on conflict (group_id, member_id, date) do update set
+          breakfast  = case when v_ob then false else public.meals.breakfast end,
+          lunch      = case when v_ol then false else public.meals.lunch end,
+          dinner     = case when v_od then false else public.meals.dinner end,
+          updated_by = auth.uid(),
+          updated_at = now();
+      end loop;
+    else
+      insert into public.guest_meals (group_id, id, host_member_id, guest_name, date, breakfast, lunch, dinner, quantity, note, created_by)
+      values (r.group_id, 'guest_' || replace(gen_random_uuid()::text, '-', ''), r.member_id, r.guest_name, r.date_from,
+              r.breakfast, r.lunch, r.dinner, r.quantity,
+              left(concat_ws(' · ', 'Approved request', r.note), 500), r.requested_by);
+    end if;
+  end if;
+
+  update public.meal_requests
+     set status = case when p_approve then 'APPROVED' else 'REJECTED' end,
+         decided_by = auth.uid(), decided_name = left(public._my_name(), 120), decided_at = now(),
+         decision_note = nullif(left(btrim(coalesce(p_note, '')), 300), '')
+   where id = p_id;
+
+  v_summary := case when p_approve then 'approved ' else 'rejected ' end || r.member_name || '''s '
+    || case when r.kind = 'MEAL_OFF'
+         then 'meal off request · ' || public._req_dates(r.date_from, r.date_to)
+              || case when r.day_meals is not null then ' · date wise' else ' · ' || public._req_meals(r.breakfast, r.lunch, r.dinner) end
+         else 'guest meal request · ' || public._req_dates(r.date_from, r.date_from) || ' · ' || public._req_meals(r.breakfast, r.lunch, r.dinner)
+              || case when r.quantity > 1 then ' ×' || r.quantity else '' end end
+    || coalesce(' — "' || nullif(btrim(coalesce(p_note, '')), '') || '"', '');
+  perform public._log_activity(r.group_id, 'request', case when p_approve then 'approved' else 'rejected' end, v_summary, r.requested_by);
+end;
+$$;
+
+revoke all on function public.create_meal_request(uuid, text, date, date, boolean, boolean, boolean, text, integer, text, jsonb) from public, anon;
+grant execute on function public.create_meal_request(uuid, text, date, date, boolean, boolean, boolean, text, integer, text, jsonb) to authenticated;
+revoke all on function public.decide_meal_request(uuid, boolean, text) from public, anon;
+grant execute on function public.decide_meal_request(uuid, boolean, text) to authenticated;
