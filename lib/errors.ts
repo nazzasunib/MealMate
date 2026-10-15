@@ -41,6 +41,8 @@ export function friendlyError(err: unknown): string {
   for (const key of Object.keys(RPC_MESSAGES)) {
     if (msg === key || msg.includes(key) || code === key) return RPC_MESSAGES[key];
   }
+  if (/create_meal_request_days|day_meals/i.test(msg))
+    return "One-time update needed for date wise meal off. Ask your Admin to run supabase/migrations/0009_meal_off_date_wise.sql in Supabase → SQL Editor.";
   if (code === "PGRST202" || code === "PGRST205" || code === "42P01" || code === "42883" || /could not find the (function|table)|schema cache|does not exist/i.test(msg))
     return "Database setup isn't finished. Run supabase/migrations/0001_mealmate.sql in Supabase → SQL Editor, then try again.";
   if (/invalid login credentials/i.test(msg)) return "Wrong email or password.";

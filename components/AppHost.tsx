@@ -412,6 +412,15 @@ export default function AppHost() {
             s.broadcastEvent("activity");
             return data as string;
           },
+          // Meal Off over a date range with different meals on each date (migration 0009)
+          createRequestDays: async (r: { from: string; to: string; days: Record<string, { b: boolean; l: boolean; d: boolean }>; note?: string }) => {
+            const { data, error } = await sb.rpc("create_meal_request_days", {
+              p_group: groupId, p_from: r.from, p_to: r.to, p_days: r.days, p_note: r.note || null,
+            });
+            if (error) throw error;
+            s.broadcastEvent("activity");
+            return data as string;
+          },
           cancelRequest: async (id: string) => {
             const { error } = await sb.rpc("cancel_meal_request", { p_id: id });
             if (error) throw error;

@@ -668,3 +668,17 @@ html.mm-dark .mm-notice-banner { box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 
 .mm-plan-opt input { width: 1.05rem; height: 1.05rem; accent-color: var(--navy-800); flex: none; }
 .mm-plan-opt:has(input:checked) { border-color: var(--navy-700); background: #eef2fb; }
 @media (max-width: 480px) { .mm-plan { flex-wrap: wrap; } .mm-plan-actions { width: 100%; justify-content: flex-end; } }
+
+/* ---- Meal Off: date wise (one row per date) ---- */
+.mm-req-days-edit { display: flex; flex-direction: column; gap: .5rem; max-height: 15rem; overflow-y: auto; padding-right: .15rem; }
+.mm-req-dayrow { display: flex; flex-direction: column; gap: .35rem; padding: .55rem .65rem; border: 1px solid var(--border); border-radius: .85rem; background: var(--surface); }
+.mm-req-dayrow-date { font-size: .8rem; font-weight: 600; color: var(--foreground); }
+.mm-req-dayrow-meals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; }
+.mm-req-meal.is-sm { padding: .4rem .25rem; font-size: .78rem; border-radius: .6rem; gap: .3rem; }
+.mm-req-meal.is-sm input { width: .9rem; height: .9rem; }
+.mm-req-days { display: flex; flex-direction: column; gap: .35rem; margin-top: .55rem; }
+.mm-req-dayline { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; padding: .4rem .6rem; border-radius: .65rem; background: var(--gray-100, rgba(0,0,0,.04)); }
+.mm-req-dayline-date { min-width: 6.2rem; font-size: .8rem; font-weight: 600; color: var(--foreground); }
+.mm-req-dayline-meals { display: flex; flex-wrap: wrap; gap: .3rem; }
+.mm-req-chip { padding: .1rem .5rem; border-radius: 999px; font-size: .72rem; color: var(--muted); border: 1px solid var(--border); background: var(--surface); }
+.mm-req-chip.is-off { color: #fff; background: var(--navy-800); border-color: var(--navy-800); font-weight: 600; }
